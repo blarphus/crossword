@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>NYT Crossword</title>
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -150,7 +150,7 @@ body {
 }
 
 /* ─── Puzzle View ────────────────────────────────────────────── */
-#puzzle-view { display: none; }
+#puzzle-view { display: none; flex-direction: column; }
 
 .puzzle-header {
   text-align: center;
@@ -421,24 +421,34 @@ body {
   .cal-day .day-number { font-size: 0.55rem; }
   .star-overlay { font-size: 1.1rem; }
 
-  .puzzle-header { padding: 10px; }
-  .puzzle-header h1 { font-size: 1.1rem; }
-  .puzzle-header .meta { font-size: 0.75rem; }
+  /* Puzzle view fills screen as flex column */
+  #puzzle-view { position: fixed; inset: 0; overflow: hidden; }
+
+  .puzzle-header { padding: 6px 10px; flex-shrink: 0; }
+  .puzzle-header h1 { font-size: 0.95rem; }
+  .puzzle-header .meta { display: none; }
   .puzzle-header .back-btn { left: 6px; padding: 5px 8px; font-size: 0.78rem; }
 
-  .toolbar { gap: 6px; padding: 8px; }
-  .toolbar button { padding: 5px 10px; font-size: 0.78rem; }
+  .toolbar { gap: 6px; padding: 4px 8px; flex-shrink: 0; }
+  .toolbar button { padding: 4px 10px; font-size: 0.78rem; }
 
-  .current-clue-bar { font-size: 0.85rem; padding: 6px 10px; background: #2b2d5e; color: #fff; }
+  .presence-bar { flex-shrink: 0; }
+
+  .current-clue-bar { font-size: 0.85rem; padding: 6px 10px; background: #2b2d5e; color: #fff; flex-shrink: 0; }
   .clue-nav-btn { color: #fff; }
 
-  .app { flex-direction: column; align-items: center; padding: 4px; gap: 8px; padding-bottom: 160px; }
-  .grid-container { width: 100%; display: flex; justify-content: center; }
+  /* Grid area fills remaining space */
+  .app { flex: 1; min-height: 0; overflow: hidden; padding: 0; gap: 0; }
+  .grid-container {
+    width: 100%; height: 100%;
+    display: flex; align-items: center; justify-content: center;
+    overflow: hidden;
+  }
+  .grid { touch-action: none; }
   .clue-panel { display: none; }
-  .mobile-keyboard { display: block; }
 
-  .puzzle-header .meta { display: none; }
-  .puzzle-header h1 { font-size: 0.95rem; }
+  /* Keyboard at bottom of flex column */
+  .mobile-keyboard { display: block; position: static; flex-shrink: 0; padding-bottom: env(safe-area-inset-bottom, 0px); }
 
   .check-text { display: none; }
   .check-icon { display: inline; font-size: 1.2rem; }
@@ -530,6 +540,9 @@ let direction = 'across';
 let autoCheck = false;
 let solved = false;
 let currentDate = null;
+
+// Grid zoom state (mobile pinch-to-zoom)
+let gridScale = 1, gridTx = 0, gridTy = 0;
 
 // ─── Remote user presence ──────────────────────────────────────
 let myColor = '#90EE90';
@@ -755,7 +768,7 @@ function showCalendar() {
 
 function showPuzzle(dateStr) {
   calendarView.style.display = 'none';
-  puzzleView.style.display = 'block';
+  puzzleView.style.display = 'flex';
   loadPuzzle(dateStr);
 }
 
@@ -823,10 +836,15 @@ async function loadPuzzle(dateStr) {
 
   // Compute cell size based on grid dimensions
   const isMobile = window.innerWidth <= 780;
-  const maxGridPx = isMobile
-    ? window.innerWidth - 12
-    : Math.min(window.innerWidth - 420, 650);
-  const cellSize = Math.max(16, Math.min(40, Math.floor(maxGridPx / Math.max(ROWS, COLS))));
+  let cellSize;
+  if (isMobile) {
+    const availW = window.innerWidth - 8;
+    const availH = window.innerHeight - 260; // header + toolbar + clue bar + keyboard
+    cellSize = Math.max(16, Math.min(40, Math.floor(Math.min(availW / COLS, availH / ROWS))));
+  } else {
+    const maxGridPx = Math.min(window.innerWidth - 420, 650);
+    cellSize = Math.max(16, Math.min(40, Math.floor(maxGridPx / Math.max(ROWS, COLS))));
+  }
   document.documentElement.style.setProperty('--cell-size', cellSize + 'px');
 
   buildGrid();
@@ -1043,6 +1061,8 @@ function getWordCells(clue, dir) {
 let cellEls = [];
 
 function buildGrid() {
+  gridScale = 1; gridTx = 0; gridTy = 0;
+  gridEl.style.transform = '';
   gridEl.innerHTML = '';
   gridEl.style.gridTemplateColumns = `repeat(${COLS}, var(--cell-size))`;
   gridEl.style.gridTemplateRows = `repeat(${ROWS}, var(--cell-size))`;
@@ -1581,6 +1601,117 @@ if (isMobileDevice) {
 }
 
 initMobileKeyboard();
+
+// ─── Mobile grid pinch-to-zoom + pan ────────────────────────────
+if (isMobileDevice) {
+  const gc = document.querySelector('.grid-container');
+  let pinchInitDist = 0, pinchInitScale = 1;
+  let pinchInitCenter = {x: 0, y: 0};
+  let pinchInitTx = 0, pinchInitTy = 0;
+  let isPinching = false;
+  let panStart = null, panStartTx = 0, panStartTy = 0, didPan = false;
+
+  function applyGridTransform() {
+    gridEl.style.transformOrigin = '0 0';
+    gridEl.style.transform = `translate(${gridTx}px,${gridTy}px) scale(${gridScale})`;
+  }
+
+  function clampGridPos() {
+    const cr = gc.getBoundingClientRect();
+    const gw = gridEl.offsetWidth * gridScale;
+    const gh = gridEl.offsetHeight * gridScale;
+    if (gw <= cr.width) { gridTx = (cr.width - gw) / 2; }
+    else { gridTx = Math.min(0, Math.max(cr.width - gw, gridTx)); }
+    if (gh <= cr.height) { gridTy = (cr.height - gh) / 2; }
+    else { gridTy = Math.min(0, Math.max(cr.height - gh, gridTy)); }
+  }
+
+  function pDist(t) {
+    const dx = t[0].clientX - t[1].clientX, dy = t[0].clientY - t[1].clientY;
+    return Math.sqrt(dx * dx + dy * dy);
+  }
+  function pCenter(t) {
+    return { x: (t[0].clientX + t[1].clientX) / 2, y: (t[0].clientY + t[1].clientY) / 2 };
+  }
+
+  gc.addEventListener('touchstart', e => {
+    if (e.touches.length === 2) {
+      e.preventDefault();
+      isPinching = true;
+      // Initialize transform from flex-centered position if needed
+      if (gridScale === 1 && gridTx === 0 && gridTy === 0) {
+        const gr = gridEl.getBoundingClientRect();
+        const cr = gc.getBoundingClientRect();
+        gridTx = gr.left - cr.left;
+        gridTy = gr.top - cr.top;
+        applyGridTransform();
+      }
+      pinchInitDist = pDist(e.touches);
+      pinchInitScale = gridScale;
+      pinchInitCenter = pCenter(e.touches);
+      pinchInitTx = gridTx;
+      pinchInitTy = gridTy;
+      panStart = null;
+    } else if (e.touches.length === 1 && gridScale > 1) {
+      panStart = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+      panStartTx = gridTx;
+      panStartTy = gridTy;
+      didPan = false;
+    }
+  }, { passive: false });
+
+  gc.addEventListener('touchmove', e => {
+    if (isPinching && e.touches.length === 2) {
+      e.preventDefault();
+      const nd = pDist(e.touches);
+      const nc = pCenter(e.touches);
+      const newScale = Math.max(1, Math.min(4, pinchInitScale * (nd / pinchInitDist)));
+      // Zoom toward pinch center
+      const rect = gc.getBoundingClientRect();
+      const cx = pinchInitCenter.x - rect.left;
+      const cy = pinchInitCenter.y - rect.top;
+      const gx = (cx - pinchInitTx) / pinchInitScale;
+      const gy = (cy - pinchInitTy) / pinchInitScale;
+      gridTx = (nc.x - rect.left) - gx * newScale;
+      gridTy = (nc.y - rect.top) - gy * newScale;
+      gridScale = newScale;
+      clampGridPos();
+      applyGridTransform();
+    } else if (e.touches.length === 1 && panStart && gridScale > 1) {
+      const dx = e.touches[0].clientX - panStart.x;
+      const dy = e.touches[0].clientY - panStart.y;
+      if (Math.abs(dx) > 3 || Math.abs(dy) > 3) didPan = true;
+      if (didPan) {
+        e.preventDefault();
+        gridTx = panStartTx + dx;
+        gridTy = panStartTy + dy;
+        clampGridPos();
+        applyGridTransform();
+      }
+    }
+  }, { passive: false });
+
+  gc.addEventListener('touchend', e => {
+    if (e.touches.length < 2) {
+      isPinching = false;
+      if (gridScale < 1.05) {
+        gridScale = 1; gridTx = 0; gridTy = 0;
+        gridEl.style.transform = '';
+      }
+    }
+    if (e.touches.length === 0) panStart = null;
+  });
+
+  // Suppress cell clicks after panning
+  gc.addEventListener('click', e => {
+    if (didPan) { e.stopPropagation(); e.preventDefault(); didPan = false; }
+  }, true);
+
+  // Prevent overscroll/bounce everywhere except grid container
+  puzzleView.addEventListener('touchmove', e => {
+    if (!e.target.closest('.grid-container')) e.preventDefault();
+  }, { passive: false });
+}
 
 // ─── Clue bar navigation ────────────────────────────────────────
 document.getElementById('clue-prev').addEventListener('click', () => {
