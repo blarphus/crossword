@@ -222,12 +222,18 @@ body {
 }
 
 .current-clue-bar {
-  text-align: center;
-  padding: 8px 16px;
+  display: flex;
+  align-items: center;
+  padding: 8px 8px;
   background: var(--highlight-word);
   font-size: 0.95rem;
   font-weight: 500;
   min-height: 36px;
+}
+#clue-bar-text { flex: 1; text-align: center; }
+.clue-nav-btn {
+  background: none; border: none; font-size: 1.5rem; cursor: pointer;
+  padding: 0 8px; color: #333; font-weight: 700;
 }
 
 .app {
@@ -376,6 +382,35 @@ body {
   left: -9999px;
 }
 
+/* Mobile keyboard */
+.mobile-keyboard {
+  display: none;
+  background: #2c2c2e;
+  padding: 6px 4px;
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  z-index: 50;
+}
+.kb-row { display: flex; justify-content: center; gap: 4px; margin-bottom: 4px; }
+.kb-key {
+  background: #5a5a5c;
+  color: #fff;
+  border: none;
+  border-radius: 5px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  min-width: 32px;
+  height: 42px;
+  cursor: pointer;
+  flex: 1;
+  max-width: 38px;
+}
+.kb-key:active { background: #7a7a7c; }
+.kb-more, .kb-backspace { flex: 1.4; max-width: 54px; font-size: 0.8rem; }
+
+/* Auto-check icon */
+.check-icon { display: none; }
+
 /* Mobile */
 @media (max-width: 780px) {
   .calendar-nav { padding: 10px; gap: 6px; }
@@ -394,12 +429,19 @@ body {
   .toolbar { gap: 6px; padding: 8px; }
   .toolbar button { padding: 5px 10px; font-size: 0.78rem; }
 
-  .current-clue-bar { font-size: 0.85rem; padding: 6px 10px; }
+  .current-clue-bar { font-size: 0.85rem; padding: 6px 10px; background: #2b2d5e; color: #fff; }
+  .clue-nav-btn { color: #fff; }
 
-  .app { flex-direction: column; align-items: center; padding: 4px; gap: 8px; }
+  .app { flex-direction: column; align-items: center; padding: 4px; gap: 8px; padding-bottom: 160px; }
   .grid-container { width: 100%; display: flex; justify-content: center; }
-  .clue-panel { max-width: 100%; max-height: 300px; width: 100%; }
-  .clue-section { max-height: 300px; }
+  .clue-panel { display: none; }
+  .mobile-keyboard { display: block; }
+
+  .puzzle-header .meta { display: none; }
+  .puzzle-header h1 { font-size: 0.95rem; }
+
+  .check-text { display: none; }
+  .check-icon { display: inline; font-size: 1.2rem; }
 }
 </style>
 </head>
@@ -430,14 +472,18 @@ body {
   </div>
 
   <div class="toolbar">
-    <button id="btn-check">Auto-Check</button>
+    <button id="btn-check"><span class="check-text">Auto-Check</span><span class="check-icon">&#x1F6DF;</span></button>
     <button id="btn-clear">Clear Puzzle</button>
     <button id="btn-reveal">Reveal Puzzle</button>
   </div>
 
   <div class="presence-bar" id="presence-bar"></div>
 
-  <div class="current-clue-bar" id="current-clue-bar">&nbsp;</div>
+  <div class="current-clue-bar" id="current-clue-bar">
+    <button class="clue-nav-btn" id="clue-prev">&lsaquo;</button>
+    <span id="clue-bar-text">&nbsp;</span>
+    <button class="clue-nav-btn" id="clue-next">&rsaquo;</button>
+  </div>
 
   <div class="app">
     <div class="grid-container">
@@ -446,6 +492,8 @@ body {
     </div>
     <div class="clue-panel" id="clue-panel"></div>
   </div>
+
+  <div class="mobile-keyboard" id="mobile-keyboard"></div>
 </div>
 
 <div class="congrats-overlay" id="congrats">
@@ -698,6 +746,7 @@ function showCalendar() {
     socket.emit('leave-puzzle');
     currentDate = null;
   }
+  localStorage.removeItem('crossword-current-puzzle');
   PUZZLE = null;
   remoteUsers.clear();
   lastCursorKey = '';
@@ -713,6 +762,7 @@ function showPuzzle(dateStr) {
 // ─── Load a puzzle (async) ────────────────────────────────────
 async function loadPuzzle(dateStr) {
   currentDate = dateStr;
+  localStorage.setItem('crossword-current-puzzle', dateStr);
   remoteUsers.clear();
   cellColors.clear();
   lastCursorKey = '';
@@ -1155,11 +1205,12 @@ function render() {
     }
   }
 
+  const clueBarTextEl = clueBarEl.querySelector('#clue-bar-text');
   if (currentClue) {
     const dirLabel = direction === 'across' ? 'A' : 'D';
-    clueBarEl.textContent = `${currentClue.n}${dirLabel}: ${currentClue.clue}`;
+    clueBarTextEl.textContent = `${currentClue.n}${dirLabel}: ${currentClue.clue}`;
   } else {
-    clueBarEl.innerHTML = '&nbsp;';
+    clueBarTextEl.innerHTML = '&nbsp;';
   }
 
   for (const k in clueItemEls) clueItemEls[k].classList.remove('active');
@@ -1440,9 +1491,119 @@ btnReveal.addEventListener('click', () => {
   checkCompletion();
 });
 
+// ─── Mobile keyboard ────────────────────────────────────────────
+function initMobileKeyboard() {
+  const kb = document.getElementById('mobile-keyboard');
+  const rows = [
+    ['Q','W','E','R','T','Y','U','I','O','P'],
+    ['A','S','D','F','G','H','J','K','L'],
+    ['MORE','Z','X','C','V','B','N','M','BACK'],
+  ];
+
+  rows.forEach(letters => {
+    const rowEl = document.createElement('div');
+    rowEl.className = 'kb-row';
+    letters.forEach(l => {
+      const btn = document.createElement('button');
+      btn.className = 'kb-key';
+      if (l === 'MORE') {
+        btn.classList.add('kb-more');
+        btn.textContent = 'More';
+      } else if (l === 'BACK') {
+        btn.classList.add('kb-backspace');
+        btn.textContent = '\u232B';
+      } else {
+        btn.textContent = l;
+      }
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        if (!PUZZLE || solved) return;
+        if (l === 'MORE') return;
+        if (l === 'BACK') {
+          handleBackspace();
+        } else {
+          handleLetterInput(l);
+        }
+      });
+      rowEl.appendChild(btn);
+    });
+    kb.appendChild(rowEl);
+  });
+}
+
+function handleLetterInput(letter) {
+  if (!checkedCells[selectedRow][selectedCol]) {
+    userGrid[selectedRow][selectedCol] = letter;
+    sendCellUpdate(selectedRow, selectedCol, letter);
+    if (autoCheck && letter === PUZZLE.grid[selectedRow][selectedCol]) {
+      checkedCells[selectedRow][selectedCol] = true;
+    }
+  }
+  render();
+  advanceCursor();
+  render();
+  checkCompletion();
+}
+
+function handleBackspace() {
+  if (checkedCells[selectedRow][selectedCol]) {
+    retreatCursor();
+  } else if (userGrid[selectedRow][selectedCol]) {
+    userGrid[selectedRow][selectedCol] = '';
+    sendCellUpdate(selectedRow, selectedCol, '');
+  } else {
+    retreatCursor();
+    if (!checkedCells[selectedRow][selectedCol]) {
+      userGrid[selectedRow][selectedCol] = '';
+      sendCellUpdate(selectedRow, selectedCol, '');
+    }
+  }
+  render();
+}
+
+const isMobileDevice = window.innerWidth <= 780;
+
+// Override focusGrid to skip hidden input on mobile
+const origFocusGrid = focusGrid;
+focusGrid = function() {
+  if (isMobileDevice) {
+    // Don't focus the hidden input — custom keyboard handles input
+    gridEl.focus();
+  } else {
+    origFocusGrid();
+  }
+};
+
+// On mobile, prevent the hidden input from showing the system keyboard
+if (isMobileDevice) {
+  mobileInput.setAttribute('inputmode', 'none');
+  mobileInput.setAttribute('readonly', 'true');
+}
+
+initMobileKeyboard();
+
+// ─── Clue bar navigation ────────────────────────────────────────
+document.getElementById('clue-prev').addEventListener('click', () => {
+  if (!PUZZLE) return;
+  moveToNextWord(false);
+  render();
+  focusGrid();
+});
+document.getElementById('clue-next').addEventListener('click', () => {
+  if (!PUZZLE) return;
+  moveToNextWord(true);
+  render();
+  focusGrid();
+});
+
 // ─── Init ──────────────────────────────────────────────────────
+const savedPuzzle = localStorage.getItem('crossword-current-puzzle');
 initCalendarNav();
-fetchAndRenderCalendar();
+if (savedPuzzle) {
+  showPuzzle(savedPuzzle);
+} else {
+  fetchAndRenderCalendar();
+}
 </script>
 </body>
 </html>
