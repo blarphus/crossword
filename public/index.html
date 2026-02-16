@@ -130,6 +130,25 @@ body {
 }
 .cal-day.complete .star-overlay { display: flex; }
 
+.player-count-badge {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  background: #2a6dd4;
+  color: #fff;
+  font-size: 0.55rem;
+  font-weight: 700;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+  line-height: 1;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+}
+
 /* ─── Puzzle View ────────────────────────────────────────────── */
 #puzzle-view { display: none; }
 
@@ -455,6 +474,8 @@ let currentDate = null;
 // ─── Remote user presence ──────────────────────────────────────
 let myColor = '#90EE90';
 const remoteUsers = new Map(); // socketId → {userId, color, row, col, direction}
+const cellColors = new Map();  // "r,c" → color (who filled this cell)
+const roomCounts = new Map();  // puzzleDate → player count
 let lastCursorKey = '';
 
 // ─── DOM refs ──────────────────────────────────────────────────
@@ -616,6 +637,15 @@ function renderCalendar() {
       dayEl.classList.add('no-puzzle');
     }
 
+    // Player count badge
+    const playerCount = roomCounts.get(dateStr);
+    if (playerCount > 0) {
+      const badge = document.createElement('div');
+      badge.className = 'player-count-badge';
+      badge.textContent = playerCount;
+      dayEl.appendChild(badge);
+    }
+
     calendarGridEl.appendChild(dayEl);
   }
 }
@@ -672,6 +702,7 @@ function showPuzzle(dateStr) {
 async function loadPuzzle(dateStr) {
   currentDate = dateStr;
   remoteUsers.clear();
+  cellColors.clear();
   lastCursorKey = '';
 
   // Fetch puzzle data and shared state in parallel
@@ -768,6 +799,12 @@ function applySharedState(gridMap) {
 
 function sendCellUpdate(row, col, letter) {
   if (!currentDate) return;
+  const key = `${row},${col}`;
+  if (letter) {
+    cellColors.set(key, myColor);
+  } else {
+    cellColors.delete(key);
+  }
   socket.emit('cell-update', { puzzleDate: currentDate, row, col, letter });
 }
 
@@ -814,10 +851,21 @@ socket.on('cursor-moved', ({ socketId, userId, row, col, direction: dir }) => {
   if (PUZZLE) render();
 });
 
-socket.on('cell-updated', ({ row, col, letter }) => {
+socket.on('cell-updated', ({ row, col, letter, userId: remoteUserId }) => {
   if (!PUZZLE) return;
   if (row >= 0 && row < ROWS && col >= 0 && col < COLS) {
     userGrid[row][col] = letter;
+    const key = `${row},${col}`;
+    if (letter) {
+      // Find color for this remote user
+      let color = '#ccc';
+      for (const [, u] of remoteUsers) {
+        if (u.userId === remoteUserId) { color = u.color; break; }
+      }
+      cellColors.set(key, color);
+    } else {
+      cellColors.delete(key);
+    }
     render();
     checkCompletion();
   }
@@ -830,9 +878,33 @@ socket.on('puzzle-cleared', () => {
       userGrid[r][c] = '';
       checkedCells[r][c] = false;
     }
+  cellColors.clear();
   solved = false;
   congratsEl.classList.remove('show');
   render();
+});
+
+socket.on('room-count', ({ puzzleDate, count }) => {
+  if (count > 0) {
+    roomCounts.set(puzzleDate, count);
+  } else {
+    roomCounts.delete(puzzleDate);
+  }
+  // Update badge on calendar if visible
+  const dayEl = document.querySelector(`.cal-day[data-date="${puzzleDate}"]`);
+  if (dayEl) {
+    let badge = dayEl.querySelector('.player-count-badge');
+    if (count > 0) {
+      if (!badge) {
+        badge = document.createElement('div');
+        badge.className = 'player-count-badge';
+        dayEl.appendChild(badge);
+      }
+      badge.textContent = count;
+    } else if (badge) {
+      badge.remove();
+    }
+  }
 });
 
 socket.on('puzzle-progress', (summary) => {
@@ -1036,7 +1108,7 @@ function render() {
         el.classList.remove('error');
       }
 
-      // Remote cursor outline
+      // Remote cursor outline (takes priority)
       const remoteCursorColor = remoteCursorCells.get(key);
       if (remoteCursorColor && !isMyCell) {
         el.style.outline = `2.5px solid ${remoteCursorColor}`;
@@ -1046,10 +1118,17 @@ function render() {
         el.style.outlineOffset = '';
       }
 
+      // Cell filler color: colored inset box-shadow showing who typed the letter
+      const fillerColor = cellColors.get(key);
+      if (fillerColor && userGrid[r][c]) {
+        el.style.boxShadow = `inset 0 0 0 2px ${fillerColor}`;
+      } else {
+        el.style.boxShadow = '';
+      }
+
       // Remote word tint (only if not overlapping with current user's highlights)
       const remoteWordColor = remoteWordCells.get(key);
       if (remoteWordColor && !isMyWord && !isMyCell && !remoteCursorCells.has(key)) {
-        // Parse hex color to rgba
         const hex = remoteWordColor.replace('#', '');
         const rr = parseInt(hex.substring(0, 2), 16);
         const gg = parseInt(hex.substring(2, 4), 16);
@@ -1327,6 +1406,7 @@ btnClear.addEventListener('click', () => {
       userGrid[r][c] = '';
       checkedCells[r][c] = false;
     }
+  cellColors.clear();
   solved = false;
   congratsEl.classList.remove('show');
   if (currentDate) {

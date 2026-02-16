@@ -141,6 +141,12 @@ function debounceProgressBroadcast(puzzleDate) {
   }, 200));
 }
 
+function broadcastRoomCount(puzzleDate) {
+  const room = puzzleRooms.get(puzzleDate);
+  const count = room ? room.size : 0;
+  io.to('calendar').emit('room-count', { puzzleDate, count });
+}
+
 function leaveCurrentPuzzle(socket) {
   const puzzleDate = socketPuzzle.get(socket.id);
   if (!puzzleDate) return;
@@ -158,6 +164,7 @@ function leaveCurrentPuzzle(socket) {
       userId: socket.handshake.query.userId,
       socketId: socket.id,
     });
+    broadcastRoomCount(puzzleDate);
   }
 }
 
@@ -200,6 +207,8 @@ io.on('connection', (socket) => {
       col: 0,
       direction: 'across',
     });
+
+    broadcastRoomCount(puzzleDate);
   });
 
   socket.on('cell-update', async ({ puzzleDate, row, col, letter }) => {
