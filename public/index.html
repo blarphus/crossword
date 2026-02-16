@@ -27,14 +27,135 @@ body {
   min-height: 100vh;
 }
 
-header {
+/* ─── Calendar View ──────────────────────────────────────────── */
+.calendar-nav {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 16px;
+  background: var(--white);
+  border-bottom: 2px solid #ddd;
+  flex-wrap: wrap;
+}
+
+.calendar-nav h1 {
+  font-size: 1.3rem;
+  font-weight: 700;
+  margin-right: 12px;
+}
+
+.calendar-nav button, .calendar-nav select {
+  padding: 6px 14px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  background: var(--white);
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: background 0.15s;
+}
+.calendar-nav button:hover:not(:disabled) { background: #eee; }
+.calendar-nav button:disabled { opacity: 0.4; cursor: default; }
+.calendar-nav select { font-size: 0.85rem; }
+
+.calendar-day-headers {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+  max-width: 600px;
+  margin: 12px auto 0;
+  padding: 0 12px;
+}
+.calendar-day-headers span {
+  text-align: center;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #888;
+  text-transform: uppercase;
+}
+
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+  max-width: 600px;
+  margin: 6px auto 24px;
+  padding: 0 12px;
+}
+
+.cal-day {
+  aspect-ratio: 1;
+  border-radius: 6px;
+  border: 1.5px solid #ddd;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.15s, box-shadow 0.15s;
+  background: var(--white);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.cal-day:hover:not(.empty) { transform: translateY(-2px); box-shadow: 0 3px 8px rgba(0,0,0,0.15); }
+.cal-day.empty { background: transparent; border-color: transparent; cursor: default; }
+.cal-day.no-puzzle { background: #fafafa; border-color: #eee; cursor: default; }
+.cal-day.no-puzzle:hover { transform: none; box-shadow: none; }
+.cal-day.today { border-color: #2a6dd4; border-width: 2.5px; }
+
+.cal-day .day-number {
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: #555;
+  margin-top: 2px;
+  z-index: 1;
+}
+.cal-day.no-puzzle .day-number { color: #bbb; }
+
+.cal-day canvas {
+  image-rendering: pixelated;
+  width: calc(100% - 6px);
+  flex: 1;
+  margin: 2px 3px 3px;
+}
+
+.star-overlay {
+  display: none;
+  position: absolute;
+  inset: 0;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.6rem;
+  pointer-events: none;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.3);
+}
+.cal-day.complete .star-overlay { display: flex; }
+
+/* ─── Puzzle View ────────────────────────────────────────────── */
+#puzzle-view { display: none; }
+
+.puzzle-header {
   text-align: center;
   padding: 16px;
   background: var(--white);
   border-bottom: 2px solid #ddd;
 }
-header h1 { font-size: 1.3rem; font-weight: 700; }
-header .meta { font-size: 0.85rem; color: #666; margin-top: 4px; }
+.puzzle-header .back-btn {
+  position: absolute;
+  left: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  padding: 6px 14px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  background: var(--white);
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: background 0.15s;
+}
+.puzzle-header .back-btn:hover { background: #eee; }
+.puzzle-header { position: relative; }
+.puzzle-header h1 { font-size: 1.3rem; font-weight: 700; }
+.puzzle-header .meta { font-size: 0.85rem; color: #666; margin-top: 4px; }
 
 .toolbar {
   display: flex;
@@ -46,7 +167,7 @@ header .meta { font-size: 0.85rem; color: #666; margin-top: 4px; }
   border-bottom: 1px solid #ddd;
   flex-wrap: wrap;
 }
-.toolbar button, .toolbar select {
+.toolbar button {
   padding: 6px 16px;
   border: 1px solid #ccc;
   border-radius: 4px;
@@ -57,7 +178,29 @@ header .meta { font-size: 0.85rem; color: #666; margin-top: 4px; }
 }
 .toolbar button:hover { background: #eee; }
 .toolbar button.active { background: #2a6dd4; color: var(--white); border-color: #2a6dd4; }
-.toolbar select { min-width: 200px; }
+
+.presence-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 6px 10px;
+  background: #fafafa;
+  border-bottom: 1px solid #eee;
+  min-height: 28px;
+  font-size: 0.78rem;
+}
+.presence-user {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.presence-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+}
 
 .current-clue-bar {
   text-align: center;
@@ -205,16 +348,21 @@ header .meta { font-size: 0.85rem; color: #666; margin-top: 4px; }
 
 /* Mobile */
 @media (max-width: 780px) {
-  header { padding: 10px; }
-  header h1 { font-size: 1.1rem; }
-  header .meta { font-size: 0.75rem; }
+  .calendar-nav { padding: 10px; gap: 6px; }
+  .calendar-nav h1 { font-size: 1rem; margin-right: 6px; }
+  .calendar-nav button, .calendar-nav select { padding: 5px 8px; font-size: 0.78rem; }
+
+  .calendar-day-headers, .calendar-grid { max-width: 100%; padding: 0 6px; gap: 4px; }
+  .cal-day .day-number { font-size: 0.55rem; }
+  .star-overlay { font-size: 1.1rem; }
+
+  .puzzle-header { padding: 10px; }
+  .puzzle-header h1 { font-size: 1.1rem; }
+  .puzzle-header .meta { font-size: 0.75rem; }
+  .puzzle-header .back-btn { left: 6px; padding: 5px 8px; font-size: 0.78rem; }
 
   .toolbar { gap: 6px; padding: 8px; }
-  .toolbar button, .toolbar select {
-    padding: 5px 10px;
-    font-size: 0.78rem;
-  }
-  .toolbar select { min-width: 140px; max-width: 45vw; }
+  .toolbar button { padding: 5px 10px; font-size: 0.78rem; }
 
   .current-clue-bar { font-size: 0.85rem; padding: 6px 10px; }
 
@@ -226,26 +374,47 @@ header .meta { font-size: 0.85rem; color: #666; margin-top: 4px; }
 </head>
 <body>
 
-<header>
-  <h1 id="puzzle-title">The New York Times Crossword</h1>
-  <div class="meta" id="puzzle-meta"></div>
-</header>
-
-<div class="toolbar">
-  <select id="puzzle-select"></select>
-  <button id="btn-check">Auto-Check</button>
-  <button id="btn-clear">Clear Puzzle</button>
-  <button id="btn-reveal">Reveal Puzzle</button>
+<!-- ─── Calendar View ────────────────────────────────────────── -->
+<div id="calendar-view">
+  <div class="calendar-nav">
+    <h1>NYT Crossword</h1>
+    <button id="cal-prev">&lt;</button>
+    <select id="cal-month"></select>
+    <select id="cal-year"></select>
+    <button id="cal-next">&gt;</button>
+    <button id="cal-today">TODAY</button>
+  </div>
+  <div class="calendar-day-headers">
+    <span>S</span><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span>
+  </div>
+  <div class="calendar-grid" id="calendar-grid"></div>
 </div>
 
-<div class="current-clue-bar" id="current-clue-bar">&nbsp;</div>
-
-<div class="app">
-  <div class="grid-container">
-    <div class="grid" id="grid" tabindex="0"></div>
-    <input type="text" id="mobile-input" class="mobile-input" autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false">
+<!-- ─── Puzzle View ──────────────────────────────────────────── -->
+<div id="puzzle-view">
+  <div class="puzzle-header">
+    <button class="back-btn" id="btn-back">&larr; Calendar</button>
+    <h1 id="puzzle-title">The New York Times Crossword</h1>
+    <div class="meta" id="puzzle-meta"></div>
   </div>
-  <div class="clue-panel" id="clue-panel"></div>
+
+  <div class="toolbar">
+    <button id="btn-check">Auto-Check</button>
+    <button id="btn-clear">Clear Puzzle</button>
+    <button id="btn-reveal">Reveal Puzzle</button>
+  </div>
+
+  <div class="presence-bar" id="presence-bar"></div>
+
+  <div class="current-clue-bar" id="current-clue-bar">&nbsp;</div>
+
+  <div class="app">
+    <div class="grid-container">
+      <div class="grid" id="grid" tabindex="0"></div>
+      <input type="text" id="mobile-input" class="mobile-input" autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false">
+    </div>
+    <div class="clue-panel" id="clue-panel"></div>
+  </div>
 </div>
 
 <div class="congrats-overlay" id="congrats">
@@ -256,8 +425,23 @@ header .meta { font-size: 0.85rem; color: #666; margin-top: 4px; }
   </div>
 </div>
 
+<script src="/socket.io/socket.io.js"></script>
 <script>
-// ─── Puzzle state ──────────────────────────────────────────────────
+// ─── User identity ──────────────────────────────────────────────
+const USER_ID = localStorage.getItem('crossword-user-id') || (() => {
+  const id = crypto.randomUUID();
+  localStorage.setItem('crossword-user-id', id);
+  return id;
+})();
+
+// ─── Socket.IO client ──────────────────────────────────────────
+const socket = io({ query: { userId: USER_ID } });
+
+socket.on('connect', () => {
+  if (currentDate) socket.emit('join-puzzle', currentDate);
+});
+
+// ─── Puzzle state ──────────────────────────────────────────────
 let PUZZLE = null;
 let ROWS = 0, COLS = 0;
 let userGrid = [];
@@ -267,45 +451,228 @@ let direction = 'across';
 let autoCheck = false;
 let solved = false;
 let currentDate = null;
-let pollTimer = null;
 
-// ─── DOM refs ──────────────────────────────────────────────────────
+// ─── Remote user presence ──────────────────────────────────────
+let myColor = '#90EE90';
+const remoteUsers = new Map(); // socketId → {userId, color, row, col, direction}
+let lastCursorKey = '';
+
+// ─── DOM refs ──────────────────────────────────────────────────
+const calendarView = document.getElementById('calendar-view');
+const puzzleView = document.getElementById('puzzle-view');
+const calendarGridEl = document.getElementById('calendar-grid');
 const gridEl = document.getElementById('grid');
 const cluePanelEl = document.getElementById('clue-panel');
 const clueBarEl = document.getElementById('current-clue-bar');
 const congratsEl = document.getElementById('congrats');
 const titleEl = document.getElementById('puzzle-title');
 const metaEl = document.getElementById('puzzle-meta');
-const selectEl = document.getElementById('puzzle-select');
+const presenceBarEl = document.getElementById('presence-bar');
 const btnCheck = document.getElementById('btn-check');
 const btnClear = document.getElementById('btn-clear');
 const btnReveal = document.getElementById('btn-reveal');
+const btnBack = document.getElementById('btn-back');
 
-// ─── Populate dropdown (async) ────────────────────────────────────
+// ─── Calendar state ────────────────────────────────────────────
 const DAYS = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 
-async function populateDropdown() {
-  const res = await fetch('/api/puzzles');
-  const puzzles = await res.json();
-  for (const p of puzzles) {
-    const d = new Date(p.date + 'T12:00:00');
-    const dayName = DAYS[d.getDay()];
-    const label = `${dayName} ${p.date} — ${p.author}`;
+let calendarYear, calendarMonth; // calendarMonth is 0-indexed
+const calendarData = new Map(); // date → {date, rows, cols, cells, filledCount, totalWhite, isComplete}
+
+function todayET() {
+  return new Date().toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
+}
+
+function initCalendarNav() {
+  const monthSel = document.getElementById('cal-month');
+  const yearSel = document.getElementById('cal-year');
+
+  for (let m = 0; m < 12; m++) {
     const opt = document.createElement('option');
-    opt.value = p.date;
-    opt.textContent = label;
-    selectEl.appendChild(opt);
+    opt.value = m;
+    opt.textContent = MONTH_NAMES[m];
+    monthSel.appendChild(opt);
   }
-  if (selectEl.options.length > 0) {
-    loadPuzzle(selectEl.options[0].value);
+
+  const thisYear = new Date().getFullYear();
+  for (let y = thisYear - 5; y <= thisYear + 1; y++) {
+    const opt = document.createElement('option');
+    opt.value = y;
+    opt.textContent = y;
+    yearSel.appendChild(opt);
+  }
+
+  // Default to current month
+  const now = new Date();
+  calendarYear = now.getFullYear();
+  calendarMonth = now.getMonth();
+  monthSel.value = calendarMonth;
+  yearSel.value = calendarYear;
+
+  monthSel.addEventListener('change', () => {
+    calendarMonth = parseInt(monthSel.value);
+    fetchAndRenderCalendar();
+  });
+  yearSel.addEventListener('change', () => {
+    calendarYear = parseInt(yearSel.value);
+    fetchAndRenderCalendar();
+  });
+
+  document.getElementById('cal-prev').addEventListener('click', () => {
+    calendarMonth--;
+    if (calendarMonth < 0) { calendarMonth = 11; calendarYear--; }
+    syncCalendarSelects();
+    fetchAndRenderCalendar();
+  });
+  document.getElementById('cal-next').addEventListener('click', () => {
+    calendarMonth++;
+    if (calendarMonth > 11) { calendarMonth = 0; calendarYear++; }
+    syncCalendarSelects();
+    fetchAndRenderCalendar();
+  });
+  document.getElementById('cal-today').addEventListener('click', () => {
+    const now = new Date();
+    calendarYear = now.getFullYear();
+    calendarMonth = now.getMonth();
+    syncCalendarSelects();
+    fetchAndRenderCalendar();
+  });
+}
+
+function syncCalendarSelects() {
+  document.getElementById('cal-month').value = calendarMonth;
+  document.getElementById('cal-year').value = calendarYear;
+  // Enable/disable today button
+  const now = new Date();
+  const isCurrent = calendarYear === now.getFullYear() && calendarMonth === now.getMonth();
+  document.getElementById('cal-today').disabled = isCurrent;
+}
+
+async function fetchAndRenderCalendar() {
+  const ym = `${calendarYear}-${String(calendarMonth + 1).padStart(2, '0')}`;
+  try {
+    const res = await fetch(`/api/calendar/${ym}`);
+    const data = await res.json();
+    // Clear old month data from map, add new
+    for (const [key] of calendarData) {
+      if (key.startsWith(ym)) calendarData.delete(key);
+    }
+    for (const item of data) {
+      calendarData.set(item.date, item);
+    }
+  } catch (e) {
+    // Silently ignore fetch errors
+  }
+  renderCalendar();
+  syncCalendarSelects();
+}
+
+function renderCalendar() {
+  calendarGridEl.innerHTML = '';
+
+  const today = todayET();
+  const firstDay = new Date(calendarYear, calendarMonth, 1).getDay();
+  const daysInMonth = new Date(calendarYear, calendarMonth + 1, 0).getDate();
+
+  // Empty cells before first day
+  for (let i = 0; i < firstDay; i++) {
+    const empty = document.createElement('div');
+    empty.className = 'cal-day empty';
+    calendarGridEl.appendChild(empty);
+  }
+
+  for (let day = 1; day <= daysInMonth; day++) {
+    const dateStr = `${calendarYear}-${String(calendarMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    const info = calendarData.get(dateStr);
+
+    const dayEl = document.createElement('div');
+    dayEl.className = 'cal-day';
+    dayEl.dataset.date = dateStr;
+
+    if (dateStr === today) dayEl.classList.add('today');
+
+    const numEl = document.createElement('span');
+    numEl.className = 'day-number';
+    numEl.textContent = day;
+    dayEl.appendChild(numEl);
+
+    if (info) {
+      if (info.isComplete) dayEl.classList.add('complete');
+
+      const canvas = document.createElement('canvas');
+      canvas.width = info.cols;
+      canvas.height = info.rows;
+      drawThumbnail(canvas, info);
+      dayEl.appendChild(canvas);
+
+      const star = document.createElement('div');
+      star.className = 'star-overlay';
+      star.textContent = '\u2B50';
+      dayEl.appendChild(star);
+
+      dayEl.addEventListener('click', () => showPuzzle(dateStr));
+    } else {
+      dayEl.classList.add('no-puzzle');
+    }
+
+    calendarGridEl.appendChild(dayEl);
   }
 }
 
-// ─── Load a puzzle (async) ────────────────────────────────────────
+function drawThumbnail(canvas, info) {
+  const ctx = canvas.getContext('2d');
+  const { rows, cols, cells, filledCount, totalWhite, isComplete } = info;
+  const hasProgress = filledCount > 0;
+
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      const val = cells[r * cols + c];
+      if (val === 0) {
+        // Black cell
+        ctx.fillStyle = '#4a4a4a';
+      } else if (isComplete) {
+        // Complete puzzle
+        ctx.fillStyle = val === 2 ? '#2a5599' : '#4a7abf';
+      } else if (hasProgress) {
+        // In progress
+        ctx.fillStyle = val === 2 ? '#5b9bd5' : '#ffffff';
+      } else {
+        // No progress — gray palette
+        ctx.fillStyle = val === 1 ? '#c8c8c8' : '#c8c8c8';
+      }
+      ctx.fillRect(c, r, 1, 1);
+    }
+  }
+}
+
+// ─── View management ───────────────────────────────────────────
+function showCalendar() {
+  puzzleView.style.display = 'none';
+  calendarView.style.display = '';
+  document.title = 'NYT Crossword';
+
+  if (currentDate) {
+    socket.emit('leave-puzzle');
+    currentDate = null;
+  }
+  PUZZLE = null;
+  remoteUsers.clear();
+  lastCursorKey = '';
+  fetchAndRenderCalendar();
+}
+
+function showPuzzle(dateStr) {
+  calendarView.style.display = 'none';
+  puzzleView.style.display = '';
+  loadPuzzle(dateStr);
+}
+
+// ─── Load a puzzle (async) ────────────────────────────────────
 async function loadPuzzle(dateStr) {
-  // Stop previous polling
-  if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
   currentDate = dateStr;
+  remoteUsers.clear();
+  lastCursorKey = '';
 
   // Fetch puzzle data and shared state in parallel
   const [puzzleRes, stateRes] = await Promise.all([
@@ -348,16 +715,15 @@ async function loadPuzzle(dateStr) {
   // Update header
   const d = new Date(dateStr + 'T12:00:00');
   const dayName = DAYS[d.getDay()];
-  const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-  const prettyDate = `${dayName}, ${monthNames[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`;
+  const prettyDate = `${dayName}, ${MONTH_NAMES[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`;
   titleEl.textContent = data.title || 'The New York Times Crossword';
-  metaEl.textContent = `${prettyDate} · By ${data.author} · Edited by ${data.editor}`;
-  document.title = `Crossword — ${prettyDate}`;
+  metaEl.textContent = `${prettyDate} \u00B7 By ${data.author} \u00B7 Edited by ${data.editor}`;
+  document.title = `Crossword \u2014 ${prettyDate}`;
 
   // Compute cell size based on grid dimensions
   const isMobile = window.innerWidth <= 780;
   const maxGridPx = isMobile
-    ? window.innerWidth - 12  // full width minus small padding
+    ? window.innerWidth - 12
     : Math.min(window.innerWidth - 420, 650);
   const cellSize = Math.max(16, Math.min(40, Math.floor(maxGridPx / Math.max(ROWS, COLS))));
   document.documentElement.style.setProperty('--cell-size', cellSize + 'px');
@@ -378,11 +744,11 @@ async function loadPuzzle(dateStr) {
   render();
   focusGrid();
 
-  // Start polling for collaborative updates every 3 seconds
-  pollTimer = setInterval(pollState, 3000);
+  // Join puzzle room via Socket.IO
+  socket.emit('join-puzzle', dateStr);
 }
 
-// ─── Collaboration helpers ────────────────────────────────────────
+// ─── Collaboration helpers ────────────────────────────────────
 function applySharedState(gridMap) {
   for (const [key, letter] of Object.entries(gridMap)) {
     const [r, c] = key.split(',').map(Number);
@@ -392,42 +758,103 @@ function applySharedState(gridMap) {
   }
 }
 
-async function pollState() {
+function sendCellUpdate(row, col, letter) {
   if (!currentDate) return;
-  try {
-    const res = await fetch(`/api/state/${currentDate}`);
-    const data = await res.json();
-    const gridMap = data.userGrid || {};
+  socket.emit('cell-update', { puzzleDate: currentDate, row, col, letter });
+}
 
-    // Merge remote state into local grid
-    // Remote is authoritative for cells we haven't just typed in
-    for (let r = 0; r < ROWS; r++) {
-      for (let c = 0; c < COLS; c++) {
-        if (isBlack(r, c)) continue;
-        const key = `${r},${c}`;
-        if (key in gridMap) {
-          userGrid[r][c] = gridMap[key];
-        } else {
-          userGrid[r][c] = '';
-        }
-      }
-    }
+function broadcastCursor() {
+  if (!currentDate) return;
+  const key = `${selectedRow},${selectedCol},${direction}`;
+  if (key === lastCursorKey) return;
+  lastCursorKey = key;
+  socket.emit('cursor-move', { puzzleDate: currentDate, row: selectedRow, col: selectedCol, direction });
+}
+
+// ─── Socket.IO event handlers for puzzle ──────────────────────
+socket.on('room-state', ({ users, yourColor }) => {
+  myColor = yourColor;
+  remoteUsers.clear();
+  for (const u of users) {
+    remoteUsers.set(u.socketId, { userId: u.userId, color: u.color, row: u.row, col: u.col, direction: u.direction });
+  }
+  renderPresenceBar();
+  if (PUZZLE) render();
+});
+
+socket.on('user-joined', ({ socketId, userId, color, row, col, direction: dir }) => {
+  remoteUsers.set(socketId, { userId, color, row, col, direction: dir });
+  renderPresenceBar();
+  if (PUZZLE) render();
+});
+
+socket.on('user-left', ({ socketId }) => {
+  remoteUsers.delete(socketId);
+  renderPresenceBar();
+  if (PUZZLE) render();
+});
+
+socket.on('cursor-moved', ({ socketId, userId, row, col, direction: dir }) => {
+  const user = remoteUsers.get(socketId);
+  if (user) {
+    user.row = row;
+    user.col = col;
+    user.direction = dir;
+  } else {
+    remoteUsers.set(socketId, { userId, color: '#ccc', row, col, direction: dir });
+  }
+  if (PUZZLE) render();
+});
+
+socket.on('cell-updated', ({ row, col, letter }) => {
+  if (!PUZZLE) return;
+  if (row >= 0 && row < ROWS && col >= 0 && col < COLS) {
+    userGrid[row][col] = letter;
     render();
-  } catch (e) {
-    // Silently ignore poll errors
+    checkCompletion();
+  }
+});
+
+socket.on('puzzle-cleared', () => {
+  if (!PUZZLE) return;
+  for (let r = 0; r < ROWS; r++)
+    for (let c = 0; c < COLS; c++) {
+      userGrid[r][c] = '';
+      checkedCells[r][c] = false;
+    }
+  solved = false;
+  congratsEl.classList.remove('show');
+  render();
+});
+
+socket.on('puzzle-progress', (summary) => {
+  calendarData.set(summary.date, summary);
+  const dayEl = document.querySelector(`.cal-day[data-date="${summary.date}"]`);
+  if (dayEl && !dayEl.classList.contains('no-puzzle')) {
+    // Update complete class + star
+    dayEl.classList.toggle('complete', summary.isComplete);
+    // Redraw canvas
+    const canvas = dayEl.querySelector('canvas');
+    if (canvas) drawThumbnail(canvas, summary);
+  }
+});
+
+function renderPresenceBar() {
+  presenceBarEl.innerHTML = '';
+  if (remoteUsers.size === 0) {
+    presenceBarEl.style.display = 'none';
+    return;
+  }
+  presenceBarEl.style.display = '';
+  for (const [, user] of remoteUsers) {
+    const el = document.createElement('span');
+    el.className = 'presence-user';
+    el.innerHTML = `<span class="presence-dot" style="background:${user.color}"></span>User`;
+    presenceBarEl.appendChild(el);
   }
 }
 
-function sendCellUpdate(row, col, letter) {
-  if (!currentDate) return;
-  fetch(`/api/state/${currentDate}`, {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ row, col, letter }),
-  }).catch(() => {});
-}
-
-// ─── Helpers ───────────────────────────────────────────────────────
+// ─── Helpers ───────────────────────────────────────────────────
 function isBlack(r, c) {
   return PUZZLE.grid[r]?.[c] === '.';
 }
@@ -470,7 +897,7 @@ function getWordCells(clue, dir) {
   return cells;
 }
 
-// ─── Build Grid ────────────────────────────────────────────────────
+// ─── Build Grid ────────────────────────────────────────────────
 let cellEls = [];
 
 function buildGrid() {
@@ -513,7 +940,7 @@ function buildGrid() {
   }
 }
 
-// ─── Build Clue Panel ──────────────────────────────────────────────
+// ─── Build Clue Panel ──────────────────────────────────────────
 let clueItemEls = {};
 
 function buildCluePanel() {
@@ -556,20 +983,40 @@ function buildCluePanel() {
   }
 }
 
-// ─── Rendering ─────────────────────────────────────────────────────
+// ─── Rendering ─────────────────────────────────────────────────
 function render() {
   if (!PUZZLE) return;
   const currentClue = getClueForCell(selectedRow, selectedCol, direction);
   const wordCells = currentClue ? getWordCells(currentClue, direction) : [];
   const wordSet = new Set(wordCells.map(([r,c]) => `${r},${c}`));
 
+  // Build remote user highlight maps
+  const remoteCursorCells = new Map(); // "r,c" → color (selected cell)
+  const remoteWordCells = new Map();   // "r,c" → color (word highlight)
+  for (const [, user] of remoteUsers) {
+    if (!PUZZLE) break;
+    const rClue = getClueForCell(user.row, user.col, user.direction);
+    if (rClue) {
+      const rWordCells = getWordCells(rClue, user.direction);
+      for (const [wr, wc] of rWordCells) {
+        const key = `${wr},${wc}`;
+        if (!remoteWordCells.has(key)) remoteWordCells.set(key, user.color);
+      }
+    }
+    remoteCursorCells.set(`${user.row},${user.col}`, user.color);
+  }
+
   for (let r = 0; r < ROWS; r++) {
     for (let c = 0; c < COLS; c++) {
       const el = cellEls[r][c];
       if (isBlack(r, c)) continue;
 
-      el.classList.toggle('highlight-word', wordSet.has(`${r},${c}`));
-      el.classList.toggle('highlight-cell', r === selectedRow && c === selectedCol);
+      const key = `${r},${c}`;
+      const isMyWord = wordSet.has(key);
+      const isMyCell = r === selectedRow && c === selectedCol;
+
+      el.classList.toggle('highlight-word', isMyWord);
+      el.classList.toggle('highlight-cell', isMyCell);
 
       const letterEl = el.querySelector('.letter');
       if (letterEl) letterEl.textContent = userGrid[r][c];
@@ -579,6 +1026,29 @@ function render() {
         el.classList.toggle('error', userGrid[r][c] !== PUZZLE.grid[r][c]);
       } else {
         el.classList.remove('error');
+      }
+
+      // Remote cursor outline
+      const remoteCursorColor = remoteCursorCells.get(key);
+      if (remoteCursorColor && !isMyCell) {
+        el.style.outline = `2.5px solid ${remoteCursorColor}`;
+        el.style.outlineOffset = '-2.5px';
+      } else {
+        el.style.outline = '';
+        el.style.outlineOffset = '';
+      }
+
+      // Remote word tint (only if not overlapping with current user's highlights)
+      const remoteWordColor = remoteWordCells.get(key);
+      if (remoteWordColor && !isMyWord && !isMyCell && !remoteCursorCells.has(key)) {
+        // Parse hex color to rgba
+        const hex = remoteWordColor.replace('#', '');
+        const rr = parseInt(hex.substring(0, 2), 16);
+        const gg = parseInt(hex.substring(2, 4), 16);
+        const bb = parseInt(hex.substring(4, 6), 16);
+        el.style.backgroundColor = `rgba(${rr},${gg},${bb},0.25)`;
+      } else if (!isMyWord && !isMyCell) {
+        el.style.backgroundColor = '';
       }
     }
   }
@@ -590,17 +1060,19 @@ function render() {
     clueBarEl.innerHTML = '&nbsp;';
   }
 
-  for (const key in clueItemEls) clueItemEls[key].classList.remove('active');
+  for (const k in clueItemEls) clueItemEls[k].classList.remove('active');
   if (currentClue) {
-    const key = `${direction}-${currentClue.n}`;
-    if (clueItemEls[key]) {
-      clueItemEls[key].classList.add('active');
-      clueItemEls[key].scrollIntoView({block: 'nearest', behavior: 'smooth'});
+    const k = `${direction}-${currentClue.n}`;
+    if (clueItemEls[k]) {
+      clueItemEls[k].classList.add('active');
+      clueItemEls[k].scrollIntoView({block: 'nearest', behavior: 'smooth'});
     }
   }
+
+  broadcastCursor();
 }
 
-// ─── Interaction ───────────────────────────────────────────────────
+// ─── Interaction ───────────────────────────────────────────────
 function onCellClick(r, c) {
   if (isBlack(r, c)) return;
   if (r === selectedRow && c === selectedCol) {
@@ -719,7 +1191,7 @@ function focusGrid() {
   }
 }
 
-// ─── Mobile input handler ──────────────────────────────────────────
+// ─── Mobile input handler ──────────────────────────────────────
 mobileInput.addEventListener('input', (e) => {
   if (!PUZZLE || solved) return;
   const val = mobileInput.value;
@@ -762,7 +1234,7 @@ mobileInput.addEventListener('keydown', (e) => {
   }
 });
 
-// ─── Keyboard ──────────────────────────────────────────────────────
+// ─── Keyboard ──────────────────────────────────────────────────
 gridEl.addEventListener('keydown', (e) => {
   if (!PUZZLE || solved) return;
   const key = e.key;
@@ -824,8 +1296,8 @@ gridEl.addEventListener('keydown', (e) => {
   }
 });
 
-// ─── Toolbar ───────────────────────────────────────────────────────
-selectEl.addEventListener('change', () => loadPuzzle(selectEl.value));
+// ─── Toolbar ───────────────────────────────────────────────────
+btnBack.addEventListener('click', () => showCalendar());
 
 btnCheck.addEventListener('click', () => {
   if (!PUZZLE) return;
@@ -840,7 +1312,7 @@ btnCheck.addEventListener('click', () => {
   render();
 });
 
-btnClear.addEventListener('click', async () => {
+btnClear.addEventListener('click', () => {
   if (!PUZZLE || !confirm('Clear all entered letters?')) return;
   for (let r = 0; r < ROWS; r++)
     for (let c = 0; c < COLS; c++) {
@@ -849,9 +1321,8 @@ btnClear.addEventListener('click', async () => {
     }
   solved = false;
   congratsEl.classList.remove('show');
-  // Clear server state
   if (currentDate) {
-    fetch(`/api/state/${currentDate}`, { method: 'DELETE' }).catch(() => {});
+    socket.emit('clear-puzzle', { puzzleDate: currentDate });
   }
   render();
 });
@@ -868,8 +1339,9 @@ btnReveal.addEventListener('click', () => {
   checkCompletion();
 });
 
-// ─── Init ──────────────────────────────────────────────────────────
-populateDropdown();
+// ─── Init ──────────────────────────────────────────────────────
+initCalendarNav();
+fetchAndRenderCalendar();
 </script>
 </body>
 </html>
