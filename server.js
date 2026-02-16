@@ -290,6 +290,52 @@ async function checkAndScrapeToday() {
   }
 }
 
+async function backfillPuzzles() {
+  const done = await db.getMetadata('backfill_complete');
+  if (done) {
+    console.log('[backfill] Already completed, skipping');
+    return;
+  }
+
+  console.log('[backfill] Starting one-time historical puzzle backfill...');
+
+  const current = new Date();
+  let consecutiveFails = 0;
+  let scraped = 0;
+  let skipped = 0;
+
+  while (consecutiveFails < 2) {
+    const y = current.getFullYear();
+    const m = String(current.getMonth() + 1).padStart(2, '0');
+    const d = String(current.getDate()).padStart(2, '0');
+    const dateStr = `${y}-${m}-${d}`;
+
+    const exists = await db.hasPuzzle(dateStr);
+    if (exists) {
+      skipped++;
+      consecutiveFails = 0;
+      current.setDate(current.getDate() - 1);
+      continue;
+    }
+
+    try {
+      await scrapeDate(dateStr);
+      scraped++;
+      consecutiveFails = 0;
+      console.log(`[backfill] ${dateStr} OK (${scraped} scraped, ${skipped} skipped)`);
+    } catch (err) {
+      consecutiveFails++;
+      console.log(`[backfill] ${dateStr} failed (${consecutiveFails}/2 consecutive)`);
+    }
+
+    current.setDate(current.getDate() - 1);
+    await new Promise(r => setTimeout(r, 1500));
+  }
+
+  await db.setMetadata('backfill_complete', new Date().toISOString());
+  console.log(`[backfill] Complete! Scraped ${scraped}, skipped ${skipped}`);
+}
+
 const PORT = process.env.PORT || 3000;
 
 (async () => {
@@ -309,7 +355,13 @@ const PORT = process.env.PORT || 3000;
       }
     });
 
-    server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+    server.listen(PORT, () => {
+      console.log(`Server running on port ${PORT}`);
+      // Run historical backfill in background (non-blocking)
+      backfillPuzzles().catch(err => {
+        console.error('[backfill] Error:', err.message);
+      });
+    });
   } catch (err) {
     console.error('Failed to initialize:', err);
     process.exit(1);

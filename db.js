@@ -22,6 +22,12 @@ async function initDb() {
       created_at TIMESTAMPTZ DEFAULT NOW()
     )
   `);
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS metadata (
+      key   TEXT PRIMARY KEY,
+      value TEXT
+    )
+  `);
 }
 
 async function savePuzzle(date, data) {
@@ -182,4 +188,16 @@ function buildProgressInfo(row) {
   };
 }
 
-module.exports = { initDb, getState, upsertCell, clearState, savePuzzle, getPuzzle, getAllPuzzleMeta, hasPuzzle, getCalendarData, getProgressSummary };
+async function getMetadata(key) {
+  const { rows } = await pool.query('SELECT value FROM metadata WHERE key = $1', [key]);
+  return rows[0]?.value || null;
+}
+
+async function setMetadata(key, value) {
+  await pool.query(
+    'INSERT INTO metadata (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = $2',
+    [key, value]
+  );
+}
+
+module.exports = { initDb, getState, upsertCell, clearState, savePuzzle, getPuzzle, getAllPuzzleMeta, hasPuzzle, getCalendarData, getProgressSummary, getMetadata, setMetadata };
