@@ -291,12 +291,23 @@ body {
 
 /* Clue Panel */
 .clue-panel {
+  display: flex;
+  gap: 0;
   flex: 1;
-  max-width: 380px;
-  overflow-y: auto;
+  max-width: 700px;
   background: var(--white);
   border: 1px solid #ddd;
   border-radius: 6px;
+  overflow: hidden;
+}
+
+.clue-section {
+  flex: 1;
+  overflow-y: auto;
+  min-width: 0;
+}
+.clue-section + .clue-section {
+  border-left: 1px solid #ddd;
 }
 
 .clue-section h2 {
@@ -387,7 +398,8 @@ body {
 
   .app { flex-direction: column; align-items: center; padding: 4px; gap: 8px; }
   .grid-container { width: 100%; display: flex; justify-content: center; }
-  .clue-panel { max-width: 100%; max-height: 250px; width: 100%; }
+  .clue-panel { max-width: 100%; max-height: 300px; width: 100%; }
+  .clue-section { max-height: 300px; }
 }
 </style>
 </head>
@@ -1015,8 +1027,11 @@ function buildGrid() {
   if (window.innerWidth > 780) {
     const gridH = ROWS * parseInt(getComputedStyle(document.documentElement).getPropertyValue('--cell-size')) + 4;
     cluePanelEl.style.maxHeight = gridH + 'px';
+    for (const sec of cluePanelEl.querySelectorAll('.clue-section')) {
+      sec.style.maxHeight = gridH + 'px';
+    }
   } else {
-    cluePanelEl.style.maxHeight = '250px';
+    cluePanelEl.style.maxHeight = '300px';
   }
 }
 
