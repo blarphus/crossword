@@ -1,0 +1,1076 @@
+{
+  "date": "2026-01-26",
+  "title": "New York Times,Monday, January 26, 2026",
+  "author": "Erica Hsiung Wojcik",
+  "editor": "Will Shortz",
+  "dimensions": {
+    "rows": 15,
+    "cols": 15
+  },
+  "grid": [
+    [
+      "P",
+      "E",
+      "C",
+      "A",
+      "N",
+      ".",
+      "S",
+      "L",
+      "O",
+      "G",
+      ".",
+      "C",
+      "C",
+      "M",
+      "E"
+    ],
+    [
+      "A",
+      "M",
+      "O",
+      "R",
+      "E",
+      ".",
+      "C",
+      "A",
+      "N",
+      "E",
+      ".",
+      "A",
+      "H",
+      "A",
+      "S"
+    ],
+    [
+      "R",
+      "O",
+      "S",
+      "E",
+      "G",
+      "A",
+      "R",
+      "D",
+      "E",
+      "N",
+      ".",
+      "M",
+      "E",
+      "L",
+      "T"
+    ],
+    [
+      ".",
+      ".",
+      ".",
+      "A",
+      "L",
+      "L",
+      "E",
+      "Y",
+      "S",
+      ".",
+      "E",
+      "E",
+      "R",
+      "I",
+      "E"
+    ],
+    [
+      "T",
+      "H",
+      "E",
+      ".",
+      "E",
+      "T",
+      "A",
+      ".",
+      "I",
+      "N",
+      "S",
+      ".",
+      "U",
+      "B",
+      "E"
+    ],
+    [
+      "B",
+      "E",
+      "S",
+      "T",
+      "C",
+      "O",
+      "M",
+      "E",
+      "D",
+      "Y",
+      "A",
+      "L",
+      "B",
+      "U",
+      "M"
+    ],
+    [
+      "S",
+      "N",
+      "O",
+      "U",
+      "T",
+      "S",
+      ".",
+      "S",
+      "E",
+      "G",
+      "U",
+      "E",
+      ".",
+      ".",
+      "."
+    ],
+    [
+      "P",
+      "S",
+      "S",
+      "T",
+      ".",
+      ".",
+      "S",
+      "I",
+      "D",
+      ".",
+      ".",
+      "G",
+      "O",
+      "U",
+      "P"
+    ],
+    [
+      ".",
+      ".",
+      ".",
+      "T",
+      "H",
+      "I",
+      "N",
+      "G",
+      ".",
+      "S",
+      "B",
+      "A",
+      "R",
+      "R",
+      "O"
+    ],
+    [
+      "D",
+      "A",
+      "V",
+      "I",
+      "D",
+      "S",
+      "O",
+      "N",
+      "C",
+      "O",
+      "L",
+      "L",
+      "E",
+      "G",
+      "E"
+    ],
+    [
+      "E",
+      "V",
+      "E",
+      ".",
+      "M",
+      "O",
+      "W",
+      ".",
+      "A",
+      "L",
+      "E",
+      ".",
+      "S",
+      "E",
+      "T"
+    ],
+    [
+      "M",
+      "E",
+      "R",
+      "C",
+      "I",
+      ".",
+      "S",
+      "E",
+      "R",
+      "V",
+      "E",
+      "R",
+      ".",
+      ".",
+      "."
+    ],
+    [
+      "U",
+      "N",
+      "T",
+      "O",
+      ".",
+      "T",
+      "H",
+      "R",
+      "E",
+      "E",
+      "P",
+      "E",
+      "A",
+      "T",
+      "S"
+    ],
+    [
+      "R",
+      "U",
+      "E",
+      "S",
+      ".",
+      "L",
+      "O",
+      "G",
+      "S",
+      ".",
+      "E",
+      "N",
+      "N",
+      "U",
+      "I"
+    ],
+    [
+      "S",
+      "E",
+      "X",
+      "T",
+      ".",
+      "C",
+      "E",
+      "O",
+      "S",
+      ".",
+      "D",
+      "O",
+      "N",
+      "T",
+      "S"
+    ]
+  ],
+  "cellNumbers": [
+    [
+      1,
+      2,
+      3,
+      4,
+      5,
+      0,
+      6,
+      7,
+      8,
+      9,
+      0,
+      10,
+      11,
+      12,
+      13
+    ],
+    [
+      14,
+      0,
+      0,
+      0,
+      0,
+      0,
+      15,
+      0,
+      0,
+      0,
+      0,
+      16,
+      0,
+      0,
+      0
+    ],
+    [
+      17,
+      0,
+      0,
+      0,
+      0,
+      18,
+      0,
+      0,
+      0,
+      0,
+      0,
+      19,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      20,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      21,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      22,
+      23,
+      24,
+      0,
+      25,
+      0,
+      0,
+      0,
+      26,
+      27,
+      0,
+      0,
+      28,
+      0,
+      0
+    ],
+    [
+      29,
+      0,
+      0,
+      30,
+      0,
+      0,
+      0,
+      31,
+      0,
+      0,
+      0,
+      32,
+      0,
+      0,
+      0
+    ],
+    [
+      33,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      34,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      35,
+      0,
+      0,
+      0,
+      0,
+      0,
+      36,
+      0,
+      0,
+      0,
+      0,
+      37,
+      38,
+      39,
+      40
+    ],
+    [
+      0,
+      0,
+      0,
+      41,
+      42,
+      43,
+      0,
+      0,
+      0,
+      44,
+      45,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      46,
+      47,
+      48,
+      0,
+      0,
+      0,
+      0,
+      0,
+      49,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      50,
+      0,
+      0,
+      0,
+      51,
+      0,
+      0,
+      0,
+      52,
+      0,
+      0,
+      0,
+      53,
+      0,
+      0
+    ],
+    [
+      54,
+      0,
+      0,
+      55,
+      0,
+      0,
+      56,
+      57,
+      0,
+      0,
+      0,
+      58,
+      0,
+      0,
+      0
+    ],
+    [
+      59,
+      0,
+      0,
+      0,
+      0,
+      60,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      61,
+      62,
+      63
+    ],
+    [
+      64,
+      0,
+      0,
+      0,
+      0,
+      65,
+      0,
+      0,
+      0,
+      0,
+      66,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      67,
+      0,
+      0,
+      0,
+      0,
+      68,
+      0,
+      0,
+      0,
+      0,
+      69,
+      0,
+      0,
+      0,
+      0
+    ]
+  ],
+  "clues": {
+    "across": [
+      {
+        "number": 1,
+        "clue": "Pie nut",
+        "answer": "PECAN",
+        "row": 0,
+        "col": 0
+      },
+      {
+        "number": 6,
+        "clue": "Boring task",
+        "answer": "SLOG",
+        "row": 0,
+        "col": 6
+      },
+      {
+        "number": 10,
+        "clue": "\"I want to be in the loop on this email\"",
+        "answer": "CCME",
+        "row": 0,
+        "col": 11
+      },
+      {
+        "number": 14,
+        "clue": "Love, Italian-style",
+        "answer": "AMORE",
+        "row": 1,
+        "col": 0
+      },
+      {
+        "number": 15,
+        "clue": "Walking stick",
+        "answer": "CANE",
+        "row": 1,
+        "col": 6
+      },
+      {
+        "number": 16,
+        "clue": "Sounds of inspiration",
+        "answer": "AHAS",
+        "row": 1,
+        "col": 11
+      },
+      {
+        "number": 17,
+        "clue": "Classic flowering locale adjacent to the White House [baseball star]",
+        "answer": "ROSEGARDEN",
+        "row": 2,
+        "col": 0
+      },
+      {
+        "number": 19,
+        "clue": "Get gooey, maybe",
+        "answer": "MELT",
+        "row": 2,
+        "col": 11
+      },
+      {
+        "number": 20,
+        "clue": "Backstreets",
+        "answer": "ALLEYS",
+        "row": 3,
+        "col": 3
+      },
+      {
+        "number": 21,
+        "clue": "Spooky",
+        "answer": "EERIE",
+        "row": 3,
+        "col": 10
+      },
+      {
+        "number": 22,
+        "clue": "___ one and only",
+        "answer": "THE",
+        "row": 4,
+        "col": 0
+      },
+      {
+        "number": 25,
+        "clue": "Itinerary calculation, in brief",
+        "answer": "ETA",
+        "row": 4,
+        "col": 4
+      },
+      {
+        "number": 26,
+        "clue": "Connections",
+        "answer": "INS",
+        "row": 4,
+        "col": 8
+      },
+      {
+        "number": 28,
+        "clue": "Purple yam used to flavor desserts",
+        "answer": "UBE",
+        "row": 4,
+        "col": 12
+      },
+      {
+        "number": 29,
+        "clue": "Grammy Award that's good for laughs? [1960s rock musician]",
+        "answer": "BESTCOMEDYALBUM",
+        "row": 5,
+        "col": 0
+      },
+      {
+        "number": 33,
+        "clue": "Truffle pigs' assets",
+        "answer": "SNOUTS",
+        "row": 6,
+        "col": 0
+      },
+      {
+        "number": 34,
+        "clue": "Connection between topics",
+        "answer": "SEGUE",
+        "row": 6,
+        "col": 7
+      },
+      {
+        "number": 35,
+        "clue": "\"Over here!\"",
+        "answer": "PSST",
+        "row": 7,
+        "col": 0
+      },
+      {
+        "number": 36,
+        "clue": "___ Vicious",
+        "answer": "SID",
+        "row": 7,
+        "col": 6
+      },
+      {
+        "number": 37,
+        "clue": "Increase",
+        "answer": "GOUP",
+        "row": 7,
+        "col": 11
+      },
+      {
+        "number": 41,
+        "clue": "\"Do the Right ___\" (Spike Lee film)",
+        "answer": "THING",
+        "row": 8,
+        "col": 3
+      },
+      {
+        "number": 44,
+        "clue": "Food court pizza chain",
+        "answer": "SBARRO",
+        "row": 8,
+        "col": 9
+      },
+      {
+        "number": 46,
+        "clue": "North Carolina educational institution [former \"S.N.L.\" cast member]",
+        "answer": "DAVIDSONCOLLEGE",
+        "row": 9,
+        "col": 0
+      },
+      {
+        "number": 50,
+        "clue": "Allhallows ___",
+        "answer": "EVE",
+        "row": 10,
+        "col": 0
+      },
+      {
+        "number": 51,
+        "clue": "Cut, as grass",
+        "answer": "MOW",
+        "row": 10,
+        "col": 4
+      },
+      {
+        "number": 52,
+        "clue": "Beverage that may come in a pint",
+        "answer": "ALE",
+        "row": 10,
+        "col": 8
+      },
+      {
+        "number": 53,
+        "clue": "Cry between \"Ready\" and \"Go!\"",
+        "answer": "SET",
+        "row": 10,
+        "col": 12
+      },
+      {
+        "number": 54,
+        "clue": "Parisian thanks",
+        "answer": "MERCI",
+        "row": 11,
+        "col": 0
+      },
+      {
+        "number": 56,
+        "clue": "Waiter or waitress",
+        "answer": "SERVER",
+        "row": 11,
+        "col": 6
+      },
+      {
+        "number": 59,
+        "clue": "\"Do ___ others ...\"",
+        "answer": "UNTO",
+        "row": 12,
+        "col": 0
+      },
+      {
+        "number": 60,
+        "clue": "Athletic trifectas ... or a phonetic hint to the starts of 17-, 29- and 46-Across",
+        "answer": "THREEPEATS",
+        "row": 12,
+        "col": 5
+      },
+      {
+        "number": 64,
+        "clue": "Wishes undone",
+        "answer": "RUES",
+        "row": 13,
+        "col": 0
+      },
+      {
+        "number": 65,
+        "clue": "Fireplace fuel",
+        "answer": "LOGS",
+        "row": 13,
+        "col": 5
+      },
+      {
+        "number": 66,
+        "clue": "Jadedness",
+        "answer": "ENNUI",
+        "row": 13,
+        "col": 10
+      },
+      {
+        "number": 67,
+        "clue": "Send an eggplant or taco emoji, say",
+        "answer": "SEXT",
+        "row": 14,
+        "col": 0
+      },
+      {
+        "number": 68,
+        "clue": "Ones appointed by corp. boards",
+        "answer": "CEOS",
+        "row": 14,
+        "col": 5
+      },
+      {
+        "number": 69,
+        "clue": "No-nos",
+        "answer": "DONTS",
+        "row": 14,
+        "col": 10
+      }
+    ],
+    "down": [
+      {
+        "number": 1,
+        "clue": "Number on a golf card",
+        "answer": "PAR",
+        "row": 0,
+        "col": 0
+      },
+      {
+        "number": 2,
+        "clue": "Music genre influenced by the Smiths and the Cure",
+        "answer": "EMO",
+        "row": 0,
+        "col": 1
+      },
+      {
+        "number": 3,
+        "clue": "Modern lead-in to play",
+        "answer": "COS",
+        "row": 0,
+        "col": 2
+      },
+      {
+        "number": 4,
+        "clue": "Space",
+        "answer": "AREA",
+        "row": 0,
+        "col": 3
+      },
+      {
+        "number": 5,
+        "clue": "Fail to take care of",
+        "answer": "NEGLECT",
+        "row": 0,
+        "col": 4
+      },
+      {
+        "number": 6,
+        "clue": "\"Aiiiiieeeee!,\" e.g.",
+        "answer": "SCREAM",
+        "row": 0,
+        "col": 6
+      },
+      {
+        "number": 7,
+        "clue": "Noblewoman",
+        "answer": "LADY",
+        "row": 0,
+        "col": 7
+      },
+      {
+        "number": 8,
+        "clue": "Like a biased presentation",
+        "answer": "ONESIDED",
+        "row": 0,
+        "col": 8
+      },
+      {
+        "number": 9,
+        "clue": "Lead-in to X, Y, Z or Alpha",
+        "answer": "GEN",
+        "row": 0,
+        "col": 9
+      },
+      {
+        "number": 10,
+        "clue": "Arrived",
+        "answer": "CAME",
+        "row": 0,
+        "col": 11
+      },
+      {
+        "number": 11,
+        "clue": "Winged figure in Raphael's \"Sistine Madonna\"",
+        "answer": "CHERUB",
+        "row": 0,
+        "col": 12
+      },
+      {
+        "number": 12,
+        "clue": "Beach city west of Los Angeles",
+        "answer": "MALIBU",
+        "row": 0,
+        "col": 13
+      },
+      {
+        "number": 13,
+        "clue": "Think highly of",
+        "answer": "ESTEEM",
+        "row": 0,
+        "col": 14
+      },
+      {
+        "number": 18,
+        "clue": "Stevie Nicks and Karen Carpenter, vocally",
+        "answer": "ALTOS",
+        "row": 2,
+        "col": 5
+      },
+      {
+        "number": 21,
+        "clue": "Jacob's brother in the Bible",
+        "answer": "ESAU",
+        "row": 3,
+        "col": 10
+      },
+      {
+        "number": 22,
+        "clue": "Baker's meas.",
+        "answer": "TBSP",
+        "row": 4,
+        "col": 0
+      },
+      {
+        "number": 23,
+        "clue": "Mothers of barnyard chicks",
+        "answer": "HENS",
+        "row": 4,
+        "col": 1
+      },
+      {
+        "number": 24,
+        "clue": "Those, in Spanish",
+        "answer": "ESOS",
+        "row": 4,
+        "col": 2
+      },
+      {
+        "number": 27,
+        "clue": "N.F.L. team at MetLife Stadium, as shown on scoreboards",
+        "answer": "NYG",
+        "row": 4,
+        "col": 9
+      },
+      {
+        "number": 30,
+        "clue": "___-frutti",
+        "answer": "TUTTI",
+        "row": 5,
+        "col": 3
+      },
+      {
+        "number": 31,
+        "clue": "Endorse digitally",
+        "answer": "ESIGN",
+        "row": 5,
+        "col": 7
+      },
+      {
+        "number": 32,
+        "clue": "Corporate department that handles contracts",
+        "answer": "LEGAL",
+        "row": 5,
+        "col": 11
+      },
+      {
+        "number": 36,
+        "clue": "Oversize article of winter footwear",
+        "answer": "SNOWSHOE",
+        "row": 7,
+        "col": 6
+      },
+      {
+        "number": 38,
+        "clue": "Metals that miners mine",
+        "answer": "ORES",
+        "row": 7,
+        "col": 12
+      },
+      {
+        "number": 39,
+        "clue": "Egg (on)",
+        "answer": "URGE",
+        "row": 7,
+        "col": 13
+      },
+      {
+        "number": 40,
+        "clue": "T.S. Eliot or W.H. Auden",
+        "answer": "POET",
+        "row": 7,
+        "col": 14
+      },
+      {
+        "number": 42,
+        "clue": "Kind of port in A/V",
+        "answer": "HDMI",
+        "row": 8,
+        "col": 4
+      },
+      {
+        "number": 43,
+        "clue": "Prefix with -metric or -morphic",
+        "answer": "ISO",
+        "row": 8,
+        "col": 5
+      },
+      {
+        "number": 44,
+        "clue": "Puzzle out",
+        "answer": "SOLVE",
+        "row": 8,
+        "col": 9
+      },
+      {
+        "number": 45,
+        "clue": "Censored, as on an audiotape",
+        "answer": "BLEEPED",
+        "row": 8,
+        "col": 10
+      },
+      {
+        "number": 46,
+        "clue": "Takes exception",
+        "answer": "DEMURS",
+        "row": 9,
+        "col": 0
+      },
+      {
+        "number": 47,
+        "clue": "Fifth or Madison, in Manhattan",
+        "answer": "AVENUE",
+        "row": 9,
+        "col": 1
+      },
+      {
+        "number": 48,
+        "clue": "Point of a polygon",
+        "answer": "VERTEX",
+        "row": 9,
+        "col": 2
+      },
+      {
+        "number": 49,
+        "clue": "Stroke lovingly",
+        "answer": "CARESS",
+        "row": 9,
+        "col": 8
+      },
+      {
+        "number": 55,
+        "clue": "\"It'll ___ ya\"",
+        "answer": "COST",
+        "row": 11,
+        "col": 3
+      },
+      {
+        "number": 57,
+        "clue": "Thus",
+        "answer": "ERGO",
+        "row": 11,
+        "col": 7
+      },
+      {
+        "number": 58,
+        "clue": "Nevada city near Lake Tahoe",
+        "answer": "RENO",
+        "row": 11,
+        "col": 11
+      },
+      {
+        "number": 60,
+        "clue": "Extra attention, in brief",
+        "answer": "TLC",
+        "row": 12,
+        "col": 5
+      },
+      {
+        "number": 61,
+        "clue": "Journalist Curry",
+        "answer": "ANN",
+        "row": 12,
+        "col": 12
+      },
+      {
+        "number": 62,
+        "clue": "Famed Egyptian king, for short",
+        "answer": "TUT",
+        "row": 12,
+        "col": 13
+      },
+      {
+        "number": 63,
+        "clue": "Bro's sibling",
+        "answer": "SIS",
+        "row": 12,
+        "col": 14
+      }
+    ]
+  }
+}

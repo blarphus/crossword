@@ -1,0 +1,790 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NYT Crossword</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --cell-size: 40px;
+  --black: #000;
+  --white: #fff;
+  --highlight-word: #a7d8ff;
+  --highlight-cell: #ffda00;
+  --border: #888;
+  --clue-hover: #dce8f0;
+  --clue-active: #a7d8ff;
+  --error: #ff4444;
+  --checked: #2a6dd4;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  background: #f5f5f5;
+  color: #222;
+  min-height: 100vh;
+}
+
+header {
+  text-align: center;
+  padding: 16px;
+  background: var(--white);
+  border-bottom: 2px solid #ddd;
+}
+header h1 { font-size: 1.3rem; font-weight: 700; }
+header .meta { font-size: 0.85rem; color: #666; margin-top: 4px; }
+
+.toolbar {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+  padding: 10px;
+  background: var(--white);
+  border-bottom: 1px solid #ddd;
+  flex-wrap: wrap;
+}
+.toolbar button, .toolbar select {
+  padding: 6px 16px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  background: var(--white);
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: background 0.15s;
+}
+.toolbar button:hover { background: #eee; }
+.toolbar button.active { background: #2a6dd4; color: var(--white); border-color: #2a6dd4; }
+.toolbar select { min-width: 200px; }
+
+.current-clue-bar {
+  text-align: center;
+  padding: 8px 16px;
+  background: var(--highlight-word);
+  font-size: 0.95rem;
+  font-weight: 500;
+  min-height: 36px;
+}
+
+.app {
+  display: flex;
+  justify-content: center;
+  gap: 24px;
+  padding: 16px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* Grid */
+.grid-container { flex-shrink: 0; }
+
+.grid {
+  display: grid;
+  border: 2px solid var(--black);
+  user-select: none;
+  cursor: pointer;
+}
+
+.cell {
+  position: relative;
+  width: var(--cell-size);
+  height: var(--cell-size);
+  border: 0.5px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: calc(var(--cell-size) * 0.5);
+  font-weight: 600;
+  background: var(--white);
+  transition: background 0.1s;
+}
+
+.cell.black {
+  background: var(--black);
+  border-color: var(--black);
+}
+
+.cell .number {
+  position: absolute;
+  top: 1px;
+  left: 2px;
+  font-size: calc(var(--cell-size) * 0.25);
+  font-weight: 500;
+  line-height: 1;
+  color: #333;
+}
+
+.cell .letter {
+  margin-top: 4px;
+  text-transform: uppercase;
+}
+
+.cell.highlight-word { background: var(--highlight-word); }
+.cell.highlight-cell { background: var(--highlight-cell); }
+.cell.error .letter { color: var(--error); }
+.cell.checked .letter { color: var(--checked); }
+
+/* Clue Panel */
+.clue-panel {
+  flex: 1;
+  max-width: 380px;
+  overflow-y: auto;
+  background: var(--white);
+  border: 1px solid #ddd;
+  border-radius: 6px;
+}
+
+.clue-section h2 {
+  position: sticky;
+  top: 0;
+  background: #e8ecf0;
+  padding: 8px 12px;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-bottom: 1px solid #ddd;
+  z-index: 1;
+}
+
+.clue-item {
+  padding: 6px 12px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  display: flex;
+  gap: 8px;
+  border-bottom: 1px solid #f0f0f0;
+  transition: background 0.1s;
+}
+.clue-item:hover { background: var(--clue-hover); }
+.clue-item.active { background: var(--clue-active); }
+.clue-item .clue-num { font-weight: 700; min-width: 24px; }
+.clue-item .clue-text { flex: 1; }
+
+/* Congratulations overlay */
+.congrats-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: 100;
+  align-items: center;
+  justify-content: center;
+}
+.congrats-overlay.show { display: flex; }
+.congrats-box {
+  background: var(--white);
+  padding: 40px;
+  border-radius: 12px;
+  text-align: center;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+}
+.congrats-box h2 { font-size: 1.8rem; margin-bottom: 8px; }
+.congrats-box p { color: #666; margin-bottom: 20px; }
+.congrats-box button {
+  padding: 10px 28px;
+  background: #2a6dd4;
+  color: var(--white);
+  border: none;
+  border-radius: 6px;
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+/* Mobile */
+@media (max-width: 780px) {
+  .app { flex-direction: column; align-items: center; padding: 8px; gap: 12px; }
+  .clue-panel { max-width: 100%; max-height: 300px; width: 100%; }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <h1 id="puzzle-title">The New York Times Crossword</h1>
+  <div class="meta" id="puzzle-meta"></div>
+</header>
+
+<div class="toolbar">
+  <select id="puzzle-select"></select>
+  <button id="btn-check">Auto-Check</button>
+  <button id="btn-clear">Clear Puzzle</button>
+  <button id="btn-reveal">Reveal Puzzle</button>
+</div>
+
+<div class="current-clue-bar" id="current-clue-bar">&nbsp;</div>
+
+<div class="app">
+  <div class="grid-container">
+    <div class="grid" id="grid" tabindex="0"></div>
+  </div>
+  <div class="clue-panel" id="clue-panel"></div>
+</div>
+
+<div class="congrats-overlay" id="congrats">
+  <div class="congrats-box">
+    <h2>Congratulations!</h2>
+    <p id="congrats-msg">You solved the crossword!</p>
+    <button onclick="document.getElementById('congrats').classList.remove('show')">Close</button>
+  </div>
+</div>
+
+<script>
+// ─── Puzzle state ──────────────────────────────────────────────────
+let PUZZLE = null;
+let ROWS = 0, COLS = 0;
+let userGrid = [];
+let checkedCells = [];
+let selectedRow = 0, selectedCol = 0;
+let direction = 'across';
+let autoCheck = false;
+let solved = false;
+let currentDate = null;
+let pollTimer = null;
+
+// ─── DOM refs ──────────────────────────────────────────────────────
+const gridEl = document.getElementById('grid');
+const cluePanelEl = document.getElementById('clue-panel');
+const clueBarEl = document.getElementById('current-clue-bar');
+const congratsEl = document.getElementById('congrats');
+const titleEl = document.getElementById('puzzle-title');
+const metaEl = document.getElementById('puzzle-meta');
+const selectEl = document.getElementById('puzzle-select');
+const btnCheck = document.getElementById('btn-check');
+const btnClear = document.getElementById('btn-clear');
+const btnReveal = document.getElementById('btn-reveal');
+
+// ─── Populate dropdown (async) ────────────────────────────────────
+const DAYS = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+
+async function populateDropdown() {
+  const res = await fetch('/api/puzzles');
+  const puzzles = await res.json();
+  for (const p of puzzles) {
+    const d = new Date(p.date + 'T12:00:00');
+    const dayName = DAYS[d.getDay()];
+    const label = `${dayName} ${p.date} — ${p.author}`;
+    const opt = document.createElement('option');
+    opt.value = p.date;
+    opt.textContent = label;
+    selectEl.appendChild(opt);
+  }
+  if (selectEl.options.length > 0) {
+    loadPuzzle(selectEl.options[0].value);
+  }
+}
+
+// ─── Load a puzzle (async) ────────────────────────────────────────
+async function loadPuzzle(dateStr) {
+  // Stop previous polling
+  if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
+  currentDate = dateStr;
+
+  // Fetch puzzle data and shared state in parallel
+  const [puzzleRes, stateRes] = await Promise.all([
+    fetch(`/api/puzzles/${dateStr}`),
+    fetch(`/api/state/${dateStr}`),
+  ]);
+  const data = await puzzleRes.json();
+  const stateData = await stateRes.json();
+
+  ROWS = data.dimensions.rows;
+  COLS = data.dimensions.cols;
+
+  const mapClues = (arr) => arr.map(c => ({
+    n: c.number, clue: c.clue, answer: c.answer, row: c.row, col: c.col
+  }));
+
+  PUZZLE = {
+    rows: ROWS,
+    cols: COLS,
+    grid: data.grid,
+    cellNumbers: data.cellNumbers,
+    clues: {
+      across: mapClues(data.clues.across),
+      down: mapClues(data.clues.down),
+    },
+  };
+
+  // Reset state
+  userGrid = Array.from({length: ROWS}, () => Array(COLS).fill(''));
+  checkedCells = Array.from({length: ROWS}, () => Array(COLS).fill(false));
+  autoCheck = false;
+  solved = false;
+  direction = 'across';
+  btnCheck.classList.remove('active');
+  congratsEl.classList.remove('show');
+
+  // Apply shared state
+  applySharedState(stateData.userGrid || {});
+
+  // Update header
+  const d = new Date(dateStr + 'T12:00:00');
+  const dayName = DAYS[d.getDay()];
+  const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  const prettyDate = `${dayName}, ${monthNames[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`;
+  titleEl.textContent = data.title || 'The New York Times Crossword';
+  metaEl.textContent = `${prettyDate} · By ${data.author} · Edited by ${data.editor}`;
+  document.title = `Crossword — ${prettyDate}`;
+
+  // Compute cell size based on grid dimensions
+  const maxGridPx = Math.min(window.innerWidth - 420, 650);
+  const cellSize = Math.max(24, Math.min(40, Math.floor(maxGridPx / Math.max(ROWS, COLS))));
+  document.documentElement.style.setProperty('--cell-size', cellSize + 'px');
+
+  buildGrid();
+  buildCluePanel();
+
+  // Select first white cell
+  selectedRow = 0; selectedCol = 0;
+  for (let r = 0; r < ROWS; r++) {
+    let found = false;
+    for (let c = 0; c < COLS; c++) {
+      if (!isBlack(r, c)) { selectedRow = r; selectedCol = c; found = true; break; }
+    }
+    if (found) break;
+  }
+
+  render();
+  focusGrid();
+
+  // Start polling for collaborative updates every 3 seconds
+  pollTimer = setInterval(pollState, 3000);
+}
+
+// ─── Collaboration helpers ────────────────────────────────────────
+function applySharedState(gridMap) {
+  for (const [key, letter] of Object.entries(gridMap)) {
+    const [r, c] = key.split(',').map(Number);
+    if (r >= 0 && r < ROWS && c >= 0 && c < COLS) {
+      userGrid[r][c] = letter;
+    }
+  }
+}
+
+async function pollState() {
+  if (!currentDate) return;
+  try {
+    const res = await fetch(`/api/state/${currentDate}`);
+    const data = await res.json();
+    const gridMap = data.userGrid || {};
+
+    // Merge remote state into local grid
+    // Remote is authoritative for cells we haven't just typed in
+    for (let r = 0; r < ROWS; r++) {
+      for (let c = 0; c < COLS; c++) {
+        if (isBlack(r, c)) continue;
+        const key = `${r},${c}`;
+        if (key in gridMap) {
+          userGrid[r][c] = gridMap[key];
+        } else {
+          userGrid[r][c] = '';
+        }
+      }
+    }
+    render();
+  } catch (e) {
+    // Silently ignore poll errors
+  }
+}
+
+function sendCellUpdate(row, col, letter) {
+  if (!currentDate) return;
+  fetch(`/api/state/${currentDate}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ row, col, letter }),
+  }).catch(() => {});
+}
+
+// ─── Helpers ───────────────────────────────────────────────────────
+function isBlack(r, c) {
+  return PUZZLE.grid[r]?.[c] === '.';
+}
+
+function inBounds(r, c) {
+  return r >= 0 && r < ROWS && c >= 0 && c < COLS;
+}
+
+function getClueForCell(r, c, dir) {
+  const clues = dir === 'across' ? PUZZLE.clues.across : PUZZLE.clues.down;
+  for (let i = clues.length - 1; i >= 0; i--) {
+    const cl = clues[i];
+    if (dir === 'across') {
+      if (cl.row === r && cl.col <= c && cl.col + getWordLen(cl, 'across') > c) return cl;
+    } else {
+      if (cl.col === c && cl.row <= r && cl.row + getWordLen(cl, 'down') > r) return cl;
+    }
+  }
+  return null;
+}
+
+function getWordLen(clue, dir) {
+  if (clue.answer) return clue.answer.length;
+  let len = 0;
+  if (dir === 'across') {
+    for (let c = clue.col; c < COLS && !isBlack(clue.row, c); c++) len++;
+  } else {
+    for (let r = clue.row; r < ROWS && !isBlack(r, clue.col); r++) len++;
+  }
+  return len;
+}
+
+function getWordCells(clue, dir) {
+  const cells = [];
+  const len = getWordLen(clue, dir);
+  for (let i = 0; i < len; i++) {
+    if (dir === 'across') cells.push([clue.row, clue.col + i]);
+    else cells.push([clue.row + i, clue.col]);
+  }
+  return cells;
+}
+
+// ─── Build Grid ────────────────────────────────────────────────────
+let cellEls = [];
+
+function buildGrid() {
+  gridEl.innerHTML = '';
+  gridEl.style.gridTemplateColumns = `repeat(${COLS}, var(--cell-size))`;
+  gridEl.style.gridTemplateRows = `repeat(${ROWS}, var(--cell-size))`;
+
+  cellEls = [];
+  for (let r = 0; r < ROWS; r++) {
+    cellEls[r] = [];
+    for (let c = 0; c < COLS; c++) {
+      const cell = document.createElement('div');
+      cell.className = 'cell' + (isBlack(r, c) ? ' black' : '');
+
+      const num = PUZZLE.cellNumbers[r][c];
+      if (num > 0) {
+        const numSpan = document.createElement('span');
+        numSpan.className = 'number';
+        numSpan.textContent = num;
+        cell.appendChild(numSpan);
+      }
+
+      if (!isBlack(r, c)) {
+        const letterSpan = document.createElement('span');
+        letterSpan.className = 'letter';
+        cell.appendChild(letterSpan);
+      }
+
+      cell.addEventListener('click', () => onCellClick(r, c));
+      gridEl.appendChild(cell);
+      cellEls[r][c] = cell;
+    }
+  }
+
+  const gridH = ROWS * parseInt(getComputedStyle(document.documentElement).getPropertyValue('--cell-size')) + 4;
+  cluePanelEl.style.maxHeight = gridH + 'px';
+}
+
+// ─── Build Clue Panel ──────────────────────────────────────────────
+let clueItemEls = {};
+
+function buildCluePanel() {
+  cluePanelEl.innerHTML = '';
+  clueItemEls = {};
+
+  for (const dir of ['across', 'down']) {
+    const section = document.createElement('div');
+    section.className = 'clue-section';
+    const h2 = document.createElement('h2');
+    h2.textContent = dir.charAt(0).toUpperCase() + dir.slice(1);
+    section.appendChild(h2);
+
+    for (const clue of PUZZLE.clues[dir]) {
+      const item = document.createElement('div');
+      item.className = 'clue-item';
+
+      const numSpan = document.createElement('span');
+      numSpan.className = 'clue-num';
+      numSpan.textContent = clue.n;
+      item.appendChild(numSpan);
+
+      const textSpan = document.createElement('span');
+      textSpan.className = 'clue-text';
+      textSpan.textContent = clue.clue;
+      item.appendChild(textSpan);
+
+      item.addEventListener('click', () => {
+        direction = dir;
+        selectedRow = clue.row;
+        selectedCol = clue.col;
+        render();
+        focusGrid();
+      });
+
+      section.appendChild(item);
+      clueItemEls[`${dir}-${clue.n}`] = item;
+    }
+    cluePanelEl.appendChild(section);
+  }
+}
+
+// ─── Rendering ─────────────────────────────────────────────────────
+function render() {
+  if (!PUZZLE) return;
+  const currentClue = getClueForCell(selectedRow, selectedCol, direction);
+  const wordCells = currentClue ? getWordCells(currentClue, direction) : [];
+  const wordSet = new Set(wordCells.map(([r,c]) => `${r},${c}`));
+
+  for (let r = 0; r < ROWS; r++) {
+    for (let c = 0; c < COLS; c++) {
+      const el = cellEls[r][c];
+      if (isBlack(r, c)) continue;
+
+      el.classList.toggle('highlight-word', wordSet.has(`${r},${c}`));
+      el.classList.toggle('highlight-cell', r === selectedRow && c === selectedCol);
+
+      const letterEl = el.querySelector('.letter');
+      if (letterEl) letterEl.textContent = userGrid[r][c];
+
+      el.classList.toggle('checked', checkedCells[r][c]);
+      if (autoCheck && userGrid[r][c] && !checkedCells[r][c]) {
+        el.classList.toggle('error', userGrid[r][c] !== PUZZLE.grid[r][c]);
+      } else {
+        el.classList.remove('error');
+      }
+    }
+  }
+
+  if (currentClue) {
+    const dirLabel = direction === 'across' ? 'A' : 'D';
+    clueBarEl.textContent = `${currentClue.n}${dirLabel}: ${currentClue.clue}`;
+  } else {
+    clueBarEl.innerHTML = '&nbsp;';
+  }
+
+  for (const key in clueItemEls) clueItemEls[key].classList.remove('active');
+  if (currentClue) {
+    const key = `${direction}-${currentClue.n}`;
+    if (clueItemEls[key]) {
+      clueItemEls[key].classList.add('active');
+      clueItemEls[key].scrollIntoView({block: 'nearest', behavior: 'smooth'});
+    }
+  }
+}
+
+// ─── Interaction ───────────────────────────────────────────────────
+function onCellClick(r, c) {
+  if (isBlack(r, c)) return;
+  if (r === selectedRow && c === selectedCol) {
+    direction = direction === 'across' ? 'down' : 'across';
+    if (!getClueForCell(r, c, direction)) {
+      direction = direction === 'across' ? 'down' : 'across';
+    }
+  } else {
+    selectedRow = r;
+    selectedCol = c;
+    if (!getClueForCell(r, c, direction)) {
+      direction = direction === 'across' ? 'down' : 'across';
+    }
+  }
+  render();
+  focusGrid();
+}
+
+function advanceCursor() {
+  if (direction === 'across') {
+    let nc = selectedCol + 1;
+    while (nc < COLS && isBlack(selectedRow, nc)) nc++;
+    if (nc < COLS) selectedCol = nc;
+  } else {
+    let nr = selectedRow + 1;
+    while (nr < ROWS && isBlack(nr, selectedCol)) nr++;
+    if (nr < ROWS) selectedRow = nr;
+  }
+}
+
+function retreatCursor() {
+  if (direction === 'across') {
+    let nc = selectedCol - 1;
+    while (nc >= 0 && isBlack(selectedRow, nc)) nc--;
+    if (nc >= 0) selectedCol = nc;
+  } else {
+    let nr = selectedRow - 1;
+    while (nr >= 0 && isBlack(nr, selectedCol)) nr--;
+    if (nr >= 0) selectedRow = nr;
+  }
+}
+
+function moveToNextWord(forward) {
+  const clues = direction === 'across' ? PUZZLE.clues.across : PUZZLE.clues.down;
+  const currentClue = getClueForCell(selectedRow, selectedCol, direction);
+  if (!currentClue) return;
+
+  const idx = clues.findIndex(c => c.n === currentClue.n);
+  let nextIdx;
+
+  if (forward) {
+    nextIdx = idx + 1;
+    if (nextIdx >= clues.length) {
+      direction = direction === 'across' ? 'down' : 'across';
+      const other = direction === 'across' ? PUZZLE.clues.across : PUZZLE.clues.down;
+      selectedRow = other[0].row;
+      selectedCol = other[0].col;
+      render();
+      return;
+    }
+  } else {
+    nextIdx = idx - 1;
+    if (nextIdx < 0) {
+      direction = direction === 'across' ? 'down' : 'across';
+      const other = direction === 'across' ? PUZZLE.clues.across : PUZZLE.clues.down;
+      selectedRow = other[other.length - 1].row;
+      selectedCol = other[other.length - 1].col;
+      render();
+      return;
+    }
+  }
+
+  selectedRow = clues[nextIdx].row;
+  selectedCol = clues[nextIdx].col;
+  render();
+}
+
+function moveArrow(dr, dc) {
+  const newDir = dc !== 0 ? 'across' : 'down';
+
+  if (newDir !== direction) {
+    if (getClueForCell(selectedRow, selectedCol, newDir)) {
+      direction = newDir;
+      return;
+    }
+  }
+
+  let r = selectedRow + dr;
+  let c = selectedCol + dc;
+  while (inBounds(r, c) && isBlack(r, c)) { r += dr; c += dc; }
+  if (inBounds(r, c)) {
+    selectedRow = r;
+    selectedCol = c;
+    direction = newDir;
+  }
+}
+
+function checkCompletion() {
+  for (let r = 0; r < ROWS; r++) {
+    for (let c = 0; c < COLS; c++) {
+      if (!isBlack(r, c) && userGrid[r][c] !== PUZZLE.grid[r][c]) return;
+    }
+  }
+  solved = true;
+  congratsEl.classList.add('show');
+}
+
+function focusGrid() { gridEl.focus(); }
+
+// ─── Keyboard ──────────────────────────────────────────────────────
+gridEl.addEventListener('keydown', (e) => {
+  if (!PUZZLE || solved) return;
+  const key = e.key;
+
+  if (key === 'ArrowLeft')       { e.preventDefault(); moveArrow(0, -1); render(); }
+  else if (key === 'ArrowRight') { e.preventDefault(); moveArrow(0, 1); render(); }
+  else if (key === 'ArrowUp')    { e.preventDefault(); moveArrow(-1, 0); render(); }
+  else if (key === 'ArrowDown')  { e.preventDefault(); moveArrow(1, 0); render(); }
+  else if (key === 'Tab') {
+    e.preventDefault();
+    moveToNextWord(!e.shiftKey);
+  }
+  else if (key === ' ') {
+    e.preventDefault();
+    direction = direction === 'across' ? 'down' : 'across';
+    if (!getClueForCell(selectedRow, selectedCol, direction)) {
+      direction = direction === 'across' ? 'down' : 'across';
+    }
+    render();
+  }
+  else if (key === 'Backspace') {
+    e.preventDefault();
+    if (checkedCells[selectedRow][selectedCol]) {
+      retreatCursor();
+    } else if (userGrid[selectedRow][selectedCol]) {
+      userGrid[selectedRow][selectedCol] = '';
+      sendCellUpdate(selectedRow, selectedCol, '');
+    } else {
+      retreatCursor();
+      if (!checkedCells[selectedRow][selectedCol]) {
+        userGrid[selectedRow][selectedCol] = '';
+        sendCellUpdate(selectedRow, selectedCol, '');
+      }
+    }
+    render();
+  }
+  else if (key === 'Delete') {
+    e.preventDefault();
+    if (!checkedCells[selectedRow][selectedCol]) {
+      userGrid[selectedRow][selectedCol] = '';
+      sendCellUpdate(selectedRow, selectedCol, '');
+    }
+    render();
+  }
+  else if (/^[a-zA-Z]$/.test(key)) {
+    e.preventDefault();
+    if (!checkedCells[selectedRow][selectedCol]) {
+      const letter = key.toUpperCase();
+      userGrid[selectedRow][selectedCol] = letter;
+      sendCellUpdate(selectedRow, selectedCol, letter);
+      if (autoCheck && userGrid[selectedRow][selectedCol] === PUZZLE.grid[selectedRow][selectedCol]) {
+        checkedCells[selectedRow][selectedCol] = true;
+      }
+    }
+    render();
+    advanceCursor();
+    render();
+    checkCompletion();
+  }
+});
+
+// ─── Toolbar ───────────────────────────────────────────────────────
+selectEl.addEventListener('change', () => loadPuzzle(selectEl.value));
+
+btnCheck.addEventListener('click', () => {
+  if (!PUZZLE) return;
+  autoCheck = !autoCheck;
+  btnCheck.classList.toggle('active', autoCheck);
+  if (autoCheck) {
+    for (let r = 0; r < ROWS; r++)
+      for (let c = 0; c < COLS; c++)
+        if (userGrid[r][c] && userGrid[r][c] === PUZZLE.grid[r][c])
+          checkedCells[r][c] = true;
+  }
+  render();
+});
+
+btnClear.addEventListener('click', async () => {
+  if (!PUZZLE || !confirm('Clear all entered letters?')) return;
+  for (let r = 0; r < ROWS; r++)
+    for (let c = 0; c < COLS; c++) {
+      userGrid[r][c] = '';
+      checkedCells[r][c] = false;
+    }
+  solved = false;
+  congratsEl.classList.remove('show');
+  // Clear server state
+  if (currentDate) {
+    fetch(`/api/state/${currentDate}`, { method: 'DELETE' }).catch(() => {});
+  }
+  render();
+});
+
+btnReveal.addEventListener('click', () => {
+  if (!PUZZLE || !confirm('Reveal the entire puzzle?')) return;
+  for (let r = 0; r < ROWS; r++)
+    for (let c = 0; c < COLS; c++)
+      if (!isBlack(r, c)) {
+        userGrid[r][c] = PUZZLE.grid[r][c];
+        sendCellUpdate(r, c, PUZZLE.grid[r][c]);
+      }
+  render();
+  checkCompletion();
+});
+
+// ─── Init ──────────────────────────────────────────────────────────
+populateDropdown();
+</script>
+</body>
+</html>

@@ -1,0 +1,1062 @@
+{
+  "date": "2026-01-27",
+  "title": "New York Times,Tuesday, January 27, 2026",
+  "author": "Miranda Kany and Tracy Bennett",
+  "editor": "Will Shortz",
+  "dimensions": {
+    "rows": 15,
+    "cols": 15
+  },
+  "grid": [
+    [
+      "P",
+      "E",
+      "T",
+      "A",
+      "L",
+      ".",
+      "M",
+      "A",
+      "S",
+      "K",
+      ".",
+      "M",
+      "A",
+      "M",
+      "A"
+    ],
+    [
+      "A",
+      "R",
+      "O",
+      "S",
+      "E",
+      ".",
+      "A",
+      "L",
+      "I",
+      "I",
+      ".",
+      "O",
+      "L",
+      "E",
+      "S"
+    ],
+    [
+      "N",
+      "I",
+      "P",
+      "A",
+      "T",
+      ".",
+      "L",
+      "O",
+      "T",
+      "S",
+      ".",
+      "J",
+      "E",
+      "E",
+      "P"
+    ],
+    [
+      "I",
+      "V",
+      "S",
+      ".",
+      "I",
+      "N",
+      "T",
+      "H",
+      "E",
+      "S",
+      "T",
+      "I",
+      "C",
+      "K",
+      "S"
+    ],
+    [
+      "C",
+      "O",
+      "Y",
+      "O",
+      "T",
+      "E",
+      ".",
+      "A",
+      "S",
+      "C",
+      "O",
+      "T",
+      ".",
+      ".",
+      "."
+    ],
+    [
+      ".",
+      ".",
+      "T",
+      "A",
+      "G",
+      "O",
+      "N",
+      ".",
+      ".",
+      "A",
+      "M",
+      "O",
+      "R",
+      "A",
+      "L"
+    ],
+    [
+      ".",
+      "O",
+      "U",
+      "T",
+      "O",
+      "N",
+      "A",
+      "L",
+      "I",
+      "M",
+      "B",
+      ".",
+      "O",
+      "R",
+      "O"
+    ],
+    [
+      "O",
+      "P",
+      "R",
+      "Y",
+      ".",
+      ".",
+      "R",
+      "E",
+      "O",
+      ".",
+      ".",
+      "D",
+      "U",
+      "C",
+      "T"
+    ],
+    [
+      "R",
+      "E",
+      "V",
+      ".",
+      "F",
+      "L",
+      "Y",
+      "I",
+      "N",
+      "G",
+      "H",
+      "I",
+      "G",
+      "H",
+      "."
+    ],
+    [
+      "A",
+      "N",
+      "Y",
+      "H",
+      "O",
+      "O",
+      ".",
+      ".",
+      "S",
+      "L",
+      "U",
+      "S",
+      "H",
+      ".",
+      "."
+    ],
+    [
+      ".",
+      ".",
+      ".",
+      "E",
+      "X",
+      "U",
+      "L",
+      "T",
+      ".",
+      "U",
+      "R",
+      "C",
+      "H",
+      "I",
+      "N"
+    ],
+    [
+      "E",
+      "M",
+      "P",
+      "T",
+      "Y",
+      "N",
+      "E",
+      "S",
+      "T",
+      "E",
+      "R",
+      ".",
+      "O",
+      "D",
+      "E"
+    ],
+    [
+      "N",
+      "O",
+      "A",
+      "H",
+      ".",
+      "G",
+      "N",
+      "A",
+      "W",
+      ".",
+      "I",
+      "R",
+      "U",
+      "L",
+      "E"
+    ],
+    [
+      "D",
+      "O",
+      "P",
+      "E",
+      ".",
+      "E",
+      "T",
+      "R",
+      "E",
+      ".",
+      "E",
+      "A",
+      "S",
+      "E",
+      "D"
+    ],
+    [
+      "S",
+      "T",
+      "A",
+      "Y",
+      ".",
+      "D",
+      "O",
+      "S",
+      "E",
+      ".",
+      "S",
+      "E",
+      "E",
+      "D",
+      "Y"
+    ]
+  ],
+  "cellNumbers": [
+    [
+      1,
+      2,
+      3,
+      4,
+      5,
+      0,
+      6,
+      7,
+      8,
+      9,
+      0,
+      10,
+      11,
+      12,
+      13
+    ],
+    [
+      14,
+      0,
+      0,
+      0,
+      0,
+      0,
+      15,
+      0,
+      0,
+      0,
+      0,
+      16,
+      0,
+      0,
+      0
+    ],
+    [
+      17,
+      0,
+      0,
+      0,
+      0,
+      0,
+      18,
+      0,
+      0,
+      0,
+      0,
+      19,
+      0,
+      0,
+      0
+    ],
+    [
+      20,
+      0,
+      0,
+      0,
+      21,
+      22,
+      0,
+      0,
+      0,
+      0,
+      23,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      24,
+      0,
+      0,
+      25,
+      0,
+      0,
+      0,
+      26,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      27,
+      0,
+      0,
+      0,
+      28,
+      0,
+      0,
+      29,
+      0,
+      0,
+      30,
+      31,
+      32
+    ],
+    [
+      0,
+      33,
+      0,
+      0,
+      0,
+      0,
+      0,
+      34,
+      35,
+      0,
+      0,
+      0,
+      36,
+      0,
+      0
+    ],
+    [
+      37,
+      0,
+      0,
+      0,
+      0,
+      0,
+      38,
+      0,
+      0,
+      0,
+      0,
+      39,
+      0,
+      0,
+      0
+    ],
+    [
+      40,
+      0,
+      0,
+      0,
+      41,
+      42,
+      0,
+      0,
+      0,
+      43,
+      44,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      45,
+      0,
+      0,
+      46,
+      0,
+      0,
+      0,
+      0,
+      47,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      48,
+      0,
+      0,
+      49,
+      50,
+      0,
+      51,
+      0,
+      0,
+      0,
+      52,
+      53
+    ],
+    [
+      54,
+      55,
+      56,
+      0,
+      0,
+      0,
+      0,
+      0,
+      57,
+      0,
+      0,
+      0,
+      58,
+      0,
+      0
+    ],
+    [
+      59,
+      0,
+      0,
+      0,
+      0,
+      60,
+      0,
+      0,
+      0,
+      0,
+      61,
+      62,
+      0,
+      0,
+      0
+    ],
+    [
+      63,
+      0,
+      0,
+      0,
+      0,
+      64,
+      0,
+      0,
+      0,
+      0,
+      65,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      66,
+      0,
+      0,
+      0,
+      0,
+      67,
+      0,
+      0,
+      0,
+      0,
+      68,
+      0,
+      0,
+      0,
+      0
+    ]
+  ],
+  "clues": {
+    "across": [
+      {
+        "number": 1,
+        "clue": "Potpourri piece",
+        "answer": "PETAL",
+        "row": 0,
+        "col": 0
+      },
+      {
+        "number": 6,
+        "clue": "Bit of pandemic attire",
+        "answer": "MASK",
+        "row": 0,
+        "col": 6
+      },
+      {
+        "number": 10,
+        "clue": "Cry from a crib, perhaps",
+        "answer": "MAMA",
+        "row": 0,
+        "col": 11
+      },
+      {
+        "number": 14,
+        "clue": "Came up",
+        "answer": "AROSE",
+        "row": 1,
+        "col": 0
+      },
+      {
+        "number": 15,
+        "clue": "Et ___ (and others)",
+        "answer": "ALII",
+        "row": 1,
+        "col": 6
+      },
+      {
+        "number": 16,
+        "clue": "Some stadium shouts",
+        "answer": "OLES",
+        "row": 1,
+        "col": 11
+      },
+      {
+        "number": 17,
+        "clue": "Give friendly bites, as a puppy might",
+        "answer": "NIPAT",
+        "row": 2,
+        "col": 0
+      },
+      {
+        "number": 18,
+        "clue": "Heaps",
+        "answer": "LOTS",
+        "row": 2,
+        "col": 6
+      },
+      {
+        "number": 19,
+        "clue": "Wrangler on the road",
+        "answer": "JEEP",
+        "row": 2,
+        "col": 11
+      },
+      {
+        "number": 20,
+        "clue": "Hosp. hookups",
+        "answer": "IVS",
+        "row": 3,
+        "col": 0
+      },
+      {
+        "number": 21,
+        "clue": "Far from any urban center, colloquially",
+        "answer": "INTHESTICKS",
+        "row": 3,
+        "col": 4
+      },
+      {
+        "number": 24,
+        "clue": "Trickster figure in Native American folklore",
+        "answer": "COYOTE",
+        "row": 4,
+        "col": 0
+      },
+      {
+        "number": 26,
+        "clue": "Cousin of a cravat",
+        "answer": "ASCOT",
+        "row": 4,
+        "col": 7
+      },
+      {
+        "number": 27,
+        "clue": "Add as an afterthought",
+        "answer": "TAGON",
+        "row": 5,
+        "col": 2
+      },
+      {
+        "number": 29,
+        "clue": "Lacking a conscience",
+        "answer": "AMORAL",
+        "row": 5,
+        "col": 9
+      },
+      {
+        "number": 33,
+        "clue": "Potentially at risk, metaphorically",
+        "answer": "OUTONALIMB",
+        "row": 6,
+        "col": 1
+      },
+      {
+        "number": 36,
+        "clue": "Spanish gold",
+        "answer": "ORO",
+        "row": 6,
+        "col": 12
+      },
+      {
+        "number": 37,
+        "clue": "Nashville has a \"grand ole\" one",
+        "answer": "OPRY",
+        "row": 7,
+        "col": 0
+      },
+      {
+        "number": 38,
+        "clue": "___ Speed Wagon (old vehicle)",
+        "answer": "REO",
+        "row": 7,
+        "col": 6
+      },
+      {
+        "number": 39,
+        "clue": "Air passage",
+        "answer": "DUCT",
+        "row": 7,
+        "col": 11
+      },
+      {
+        "number": 40,
+        "clue": "Title for M.L.K. Jr.",
+        "answer": "REV",
+        "row": 8,
+        "col": 0
+      },
+      {
+        "number": 41,
+        "clue": "In a soaring mood, so to speak",
+        "answer": "FLYINGHIGH",
+        "row": 8,
+        "col": 4
+      },
+      {
+        "number": 45,
+        "clue": "\"Moving right along ...\"",
+        "answer": "ANYHOO",
+        "row": 9,
+        "col": 0
+      },
+      {
+        "number": 47,
+        "clue": "Kind of fund",
+        "answer": "SLUSH",
+        "row": 9,
+        "col": 8
+      },
+      {
+        "number": 48,
+        "clue": "Jump and shout for joy",
+        "answer": "EXULT",
+        "row": 10,
+        "col": 3
+      },
+      {
+        "number": 51,
+        "clue": "Ragamuffin",
+        "answer": "URCHIN",
+        "row": 10,
+        "col": 9
+      },
+      {
+        "number": 54,
+        "clue": "Metaphor for a parent whose youngest has \"launched\" ... like the little bird whose progress is suggested by 21-, 33- and 41-Across",
+        "answer": "EMPTYNESTER",
+        "row": 11,
+        "col": 0
+      },
+      {
+        "number": 58,
+        "clue": "Poem of praise",
+        "answer": "ODE",
+        "row": 11,
+        "col": 12
+      },
+      {
+        "number": 59,
+        "clue": "\"Captain\" on Mount Ararat",
+        "answer": "NOAH",
+        "row": 12,
+        "col": 0
+      },
+      {
+        "number": 60,
+        "clue": "Chew as a beaver might",
+        "answer": "GNAW",
+        "row": 12,
+        "col": 5
+      },
+      {
+        "number": 61,
+        "clue": "\"Yay me!\"",
+        "answer": "IRULE",
+        "row": 12,
+        "col": 10
+      },
+      {
+        "number": 63,
+        "clue": "Doofus",
+        "answer": "DOPE",
+        "row": 13,
+        "col": 0
+      },
+      {
+        "number": 64,
+        "clue": "To be, in Toulouse",
+        "answer": "ETRE",
+        "row": 13,
+        "col": 5
+      },
+      {
+        "number": 65,
+        "clue": "Assuaged",
+        "answer": "EASED",
+        "row": 13,
+        "col": 10
+      },
+      {
+        "number": 66,
+        "clue": "Corset component",
+        "answer": "STAY",
+        "row": 14,
+        "col": 0
+      },
+      {
+        "number": 67,
+        "clue": "Medical measure",
+        "answer": "DOSE",
+        "row": 14,
+        "col": 5
+      },
+      {
+        "number": 68,
+        "clue": "In poor condition",
+        "answer": "SEEDY",
+        "row": 14,
+        "col": 10
+      }
+    ],
+    "down": [
+      {
+        "number": 1,
+        "clue": "Freak out",
+        "answer": "PANIC",
+        "row": 0,
+        "col": 0
+      },
+      {
+        "number": 2,
+        "clue": "\"Wicked\" co-star Cynthia ___",
+        "answer": "ERIVO",
+        "row": 0,
+        "col": 1
+      },
+      {
+        "number": 3,
+        "clue": "Downside-up",
+        "answer": "TOPSYTURVY",
+        "row": 0,
+        "col": 2
+      },
+      {
+        "number": 4,
+        "clue": "Happy ___ lark",
+        "answer": "ASA",
+        "row": 0,
+        "col": 3
+      },
+      {
+        "number": 5,
+        "clue": "\"Forgive and forget\"",
+        "answer": "LETITGO",
+        "row": 0,
+        "col": 4
+      },
+      {
+        "number": 6,
+        "clue": "Barley product",
+        "answer": "MALT",
+        "row": 0,
+        "col": 6
+      },
+      {
+        "number": 7,
+        "clue": "Hi in HI",
+        "answer": "ALOHA",
+        "row": 0,
+        "col": 7
+      },
+      {
+        "number": 8,
+        "clue": "Loci",
+        "answer": "SITES",
+        "row": 0,
+        "col": 8
+      },
+      {
+        "number": 9,
+        "clue": "Source of some Jumbotron entertainment",
+        "answer": "KISSCAM",
+        "row": 0,
+        "col": 9
+      },
+      {
+        "number": 10,
+        "clue": "Cuban rum cocktail",
+        "answer": "MOJITO",
+        "row": 0,
+        "col": 11
+      },
+      {
+        "number": 11,
+        "clue": "Actor Guinness",
+        "answer": "ALEC",
+        "row": 0,
+        "col": 12
+      },
+      {
+        "number": 12,
+        "clue": "Like the ones who shall inherit the earth, in Matthew 5:5",
+        "answer": "MEEK",
+        "row": 0,
+        "col": 13
+      },
+      {
+        "number": 13,
+        "clue": "Horned vipers",
+        "answer": "ASPS",
+        "row": 0,
+        "col": 14
+      },
+      {
+        "number": 22,
+        "clue": "Like some highlighter colors",
+        "answer": "NEON",
+        "row": 3,
+        "col": 5
+      },
+      {
+        "number": 23,
+        "clue": "___ of the Unknown Soldier",
+        "answer": "TOMB",
+        "row": 3,
+        "col": 10
+      },
+      {
+        "number": 25,
+        "clue": "Like some cookies and milk",
+        "answer": "OATY",
+        "row": 4,
+        "col": 3
+      },
+      {
+        "number": 28,
+        "clue": "Not, colloquially",
+        "answer": "NARY",
+        "row": 5,
+        "col": 6
+      },
+      {
+        "number": 30,
+        "clue": "Engage in boisterous activity",
+        "answer": "ROUGHHOUSE",
+        "row": 5,
+        "col": 12
+      },
+      {
+        "number": 31,
+        "clue": "St. Louis landmark",
+        "answer": "ARCH",
+        "row": 5,
+        "col": 13
+      },
+      {
+        "number": 32,
+        "clue": "Area to build on",
+        "answer": "LOT",
+        "row": 5,
+        "col": 14
+      },
+      {
+        "number": 33,
+        "clue": "Request from a dentist",
+        "answer": "OPEN",
+        "row": 6,
+        "col": 1
+      },
+      {
+        "number": 34,
+        "clue": "Floral ring",
+        "answer": "LEI",
+        "row": 6,
+        "col": 7
+      },
+      {
+        "number": 35,
+        "clue": "Charged particles",
+        "answer": "IONS",
+        "row": 6,
+        "col": 8
+      },
+      {
+        "number": 37,
+        "clue": "Singer Rita",
+        "answer": "ORA",
+        "row": 7,
+        "col": 0
+      },
+      {
+        "number": 39,
+        "clue": "Chip shape",
+        "answer": "DISC",
+        "row": 7,
+        "col": 11
+      },
+      {
+        "number": 41,
+        "clue": "Cunning, like Mr. Tod or Swiper",
+        "answer": "FOXY",
+        "row": 8,
+        "col": 4
+      },
+      {
+        "number": 42,
+        "clue": "Chillaxed, say",
+        "answer": "LOUNGED",
+        "row": 8,
+        "col": 5
+      },
+      {
+        "number": 43,
+        "clue": "It's binding",
+        "answer": "GLUE",
+        "row": 8,
+        "col": 9
+      },
+      {
+        "number": 44,
+        "clue": "Gets a move on",
+        "answer": "HURRIES",
+        "row": 8,
+        "col": 10
+      },
+      {
+        "number": 46,
+        "clue": "Possible pronoun pairing",
+        "answer": "HETHEY",
+        "row": 9,
+        "col": 3
+      },
+      {
+        "number": 49,
+        "clue": "Slowly, in scores",
+        "answer": "LENTO",
+        "row": 10,
+        "col": 6
+      },
+      {
+        "number": 50,
+        "clue": "Ivan the Terrible and Peter the Great",
+        "answer": "TSARS",
+        "row": 10,
+        "col": 7
+      },
+      {
+        "number": 52,
+        "clue": "Did diddly-squat",
+        "answer": "IDLED",
+        "row": 10,
+        "col": 13
+      },
+      {
+        "number": 53,
+        "clue": "Tending to cling",
+        "answer": "NEEDY",
+        "row": 10,
+        "col": 14
+      },
+      {
+        "number": 54,
+        "clue": "Winds up",
+        "answer": "ENDS",
+        "row": 11,
+        "col": 0
+      },
+      {
+        "number": 55,
+        "clue": "Debatable",
+        "answer": "MOOT",
+        "row": 11,
+        "col": 1
+      },
+      {
+        "number": 56,
+        "clue": "Cry from a crib, perhaps",
+        "answer": "PAPA",
+        "row": 11,
+        "col": 2
+      },
+      {
+        "number": 57,
+        "clue": "Britishly precious",
+        "answer": "TWEE",
+        "row": 11,
+        "col": 8
+      },
+      {
+        "number": 62,
+        "clue": "Issa of \"The Lovebirds\"",
+        "answer": "RAE",
+        "row": 12,
+        "col": 11
+      }
+    ]
+  }
+}

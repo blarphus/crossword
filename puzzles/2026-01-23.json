@@ -1,0 +1,1020 @@
+{
+  "date": "2026-01-23",
+  "title": "New York Times,Friday, January 23, 2026",
+  "author": "Joyce Keller",
+  "editor": "Will Shortz",
+  "dimensions": {
+    "rows": 15,
+    "cols": 15
+  },
+  "grid": [
+    [
+      "S",
+      "C",
+      "A",
+      "N",
+      "T",
+      ".",
+      "G",
+      "R",
+      "A",
+      "Y",
+      ".",
+      "S",
+      "M",
+      "O",
+      "G"
+    ],
+    [
+      "O",
+      "H",
+      "P",
+      "U",
+      "H",
+      "L",
+      "E",
+      "A",
+      "S",
+      "E",
+      ".",
+      "P",
+      "I",
+      "C",
+      "O"
+    ],
+    [
+      "L",
+      "E",
+      "S",
+      "B",
+      "I",
+      "A",
+      "N",
+      "B",
+      "A",
+      "R",
+      ".",
+      "A",
+      "L",
+      "T",
+      "O"
+    ],
+    [
+      "D",
+      "R",
+      "E",
+      ".",
+      "S",
+      "W",
+      "E",
+      "E",
+      "T",
+      ".",
+      "P",
+      "R",
+      "E",
+      "E",
+      "N"
+    ],
+    [
+      ".",
+      ".",
+      ".",
+      "B",
+      "O",
+      "Y",
+      "S",
+      ".",
+      "R",
+      "A",
+      "R",
+      "E",
+      "S",
+      "T",
+      "."
+    ],
+    [
+      ".",
+      "B",
+      "E",
+      "E",
+      "N",
+      "E",
+      ".",
+      "S",
+      "E",
+      "L",
+      "E",
+      "C",
+      "T",
+      ".",
+      "."
+    ],
+    [
+      "H",
+      "A",
+      "R",
+      "D",
+      "E",
+      "R",
+      ".",
+      "T",
+      "A",
+      "P",
+      "S",
+      "H",
+      "O",
+      "E",
+      "S"
+    ],
+    [
+      "U",
+      "S",
+      "E",
+      "R",
+      "S",
+      ".",
+      "N",
+      "A",
+      "T",
+      ".",
+      "S",
+      "A",
+      "N",
+      "A",
+      "A"
+    ],
+    [
+      "E",
+      "S",
+      "C",
+      "O",
+      "O",
+      "T",
+      "E",
+      "R",
+      ".",
+      "H",
+      "O",
+      "N",
+      "E",
+      "S",
+      "T"
+    ],
+    [
+      ".",
+      ".",
+      "T",
+      "O",
+      "N",
+      "G",
+      "U",
+      "E",
+      ".",
+      "A",
+      "N",
+      "G",
+      "S",
+      "T",
+      "."
+    ],
+    [
+      ".",
+      "C",
+      "O",
+      "M",
+      "M",
+      "I",
+      "T",
+      ".",
+      "T",
+      "U",
+      "N",
+      "E",
+      ".",
+      ".",
+      "."
+    ],
+    [
+      "H",
+      "I",
+      "R",
+      "E",
+      "E",
+      ".",
+      "E",
+      "L",
+      "E",
+      "N",
+      "A",
+      ".",
+      "Z",
+      "I",
+      "P"
+    ],
+    [
+      "E",
+      "A",
+      "S",
+      "Y",
+      ".",
+      "C",
+      "R",
+      "E",
+      "A",
+      "T",
+      "I",
+      "V",
+      "I",
+      "T",
+      "Y"
+    ],
+    [
+      "F",
+      "R",
+      "E",
+      "E",
+      ".",
+      "Y",
+      "E",
+      "A",
+      "R",
+      "S",
+      "L",
+      "A",
+      "T",
+      "E",
+      "R"
+    ],
+    [
+      "T",
+      "A",
+      "T",
+      "S",
+      ".",
+      "A",
+      "D",
+      "D",
+      "S",
+      ".",
+      "S",
+      "L",
+      "I",
+      "M",
+      "E"
+    ]
+  ],
+  "cellNumbers": [
+    [
+      1,
+      2,
+      3,
+      4,
+      5,
+      0,
+      6,
+      7,
+      8,
+      9,
+      0,
+      10,
+      11,
+      12,
+      13
+    ],
+    [
+      14,
+      0,
+      0,
+      0,
+      0,
+      15,
+      0,
+      0,
+      0,
+      0,
+      0,
+      16,
+      0,
+      0,
+      0
+    ],
+    [
+      17,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      18,
+      0,
+      0,
+      0
+    ],
+    [
+      19,
+      0,
+      0,
+      0,
+      20,
+      0,
+      0,
+      0,
+      0,
+      0,
+      21,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      22,
+      0,
+      0,
+      0,
+      0,
+      23,
+      24,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      25,
+      26,
+      0,
+      0,
+      0,
+      0,
+      27,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      28,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      29,
+      0,
+      0,
+      0,
+      0,
+      0,
+      30,
+      31
+    ],
+    [
+      32,
+      0,
+      0,
+      0,
+      0,
+      0,
+      33,
+      0,
+      0,
+      0,
+      34,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      35,
+      0,
+      0,
+      0,
+      0,
+      36,
+      0,
+      0,
+      0,
+      37,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      38,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      39,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      40,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      41,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      42,
+      0,
+      0,
+      0,
+      0,
+      0,
+      43,
+      44,
+      0,
+      0,
+      0,
+      0,
+      45,
+      46,
+      47
+    ],
+    [
+      48,
+      0,
+      0,
+      0,
+      0,
+      49,
+      0,
+      0,
+      0,
+      0,
+      0,
+      50,
+      0,
+      0,
+      0
+    ],
+    [
+      51,
+      0,
+      0,
+      0,
+      0,
+      52,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      53,
+      0,
+      0,
+      0,
+      0,
+      54,
+      0,
+      0,
+      0,
+      0,
+      55,
+      0,
+      0,
+      0,
+      0
+    ]
+  ],
+  "clues": {
+    "across": [
+      {
+        "number": 1,
+        "clue": "Barely enough",
+        "answer": "SCANT",
+        "row": 0,
+        "col": 0
+      },
+      {
+        "number": 6,
+        "clue": "What some may be dyeing to conceal?",
+        "answer": "GRAY",
+        "row": 0,
+        "col": 6
+      },
+      {
+        "number": 10,
+        "clue": "Environmental concern",
+        "answer": "SMOG",
+        "row": 0,
+        "col": 11
+      },
+      {
+        "number": 14,
+        "clue": "\"Don't be absurd!\"",
+        "answer": "OHPUHLEASE",
+        "row": 1,
+        "col": 0
+      },
+      {
+        "number": 16,
+        "clue": "___ Mountain (ski area in Killington, Vt.)",
+        "answer": "PICO",
+        "row": 1,
+        "col": 11
+      },
+      {
+        "number": 17,
+        "clue": "She's out there!",
+        "answer": "LESBIANBAR",
+        "row": 2,
+        "col": 0
+      },
+      {
+        "number": 18,
+        "clue": "Many a choirgirl",
+        "answer": "ALTO",
+        "row": 2,
+        "col": 11
+      },
+      {
+        "number": 19,
+        "clue": "\"Black-ish\" patriarch",
+        "answer": "DRE",
+        "row": 3,
+        "col": 0
+      },
+      {
+        "number": 20,
+        "clue": "Dulcet",
+        "answer": "SWEET",
+        "row": 3,
+        "col": 4
+      },
+      {
+        "number": 21,
+        "clue": "Fiddle with feathers, say",
+        "answer": "PREEN",
+        "row": 3,
+        "col": 10
+      },
+      {
+        "number": 22,
+        "clue": "Backstreet ___",
+        "answer": "BOYS",
+        "row": 4,
+        "col": 3
+      },
+      {
+        "number": 23,
+        "clue": "Like kyawthuite, among gems",
+        "answer": "RAREST",
+        "row": 4,
+        "col": 8
+      },
+      {
+        "number": 25,
+        "clue": "Designer Geoffrey",
+        "answer": "BEENE",
+        "row": 5,
+        "col": 1
+      },
+      {
+        "number": 27,
+        "clue": "A-list",
+        "answer": "SELECT",
+        "row": 5,
+        "col": 7
+      },
+      {
+        "number": 28,
+        "clue": "Like quartzite vis-à-vis quartz",
+        "answer": "HARDER",
+        "row": 6,
+        "col": 0
+      },
+      {
+        "number": 29,
+        "clue": "They really click as a pair",
+        "answer": "TAPSHOES",
+        "row": 6,
+        "col": 7
+      },
+      {
+        "number": 32,
+        "clue": "Masters of manipulation",
+        "answer": "USERS",
+        "row": 7,
+        "col": 0
+      },
+      {
+        "number": 33,
+        "clue": "Commercial preceder of Geo",
+        "answer": "NAT",
+        "row": 7,
+        "col": 6
+      },
+      {
+        "number": 34,
+        "clue": "Capital near the Red Sea",
+        "answer": "SANAA",
+        "row": 7,
+        "col": 10
+      },
+      {
+        "number": 35,
+        "clue": "Micromobility option",
+        "answer": "ESCOOTER",
+        "row": 8,
+        "col": 0
+      },
+      {
+        "number": 37,
+        "clue": "On the level",
+        "answer": "HONEST",
+        "row": 8,
+        "col": 9
+      },
+      {
+        "number": 38,
+        "clue": "Mouth organ",
+        "answer": "TONGUE",
+        "row": 9,
+        "col": 2
+      },
+      {
+        "number": 39,
+        "clue": "Internal turmoil",
+        "answer": "ANGST",
+        "row": 9,
+        "col": 9
+      },
+      {
+        "number": 40,
+        "clue": "Say \"I do,\" say",
+        "answer": "COMMIT",
+        "row": 10,
+        "col": 1
+      },
+      {
+        "number": 41,
+        "clue": "One may be carried in a concert hall",
+        "answer": "TUNE",
+        "row": 10,
+        "col": 8
+      },
+      {
+        "number": 42,
+        "clue": "Recent recruit",
+        "answer": "HIREE",
+        "row": 11,
+        "col": 0
+      },
+      {
+        "number": 43,
+        "clue": "First name on the Supreme Court",
+        "answer": "ELENA",
+        "row": 11,
+        "col": 6
+      },
+      {
+        "number": 45,
+        "clue": "Zilch",
+        "answer": "ZIP",
+        "row": 11,
+        "col": 12
+      },
+      {
+        "number": 48,
+        "clue": "Cushy",
+        "answer": "EASY",
+        "row": 12,
+        "col": 0
+      },
+      {
+        "number": 49,
+        "clue": "It is \"making the complicated simple, awesomely simple,\" per Charles Mingus",
+        "answer": "CREATIVITY",
+        "row": 12,
+        "col": 5
+      },
+      {
+        "number": 51,
+        "clue": "Out of joint?",
+        "answer": "FREE",
+        "row": 13,
+        "col": 0
+      },
+      {
+        "number": 52,
+        "clue": "Text insert for a flash-forward film scene",
+        "answer": "YEARSLATER",
+        "row": 13,
+        "col": 5
+      },
+      {
+        "number": 53,
+        "clue": "Ink",
+        "answer": "TATS",
+        "row": 14,
+        "col": 0
+      },
+      {
+        "number": 54,
+        "clue": "Apt rhyme for \"pads\"",
+        "answer": "ADDS",
+        "row": 14,
+        "col": 5
+      },
+      {
+        "number": 55,
+        "clue": "Guck",
+        "answer": "SLIME",
+        "row": 14,
+        "col": 10
+      }
+    ],
+    "down": [
+      {
+        "number": 1,
+        "clue": "Completely convinced",
+        "answer": "SOLD",
+        "row": 0,
+        "col": 0
+      },
+      {
+        "number": 2,
+        "clue": "French letter opener",
+        "answer": "CHER",
+        "row": 0,
+        "col": 1
+      },
+      {
+        "number": 3,
+        "clue": "Niche for a shrine",
+        "answer": "APSE",
+        "row": 0,
+        "col": 2
+      },
+      {
+        "number": 4,
+        "clue": "Essence of the matter",
+        "answer": "NUB",
+        "row": 0,
+        "col": 3
+      },
+      {
+        "number": 5,
+        "clue": "\"I'll take the blame\"",
+        "answer": "THISONESONME",
+        "row": 0,
+        "col": 4
+      },
+      {
+        "number": 6,
+        "clue": "Some body builders?",
+        "answer": "GENES",
+        "row": 0,
+        "col": 6
+      },
+      {
+        "number": 7,
+        "clue": "Broccoli ___",
+        "answer": "RABE",
+        "row": 0,
+        "col": 7
+      },
+      {
+        "number": 8,
+        "clue": "How to look at your hot fudge sundae",
+        "answer": "ASATREAT",
+        "row": 0,
+        "col": 8
+      },
+      {
+        "number": 9,
+        "clue": "A little possessive, perhaps?",
+        "answer": "YER",
+        "row": 0,
+        "col": 9
+      },
+      {
+        "number": 10,
+        "clue": "Pocket money",
+        "answer": "SPARECHANGE",
+        "row": 0,
+        "col": 11
+      },
+      {
+        "number": 11,
+        "clue": "Momentous moments",
+        "answer": "MILESTONES",
+        "row": 0,
+        "col": 12
+      },
+      {
+        "number": 12,
+        "clue": "Bits in a byte, e.g.",
+        "answer": "OCTET",
+        "row": 0,
+        "col": 13
+      },
+      {
+        "number": 13,
+        "clue": "\"I'm listening\"",
+        "answer": "GOON",
+        "row": 0,
+        "col": 14
+      },
+      {
+        "number": 15,
+        "clue": "One who's on the defense, perhaps",
+        "answer": "LAWYER",
+        "row": 1,
+        "col": 5
+      },
+      {
+        "number": 21,
+        "clue": "Digital applications?",
+        "answer": "PRESSONNAILS",
+        "row": 3,
+        "col": 10
+      },
+      {
+        "number": 22,
+        "clue": "Longing look",
+        "answer": "BEDROOMEYES",
+        "row": 4,
+        "col": 3
+      },
+      {
+        "number": 24,
+        "clue": "Rigi of Switzerland, e.g.",
+        "answer": "ALP",
+        "row": 4,
+        "col": 9
+      },
+      {
+        "number": 25,
+        "clue": "One setting on speakers",
+        "answer": "BASS",
+        "row": 5,
+        "col": 1
+      },
+      {
+        "number": 26,
+        "clue": "Classic toy for budding engineers",
+        "answer": "ERECTORSET",
+        "row": 5,
+        "col": 2
+      },
+      {
+        "number": 27,
+        "clue": "Long look",
+        "answer": "STARE",
+        "row": 5,
+        "col": 7
+      },
+      {
+        "number": 28,
+        "clue": "Peach or plum",
+        "answer": "HUE",
+        "row": 6,
+        "col": 0
+      },
+      {
+        "number": 30,
+        "clue": "Interest of Marco Polo, with \"the\"",
+        "answer": "EAST",
+        "row": 6,
+        "col": 13
+      },
+      {
+        "number": 31,
+        "clue": "Settled on the bottom?",
+        "answer": "SAT",
+        "row": 6,
+        "col": 14
+      },
+      {
+        "number": 33,
+        "clue": "Gelded",
+        "answer": "NEUTERED",
+        "row": 7,
+        "col": 6
+      },
+      {
+        "number": 36,
+        "clue": "___ Fridays",
+        "answer": "TGI",
+        "row": 8,
+        "col": 5
+      },
+      {
+        "number": 37,
+        "clue": "Hangouts",
+        "answer": "HAUNTS",
+        "row": 8,
+        "col": 9
+      },
+      {
+        "number": 40,
+        "clue": "Grammy-winning R&B singer named for a Revlon fragrance",
+        "answer": "CIARA",
+        "row": 10,
+        "col": 1
+      },
+      {
+        "number": 41,
+        "clue": "They make streaks on cheeks",
+        "answer": "TEARS",
+        "row": 10,
+        "col": 8
+      },
+      {
+        "number": 42,
+        "clue": "Mass",
+        "answer": "HEFT",
+        "row": 11,
+        "col": 0
+      },
+      {
+        "number": 44,
+        "clue": "Tip",
+        "answer": "LEAD",
+        "row": 11,
+        "col": 7
+      },
+      {
+        "number": 45,
+        "clue": "Trattoria tubes",
+        "answer": "ZITI",
+        "row": 11,
+        "col": 12
+      },
+      {
+        "number": 46,
+        "clue": "Couple",
+        "answer": "ITEM",
+        "row": 11,
+        "col": 13
+      },
+      {
+        "number": 47,
+        "clue": "Funeral ___",
+        "answer": "PYRE",
+        "row": 11,
+        "col": 14
+      },
+      {
+        "number": 49,
+        "clue": "Texter's \"ciao\"",
+        "answer": "CYA",
+        "row": 12,
+        "col": 5
+      },
+      {
+        "number": 50,
+        "clue": "Late actor Kilmer",
+        "answer": "VAL",
+        "row": 12,
+        "col": 11
+      }
+    ]
+  }
+}

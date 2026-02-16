@@ -1,0 +1,1048 @@
+{
+  "date": "2026-02-10",
+  "title": "New York Times,Tuesday, February 10, 2026",
+  "author": "Sarah Sinclair and Amie Walker",
+  "editor": "Will Shortz",
+  "dimensions": {
+    "rows": 15,
+    "cols": 15
+  },
+  "grid": [
+    [
+      "V",
+      "I",
+      "M",
+      ".",
+      ".",
+      ".",
+      "B",
+      "A",
+      "L",
+      "S",
+      "A",
+      ".",
+      "D",
+      "I",
+      "A"
+    ],
+    [
+      "I",
+      "M",
+      "A",
+      "G",
+      "E",
+      ".",
+      "A",
+      "B",
+      "A",
+      "T",
+      "E",
+      ".",
+      "I",
+      "N",
+      "N"
+    ],
+    [
+      "P",
+      "O",
+      "K",
+      "E",
+      "R",
+      "P",
+      "L",
+      "A",
+      "Y",
+      "E",
+      "R",
+      ".",
+      "V",
+      "A",
+      "T"
+    ],
+    [
+      ".",
+      ".",
+      "E",
+      "T",
+      "A",
+      "I",
+      "L",
+      ".",
+      ".",
+      "E",
+      "I",
+      "L",
+      "I",
+      "S",
+      "H"
+    ],
+    [
+      "C",
+      "F",
+      "O",
+      "S",
+      ".",
+      "P",
+      "A",
+      "L",
+      "M",
+      "R",
+      "E",
+      "A",
+      "D",
+      "E",
+      "R"
+    ],
+    [
+      "A",
+      "L",
+      "V",
+      "I",
+      "N",
+      ".",
+      "D",
+      "A",
+      "E",
+      ".",
+      ".",
+      "D",
+      "E",
+      "C",
+      "O"
+    ],
+    [
+      "N",
+      "A",
+      "E",
+      "N",
+      "A",
+      "E",
+      ".",
+      "V",
+      "E",
+      "N",
+      "T",
+      "I",
+      ".",
+      ".",
+      "."
+    ],
+    [
+      ".",
+      "M",
+      "R",
+      "S",
+      "P",
+      "O",
+      "T",
+      "A",
+      "T",
+      "O",
+      "H",
+      "E",
+      "A",
+      "D",
+      "."
+    ],
+    [
+      ".",
+      ".",
+      ".",
+      "H",
+      "A",
+      "S",
+      "U",
+      "P",
+      ".",
+      "D",
+      "I",
+      "S",
+      "B",
+      "A",
+      "R"
+    ],
+    [
+      "M",
+      "A",
+      "M",
+      "A",
+      ".",
+      ".",
+      "N",
+      "I",
+      "H",
+      ".",
+      "S",
+      "N",
+      "O",
+      "R",
+      "E"
+    ],
+    [
+      "C",
+      "L",
+      "A",
+      "P",
+      "O",
+      "M",
+      "E",
+      "T",
+      "E",
+      "R",
+      ".",
+      "I",
+      "V",
+      "A",
+      "N"
+    ],
+    [
+      "P",
+      "A",
+      "N",
+      "E",
+      "R",
+      "A",
+      ".",
+      ".",
+      "R",
+      "A",
+      "N",
+      "G",
+      "E",
+      ".",
+      "."
+    ],
+    [
+      "H",
+      "S",
+      "N",
+      ".",
+      "G",
+      "I",
+      "V",
+      "E",
+      "M",
+      "E",
+      "A",
+      "H",
+      "A",
+      "N",
+      "D"
+    ],
+    [
+      "E",
+      "K",
+      "E",
+      ".",
+      "A",
+      "N",
+      "O",
+      "D",
+      "E",
+      ".",
+      "S",
+      "T",
+      "L",
+      "E",
+      "O"
+    ],
+    [
+      "E",
+      "A",
+      "R",
+      ".",
+      "N",
+      "E",
+      "X",
+      "U",
+      "S",
+      ".",
+      ".",
+      ".",
+      "L",
+      "E",
+      "G"
+    ]
+  ],
+  "cellNumbers": [
+    [
+      1,
+      2,
+      3,
+      0,
+      0,
+      0,
+      4,
+      5,
+      6,
+      7,
+      8,
+      0,
+      9,
+      10,
+      11
+    ],
+    [
+      12,
+      0,
+      0,
+      13,
+      14,
+      0,
+      15,
+      0,
+      0,
+      0,
+      0,
+      0,
+      16,
+      0,
+      0
+    ],
+    [
+      17,
+      0,
+      0,
+      0,
+      0,
+      18,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      19,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      20,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      21,
+      0,
+      22,
+      0,
+      0,
+      0
+    ],
+    [
+      23,
+      24,
+      0,
+      0,
+      0,
+      25,
+      0,
+      26,
+      27,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      28,
+      0,
+      0,
+      0,
+      29,
+      0,
+      30,
+      0,
+      0,
+      0,
+      0,
+      31,
+      0,
+      0,
+      0
+    ],
+    [
+      32,
+      0,
+      0,
+      0,
+      0,
+      33,
+      0,
+      34,
+      0,
+      35,
+      36,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      37,
+      0,
+      0,
+      0,
+      0,
+      38,
+      0,
+      0,
+      0,
+      0,
+      0,
+      39,
+      40,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      41,
+      0,
+      0,
+      0,
+      0,
+      0,
+      42,
+      0,
+      0,
+      0,
+      0,
+      43
+    ],
+    [
+      44,
+      45,
+      46,
+      0,
+      0,
+      0,
+      47,
+      0,
+      48,
+      0,
+      49,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      50,
+      0,
+      0,
+      0,
+      51,
+      52,
+      0,
+      0,
+      0,
+      53,
+      0,
+      54,
+      0,
+      0,
+      0
+    ],
+    [
+      55,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      56,
+      0,
+      57,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      58,
+      0,
+      0,
+      0,
+      59,
+      0,
+      60,
+      61,
+      0,
+      0,
+      0,
+      0,
+      0,
+      62,
+      63
+    ],
+    [
+      64,
+      0,
+      0,
+      0,
+      65,
+      0,
+      0,
+      0,
+      0,
+      0,
+      66,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      67,
+      0,
+      0,
+      0,
+      68,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      69,
+      0,
+      0
+    ]
+  ],
+  "clues": {
+    "across": [
+      {
+        "number": 1,
+        "clue": "Pep in one's step",
+        "answer": "VIM",
+        "row": 0,
+        "col": 0
+      },
+      {
+        "number": 4,
+        "clue": "Model airplane material",
+        "answer": "BALSA",
+        "row": 0,
+        "col": 6
+      },
+      {
+        "number": 9,
+        "clue": "___ de los Muertos",
+        "answer": "DIA",
+        "row": 0,
+        "col": 12
+      },
+      {
+        "number": 12,
+        "clue": "Picture it!",
+        "answer": "IMAGE",
+        "row": 1,
+        "col": 0
+      },
+      {
+        "number": 15,
+        "clue": "Become less intense",
+        "answer": "ABATE",
+        "row": 1,
+        "col": 6
+      },
+      {
+        "number": 16,
+        "clue": "\"Holiday ___\" (1942 film with Irving Berlin songs)",
+        "answer": "INN",
+        "row": 1,
+        "col": 12
+      },
+      {
+        "number": 17,
+        "clue": "Certain casino regular",
+        "answer": "POKERPLAYER",
+        "row": 2,
+        "col": 0
+      },
+      {
+        "number": 19,
+        "clue": "Vessel that might hold dye",
+        "answer": "VAT",
+        "row": 2,
+        "col": 12
+      },
+      {
+        "number": 20,
+        "clue": "Online commerce",
+        "answer": "ETAIL",
+        "row": 3,
+        "col": 2
+      },
+      {
+        "number": 21,
+        "clue": "First Oscar winner to be born in the 21st century (for Best Original Song)",
+        "answer": "EILISH",
+        "row": 3,
+        "col": 9
+      },
+      {
+        "number": 23,
+        "clue": "$$$ execs",
+        "answer": "CFOS",
+        "row": 4,
+        "col": 0
+      },
+      {
+        "number": 25,
+        "clue": "Psychic who examines lifelines and heart lines",
+        "answer": "PALMREADER",
+        "row": 4,
+        "col": 5
+      },
+      {
+        "number": 28,
+        "clue": "Leader of the Chipmunks, in an old novelty group",
+        "answer": "ALVIN",
+        "row": 5,
+        "col": 0
+      },
+      {
+        "number": 30,
+        "clue": "\"Lost\" actor Daniel ___ Kim",
+        "answer": "DAE",
+        "row": 5,
+        "col": 6
+      },
+      {
+        "number": 31,
+        "clue": "Art ___ (geometric architectural style)",
+        "answer": "DECO",
+        "row": 5,
+        "col": 11
+      },
+      {
+        "number": 32,
+        "clue": "Viral dance of the 2010s",
+        "answer": "NAENAE",
+        "row": 6,
+        "col": 0
+      },
+      {
+        "number": 34,
+        "clue": "20-ounce Starbucks size",
+        "answer": "VENTI",
+        "row": 6,
+        "col": 7
+      },
+      {
+        "number": 37,
+        "clue": "\"Toy Story 2\" character who says \"I'm packing you an extra pair of shoes, and your angry eyes, just in case\"",
+        "answer": "MRSPOTATOHEAD",
+        "row": 7,
+        "col": 1
+      },
+      {
+        "number": 41,
+        "clue": "Invites for a nightcap, say",
+        "answer": "HASUP",
+        "row": 8,
+        "col": 3
+      },
+      {
+        "number": 42,
+        "clue": "Prohibit from practicing law",
+        "answer": "DISBAR",
+        "row": 8,
+        "col": 9
+      },
+      {
+        "number": 44,
+        "clue": "\"Don't Tell ___\" (\"Cabaret\" song)",
+        "answer": "MAMA",
+        "row": 9,
+        "col": 0
+      },
+      {
+        "number": 47,
+        "clue": "Partner of the C.D.C. and F.D.A.",
+        "answer": "NIH",
+        "row": 9,
+        "col": 6
+      },
+      {
+        "number": 49,
+        "clue": "Sound sometimes written as Z's",
+        "answer": "SNORE",
+        "row": 9,
+        "col": 10
+      },
+      {
+        "number": 50,
+        "clue": "Device measuring audience approval",
+        "answer": "CLAPOMETER",
+        "row": 10,
+        "col": 0
+      },
+      {
+        "number": 54,
+        "clue": "Denisovich or Ilyich of Russian literature",
+        "answer": "IVAN",
+        "row": 10,
+        "col": 11
+      },
+      {
+        "number": 55,
+        "clue": "\"You Pick Two\" bakery chain",
+        "answer": "PANERA",
+        "row": 11,
+        "col": 0
+      },
+      {
+        "number": 56,
+        "clue": "Word after mountain or vocal",
+        "answer": "RANGE",
+        "row": 11,
+        "col": 8
+      },
+      {
+        "number": 58,
+        "clue": "QVC alternative",
+        "answer": "HSN",
+        "row": 12,
+        "col": 0
+      },
+      {
+        "number": 59,
+        "clue": "\"I could use some help here\" ... or hint to 17-, 25-, 37- and 50-Across",
+        "answer": "GIVEMEAHAND",
+        "row": 12,
+        "col": 4
+      },
+      {
+        "number": 64,
+        "clue": "Squeak (out)",
+        "answer": "EKE",
+        "row": 13,
+        "col": 0
+      },
+      {
+        "number": 65,
+        "clue": "One terminal on a battery",
+        "answer": "ANODE",
+        "row": 13,
+        "col": 4
+      },
+      {
+        "number": 66,
+        "clue": "Catholic university whose mascot is a lion, aptly",
+        "answer": "STLEO",
+        "row": 13,
+        "col": 10
+      },
+      {
+        "number": 67,
+        "clue": "Body part that may have a ring or a stud",
+        "answer": "EAR",
+        "row": 14,
+        "col": 0
+      },
+      {
+        "number": 68,
+        "clue": "Program for expedited travel between the U.S. and Canada",
+        "answer": "NEXUS",
+        "row": 14,
+        "col": 4
+      },
+      {
+        "number": 69,
+        "clue": "Section of a journey",
+        "answer": "LEG",
+        "row": 14,
+        "col": 12
+      }
+    ],
+    "down": [
+      {
+        "number": 1,
+        "clue": "One who gets special treatment, for short",
+        "answer": "VIP",
+        "row": 0,
+        "col": 0
+      },
+      {
+        "number": 2,
+        "clue": "\"if u ask me ...\"",
+        "answer": "IMO",
+        "row": 0,
+        "col": 1
+      },
+      {
+        "number": 3,
+        "clue": "One might involve a drastic haircut and new clothes",
+        "answer": "MAKEOVER",
+        "row": 0,
+        "col": 2
+      },
+      {
+        "number": 4,
+        "clue": "Song suitable for a slow dance",
+        "answer": "BALLAD",
+        "row": 0,
+        "col": 6
+      },
+      {
+        "number": 5,
+        "clue": "Legal org.",
+        "answer": "ABA",
+        "row": 0,
+        "col": 7
+      },
+      {
+        "number": 6,
+        "clue": "Set (down)",
+        "answer": "LAY",
+        "row": 0,
+        "col": 8
+      },
+      {
+        "number": 7,
+        "clue": "Part of a cattle herd",
+        "answer": "STEER",
+        "row": 0,
+        "col": 9
+      },
+      {
+        "number": 8,
+        "clue": "American Eagle subbrand",
+        "answer": "AERIE",
+        "row": 0,
+        "col": 10
+      },
+      {
+        "number": 9,
+        "clue": "Do the splits?",
+        "answer": "DIVIDE",
+        "row": 0,
+        "col": 12
+      },
+      {
+        "number": 10,
+        "clue": "\"One moment!\"",
+        "answer": "INASEC",
+        "row": 0,
+        "col": 13
+      },
+      {
+        "number": 11,
+        "clue": "Margaret Mead's subject, informally",
+        "answer": "ANTHRO",
+        "row": 0,
+        "col": 14
+      },
+      {
+        "number": 13,
+        "clue": "Regularly hits the gym, say",
+        "answer": "GETSINSHAPE",
+        "row": 1,
+        "col": 3
+      },
+      {
+        "number": 14,
+        "clue": "Reputation or Lover, to a Swiftie",
+        "answer": "ERA",
+        "row": 1,
+        "col": 4
+      },
+      {
+        "number": 18,
+        "clue": "One of three in the Domino's logo",
+        "answer": "PIP",
+        "row": 2,
+        "col": 5
+      },
+      {
+        "number": 22,
+        "clue": "Occasion for some girl talk",
+        "answer": "LADIESNIGHT",
+        "row": 3,
+        "col": 11
+      },
+      {
+        "number": 23,
+        "clue": "Common food shelf donation",
+        "answer": "CAN",
+        "row": 4,
+        "col": 0
+      },
+      {
+        "number": 24,
+        "clue": "Flim-___",
+        "answer": "FLAM",
+        "row": 4,
+        "col": 1
+      },
+      {
+        "number": 26,
+        "clue": "Pool from a volcanic eruption",
+        "answer": "LAVAPIT",
+        "row": 4,
+        "col": 7
+      },
+      {
+        "number": 27,
+        "clue": "Cross paths",
+        "answer": "MEET",
+        "row": 4,
+        "col": 8
+      },
+      {
+        "number": 29,
+        "clue": "California wine valley",
+        "answer": "NAPA",
+        "row": 5,
+        "col": 4
+      },
+      {
+        "number": 33,
+        "clue": "Goddess of daybreak",
+        "answer": "EOS",
+        "row": 6,
+        "col": 5
+      },
+      {
+        "number": 35,
+        "clue": "Land of ___ (Genesis locale)",
+        "answer": "NOD",
+        "row": 6,
+        "col": 9
+      },
+      {
+        "number": 36,
+        "clue": "Public radio's \"___ American Life\"",
+        "answer": "THIS",
+        "row": 6,
+        "col": 10
+      },
+      {
+        "number": 38,
+        "clue": "Something to whistle",
+        "answer": "TUNE",
+        "row": 7,
+        "col": 6
+      },
+      {
+        "number": 39,
+        "clue": "First and foremost",
+        "answer": "ABOVEALL",
+        "row": 7,
+        "col": 12
+      },
+      {
+        "number": 40,
+        "clue": "Swimmer Torres with 12 Olympic medals",
+        "answer": "DARA",
+        "row": 7,
+        "col": 13
+      },
+      {
+        "number": 43,
+        "clue": "Kylo ___, \"Star Wars\" antagonist",
+        "answer": "REN",
+        "row": 8,
+        "col": 14
+      },
+      {
+        "number": 44,
+        "clue": "John ___, longtime writer for The New Yorker",
+        "answer": "MCPHEE",
+        "row": 9,
+        "col": 0
+      },
+      {
+        "number": 45,
+        "clue": "State that's the subject of 44-Down's book \"Coming Into the Country\"",
+        "answer": "ALASKA",
+        "row": 9,
+        "col": 1
+      },
+      {
+        "number": 46,
+        "clue": "Way of doing things",
+        "answer": "MANNER",
+        "row": 9,
+        "col": 2
+      },
+      {
+        "number": 48,
+        "clue": "Birkin bag maker",
+        "answer": "HERMES",
+        "row": 9,
+        "col": 8
+      },
+      {
+        "number": 51,
+        "clue": "\"The Phantom of the Opera\" instrument",
+        "answer": "ORGAN",
+        "row": 10,
+        "col": 4
+      },
+      {
+        "number": 52,
+        "clue": "Only U.S. state with a monosyllabic name",
+        "answer": "MAINE",
+        "row": 10,
+        "col": 5
+      },
+      {
+        "number": 53,
+        "clue": "Emmy-nominated Issa",
+        "answer": "RAE",
+        "row": 10,
+        "col": 9
+      },
+      {
+        "number": 57,
+        "clue": "Rapper Lil ___ X",
+        "answer": "NAS",
+        "row": 11,
+        "col": 10
+      },
+      {
+        "number": 60,
+        "clue": "News website with a Latin name",
+        "answer": "VOX",
+        "row": 12,
+        "col": 6
+      },
+      {
+        "number": 61,
+        "clue": "Email suffix once required to use Facebook",
+        "answer": "EDU",
+        "row": 12,
+        "col": 7
+      },
+      {
+        "number": 62,
+        "clue": "Formerly named",
+        "answer": "NEE",
+        "row": 12,
+        "col": 13
+      },
+      {
+        "number": 63,
+        "clue": "Snoopy or Scooby-Doo",
+        "answer": "DOG",
+        "row": 12,
+        "col": 14
+      }
+    ]
+  }
+}

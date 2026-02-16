@@ -1,0 +1,1076 @@
+{
+  "date": "2026-02-09",
+  "title": "New York Times,Monday, February 9, 2026",
+  "author": "Matthew Stock",
+  "editor": "Will Shortz",
+  "dimensions": {
+    "rows": 15,
+    "cols": 15
+  },
+  "grid": [
+    [
+      "A",
+      "T",
+      "A",
+      "D",
+      ".",
+      ".",
+      "S",
+      "E",
+      "A",
+      "S",
+      ".",
+      "S",
+      "C",
+      "A",
+      "B"
+    ],
+    [
+      "N",
+      "O",
+      "W",
+      "I",
+      "N",
+      ".",
+      "A",
+      "R",
+      "C",
+      "H",
+      ".",
+      "A",
+      "L",
+      "T",
+      "O"
+    ],
+    [
+      "G",
+      "R",
+      "A",
+      "V",
+      "Y",
+      ".",
+      "G",
+      "A",
+      "T",
+      "O",
+      ".",
+      "D",
+      "I",
+      "E",
+      "T"
+    ],
+    [
+      "L",
+      "A",
+      "S",
+      "V",
+      "E",
+      "G",
+      "A",
+      "S",
+      "S",
+      "T",
+      "R",
+      "I",
+      "P",
+      ".",
+      "."
+    ],
+    [
+      "O",
+      "H",
+      "H",
+      "I",
+      ".",
+      "U",
+      "S",
+      "E",
+      ".",
+      "P",
+      "U",
+      "E",
+      "B",
+      "L",
+      "O"
+    ],
+    [
+      ".",
+      ".",
+      ".",
+      "E",
+      "A",
+      "R",
+      ".",
+      ".",
+      "Y",
+      "U",
+      "M",
+      ".",
+      "O",
+      "A",
+      "R"
+    ],
+    [
+      "G",
+      "O",
+      "L",
+      "D",
+      "N",
+      "U",
+      "G",
+      "G",
+      "E",
+      "T",
+      ".",
+      "H",
+      "A",
+      "R",
+      "D"
+    ],
+    [
+      "I",
+      "M",
+      "O",
+      "U",
+      "T",
+      ".",
+      "L",
+      "O",
+      "L",
+      ".",
+      "G",
+      "O",
+      "R",
+      "G",
+      "E"
+    ],
+    [
+      "R",
+      "A",
+      "S",
+      "P",
+      ".",
+      "G",
+      "O",
+      "A",
+      "L",
+      "T",
+      "E",
+      "N",
+      "D",
+      "E",
+      "R"
+    ],
+    [
+      "T",
+      "N",
+      "T",
+      ".",
+      "C",
+      "A",
+      "W",
+      ".",
+      ".",
+      "E",
+      "M",
+      "O",
+      ".",
+      ".",
+      "."
+    ],
+    [
+      "H",
+      "I",
+      "C",
+      "C",
+      "U",
+      "P",
+      ".",
+      "S",
+      "I",
+      "C",
+      ".",
+      "R",
+      "I",
+      "D",
+      "E"
+    ],
+    [
+      ".",
+      ".",
+      "A",
+      "R",
+      "E",
+      "Y",
+      "O",
+      "U",
+      "C",
+      "H",
+      "I",
+      "C",
+      "K",
+      "E",
+      "N"
+    ],
+    [
+      "T",
+      "R",
+      "U",
+      "E",
+      ".",
+      "E",
+      "R",
+      "I",
+      "E",
+      ".",
+      "N",
+      "O",
+      "N",
+      "E",
+      "T"
+    ],
+    [
+      "E",
+      "A",
+      "S",
+      "E",
+      ".",
+      "A",
+      "C",
+      "N",
+      "E",
+      ".",
+      "A",
+      "D",
+      "O",
+      "R",
+      "E"
+    ],
+    [
+      "A",
+      "W",
+      "E",
+      "D",
+      ".",
+      "R",
+      "A",
+      "G",
+      "S",
+      ".",
+      ".",
+      "E",
+      "W",
+      "E",
+      "R"
+    ]
+  ],
+  "cellNumbers": [
+    [
+      1,
+      2,
+      3,
+      4,
+      0,
+      0,
+      5,
+      6,
+      7,
+      8,
+      0,
+      9,
+      10,
+      11,
+      12
+    ],
+    [
+      13,
+      0,
+      0,
+      0,
+      14,
+      0,
+      15,
+      0,
+      0,
+      0,
+      0,
+      16,
+      0,
+      0,
+      0
+    ],
+    [
+      17,
+      0,
+      0,
+      0,
+      0,
+      0,
+      18,
+      0,
+      0,
+      0,
+      0,
+      19,
+      0,
+      0,
+      0
+    ],
+    [
+      20,
+      0,
+      0,
+      0,
+      0,
+      21,
+      0,
+      0,
+      0,
+      0,
+      22,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      23,
+      0,
+      0,
+      0,
+      0,
+      24,
+      0,
+      0,
+      0,
+      25,
+      0,
+      0,
+      0,
+      26,
+      27
+    ],
+    [
+      0,
+      0,
+      0,
+      28,
+      29,
+      0,
+      0,
+      0,
+      30,
+      0,
+      0,
+      0,
+      31,
+      0,
+      0
+    ],
+    [
+      32,
+      33,
+      34,
+      0,
+      0,
+      0,
+      35,
+      36,
+      0,
+      0,
+      0,
+      37,
+      0,
+      0,
+      0
+    ],
+    [
+      38,
+      0,
+      0,
+      0,
+      0,
+      0,
+      39,
+      0,
+      0,
+      0,
+      40,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      41,
+      0,
+      0,
+      0,
+      0,
+      42,
+      0,
+      0,
+      0,
+      43,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      44,
+      0,
+      0,
+      0,
+      45,
+      0,
+      0,
+      0,
+      0,
+      46,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      47,
+      0,
+      0,
+      48,
+      0,
+      0,
+      0,
+      49,
+      50,
+      0,
+      0,
+      51,
+      52,
+      53,
+      54
+    ],
+    [
+      0,
+      0,
+      55,
+      0,
+      0,
+      0,
+      56,
+      0,
+      0,
+      0,
+      57,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      58,
+      59,
+      0,
+      0,
+      0,
+      60,
+      0,
+      0,
+      0,
+      0,
+      61,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      62,
+      0,
+      0,
+      0,
+      0,
+      63,
+      0,
+      0,
+      0,
+      0,
+      64,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      65,
+      0,
+      0,
+      0,
+      0,
+      66,
+      0,
+      0,
+      0,
+      0,
+      0,
+      67,
+      0,
+      0,
+      0
+    ]
+  ],
+  "clues": {
+    "across": [
+      {
+        "number": 1,
+        "clue": "The slightest bit",
+        "answer": "ATAD",
+        "row": 0,
+        "col": 0
+      },
+      {
+        "number": 5,
+        "clue": "Mariner's septet",
+        "answer": "SEAS",
+        "row": 0,
+        "col": 6
+      },
+      {
+        "number": 9,
+        "clue": "Picket line crosser",
+        "answer": "SCAB",
+        "row": 0,
+        "col": 11
+      },
+      {
+        "number": 13,
+        "clue": "Like a situation with only bad outcomes",
+        "answer": "NOWIN",
+        "row": 1,
+        "col": 0
+      },
+      {
+        "number": 15,
+        "clue": "St. Louis's Gateway ___ National Park",
+        "answer": "ARCH",
+        "row": 1,
+        "col": 6
+      },
+      {
+        "number": 16,
+        "clue": "Voice above tenor",
+        "answer": "ALTO",
+        "row": 1,
+        "col": 11
+      },
+      {
+        "number": 17,
+        "clue": "Thanksgiving boatful",
+        "answer": "GRAVY",
+        "row": 2,
+        "col": 0
+      },
+      {
+        "number": 18,
+        "clue": "Spanish cat",
+        "answer": "GATO",
+        "row": 2,
+        "col": 6
+      },
+      {
+        "number": 19,
+        "clue": "Nutritionist's plan",
+        "answer": "DIET",
+        "row": 2,
+        "col": 11
+      },
+      {
+        "number": 20,
+        "clue": "Main drag through Sin City",
+        "answer": "LASVEGASSTRIP",
+        "row": 3,
+        "col": 0
+      },
+      {
+        "number": 23,
+        "clue": "\"Fancy meeting you here!\"",
+        "answer": "OHHI",
+        "row": 4,
+        "col": 0
+      },
+      {
+        "number": 24,
+        "clue": "Apply, as a new skill",
+        "answer": "USE",
+        "row": 4,
+        "col": 5
+      },
+      {
+        "number": 25,
+        "clue": "Indigenous Southwestern people",
+        "answer": "PUEBLO",
+        "row": 4,
+        "col": 9
+      },
+      {
+        "number": 28,
+        "clue": "Body part that can serve as a pencil holder",
+        "answer": "EAR",
+        "row": 5,
+        "col": 3
+      },
+      {
+        "number": 30,
+        "clue": "\"Delicious!\"",
+        "answer": "YUM",
+        "row": 5,
+        "col": 8
+      },
+      {
+        "number": 31,
+        "clue": "Trireme implement",
+        "answer": "OAR",
+        "row": 5,
+        "col": 12
+      },
+      {
+        "number": 32,
+        "clue": "Valuable bit in a prospector's pan",
+        "answer": "GOLDNUGGET",
+        "row": 6,
+        "col": 0
+      },
+      {
+        "number": 37,
+        "clue": "Like sudokus with very few given digits, generally",
+        "answer": "HARD",
+        "row": 6,
+        "col": 11
+      },
+      {
+        "number": 38,
+        "clue": "\"Nope, not for me\"",
+        "answer": "IMOUT",
+        "row": 7,
+        "col": 0
+      },
+      {
+        "number": 39,
+        "clue": "Online \"haha\"",
+        "answer": "LOL",
+        "row": 7,
+        "col": 6
+      },
+      {
+        "number": 40,
+        "clue": "Steep-walled canyon",
+        "answer": "GORGE",
+        "row": 7,
+        "col": 10
+      },
+      {
+        "number": 41,
+        "clue": "Hoarse voice",
+        "answer": "RASP",
+        "row": 8,
+        "col": 0
+      },
+      {
+        "number": 42,
+        "clue": "Hockey player who typically plays the entire game",
+        "answer": "GOALTENDER",
+        "row": 8,
+        "col": 5
+      },
+      {
+        "number": 44,
+        "clue": "Explosive-sounding TV channel",
+        "answer": "TNT",
+        "row": 9,
+        "col": 0
+      },
+      {
+        "number": 45,
+        "clue": "Crow's call",
+        "answer": "CAW",
+        "row": 9,
+        "col": 4
+      },
+      {
+        "number": 46,
+        "clue": "Punk-inspired music genre",
+        "answer": "EMO",
+        "row": 9,
+        "col": 9
+      },
+      {
+        "number": 47,
+        "clue": "Minor disruption in the proceedings",
+        "answer": "HICCUP",
+        "row": 10,
+        "col": 0
+      },
+      {
+        "number": 49,
+        "clue": "[Their typo, not mine!]",
+        "answer": "SIC",
+        "row": 10,
+        "col": 7
+      },
+      {
+        "number": 51,
+        "clue": "Be a passenger",
+        "answer": "RIDE",
+        "row": 10,
+        "col": 11
+      },
+      {
+        "number": 55,
+        "clue": "Question to a scaredy-cat ... to which the final parts of 20-, 32- and 42-Across would answer \"Yes!\"",
+        "answer": "AREYOUCHICKEN",
+        "row": 11,
+        "col": 2
+      },
+      {
+        "number": 58,
+        "clue": "\"You have a point there\"",
+        "answer": "TRUE",
+        "row": 12,
+        "col": 0
+      },
+      {
+        "number": 60,
+        "clue": "Lake on Ohio's northern border",
+        "answer": "ERIE",
+        "row": 12,
+        "col": 5
+      },
+      {
+        "number": 61,
+        "clue": "Nine-member musical group",
+        "answer": "NONET",
+        "row": 12,
+        "col": 10
+      },
+      {
+        "number": 62,
+        "clue": "Lack of difficulty",
+        "answer": "EASE",
+        "row": 13,
+        "col": 0
+      },
+      {
+        "number": 63,
+        "clue": "Pimples",
+        "answer": "ACNE",
+        "row": 13,
+        "col": 5
+      },
+      {
+        "number": 64,
+        "clue": "Like a lot",
+        "answer": "ADORE",
+        "row": 13,
+        "col": 10
+      },
+      {
+        "number": 65,
+        "clue": "Amazed",
+        "answer": "AWED",
+        "row": 14,
+        "col": 0
+      },
+      {
+        "number": 66,
+        "clue": "From ___ to riches",
+        "answer": "RAGS",
+        "row": 14,
+        "col": 5
+      },
+      {
+        "number": 67,
+        "clue": "Water pitcher",
+        "answer": "EWER",
+        "row": 14,
+        "col": 11
+      }
+    ],
+    "down": [
+      {
+        "number": 1,
+        "clue": "___-Saxon",
+        "answer": "ANGLO",
+        "row": 0,
+        "col": 0
+      },
+      {
+        "number": 2,
+        "clue": "Scroll read during a bat mitzvah ceremony",
+        "answer": "TORAH",
+        "row": 0,
+        "col": 1
+      },
+      {
+        "number": 3,
+        "clue": "Overflowing (with)",
+        "answer": "AWASH",
+        "row": 0,
+        "col": 2
+      },
+      {
+        "number": 4,
+        "clue": "Apportioned",
+        "answer": "DIVVIEDUP",
+        "row": 0,
+        "col": 3
+      },
+      {
+        "number": 5,
+        "clue": "Long stories",
+        "answer": "SAGAS",
+        "row": 0,
+        "col": 6
+      },
+      {
+        "number": 6,
+        "clue": "Wipe clean",
+        "answer": "ERASE",
+        "row": 0,
+        "col": 7
+      },
+      {
+        "number": 7,
+        "clue": "\"America's Got Talent\" segments",
+        "answer": "ACTS",
+        "row": 0,
+        "col": 8
+      },
+      {
+        "number": 8,
+        "clue": "Track-and-field event with a 16-pound ball",
+        "answer": "SHOTPUT",
+        "row": 0,
+        "col": 9
+      },
+      {
+        "number": 9,
+        "clue": "British novelist Jones",
+        "answer": "SADIE",
+        "row": 0,
+        "col": 11
+      },
+      {
+        "number": 10,
+        "clue": "Portable writing surface",
+        "answer": "CLIPBOARD",
+        "row": 0,
+        "col": 12
+      },
+      {
+        "number": 11,
+        "clue": "Devoured",
+        "answer": "ATE",
+        "row": 0,
+        "col": 13
+      },
+      {
+        "number": 12,
+        "clue": "Spam spewer",
+        "answer": "BOT",
+        "row": 0,
+        "col": 14
+      },
+      {
+        "number": 14,
+        "clue": "Bill who says \"Science rules!\" in the intro to his TV show",
+        "answer": "NYE",
+        "row": 1,
+        "col": 4
+      },
+      {
+        "number": 21,
+        "clue": "Sanskrit word for \"teacher\"",
+        "answer": "GURU",
+        "row": 3,
+        "col": 5
+      },
+      {
+        "number": 22,
+        "clue": "\"Yo-ho-ho, and a bottle of ___\"",
+        "answer": "RUM",
+        "row": 3,
+        "col": 10
+      },
+      {
+        "number": 26,
+        "clue": "Massive",
+        "answer": "LARGE",
+        "row": 4,
+        "col": 13
+      },
+      {
+        "number": 27,
+        "clue": "Pick from the menu",
+        "answer": "ORDER",
+        "row": 4,
+        "col": 14
+      },
+      {
+        "number": 29,
+        "clue": "Tiny hill dweller",
+        "answer": "ANT",
+        "row": 5,
+        "col": 4
+      },
+      {
+        "number": 30,
+        "clue": "Bellow",
+        "answer": "YELL",
+        "row": 5,
+        "col": 8
+      },
+      {
+        "number": 32,
+        "clue": "Measurement around the waist",
+        "answer": "GIRTH",
+        "row": 6,
+        "col": 0
+      },
+      {
+        "number": 33,
+        "clue": "Resident of Muscat",
+        "answer": "OMANI",
+        "row": 6,
+        "col": 1
+      },
+      {
+        "number": 34,
+        "clue": "Something that's beyond help",
+        "answer": "LOSTCAUSE",
+        "row": 6,
+        "col": 2
+      },
+      {
+        "number": 35,
+        "clue": "Luminesce",
+        "answer": "GLOW",
+        "row": 6,
+        "col": 6
+      },
+      {
+        "number": 36,
+        "clue": "India's smallest state by area",
+        "answer": "GOA",
+        "row": 6,
+        "col": 7
+      },
+      {
+        "number": 37,
+        "clue": "What students abide by when they don't cheat",
+        "answer": "HONORCODE",
+        "row": 6,
+        "col": 11
+      },
+      {
+        "number": 40,
+        "clue": "Precious stone",
+        "answer": "GEM",
+        "row": 7,
+        "col": 10
+      },
+      {
+        "number": 42,
+        "clue": "Period before starting more school",
+        "answer": "GAPYEAR",
+        "row": 8,
+        "col": 5
+      },
+      {
+        "number": 43,
+        "clue": "Georgia ___ (Atlanta school)",
+        "answer": "TECH",
+        "row": 8,
+        "col": 9
+      },
+      {
+        "number": 45,
+        "clue": "Pool player's stick",
+        "answer": "CUE",
+        "row": 9,
+        "col": 4
+      },
+      {
+        "number": 48,
+        "clue": "Words to live by",
+        "answer": "CREED",
+        "row": 10,
+        "col": 3
+      },
+      {
+        "number": 49,
+        "clue": "Taking to court",
+        "answer": "SUING",
+        "row": 10,
+        "col": 7
+      },
+      {
+        "number": 50,
+        "clue": "Some frozen drinks",
+        "answer": "ICEES",
+        "row": 10,
+        "col": 8
+      },
+      {
+        "number": 52,
+        "clue": "\"No need to remind me!\"",
+        "answer": "IKNOW",
+        "row": 10,
+        "col": 12
+      },
+      {
+        "number": 53,
+        "clue": "Outdoor John?",
+        "answer": "DEERE",
+        "row": 10,
+        "col": 13
+      },
+      {
+        "number": 54,
+        "clue": "\"Come in\"",
+        "answer": "ENTER",
+        "row": 10,
+        "col": 14
+      },
+      {
+        "number": 56,
+        "clue": "Oceanic predator",
+        "answer": "ORCA",
+        "row": 11,
+        "col": 6
+      },
+      {
+        "number": 57,
+        "clue": "All ___ day's work",
+        "answer": "INA",
+        "row": 11,
+        "col": 10
+      },
+      {
+        "number": 58,
+        "clue": "Drink served by the Mad Hatter",
+        "answer": "TEA",
+        "row": 12,
+        "col": 0
+      },
+      {
+        "number": 59,
+        "clue": "Like the fish in poke",
+        "answer": "RAW",
+        "row": 12,
+        "col": 1
+      }
+    ]
+  }
+}

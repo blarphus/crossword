@@ -1,0 +1,1076 @@
+{
+  "date": "2026-01-19",
+  "title": "New York Times,Monday, January 19, 2026",
+  "author": "Peter Gorman",
+  "editor": "Will Shortz",
+  "dimensions": {
+    "rows": 15,
+    "cols": 15
+  },
+  "grid": [
+    [
+      "G",
+      "I",
+      "F",
+      "T",
+      ".",
+      "C",
+      "H",
+      "U",
+      "R",
+      "N",
+      ".",
+      "Q",
+      "T",
+      "I",
+      "P"
+    ],
+    [
+      "O",
+      "M",
+      "A",
+      "R",
+      ".",
+      "H",
+      "I",
+      "P",
+      "T",
+      "O",
+      ".",
+      "U",
+      "R",
+      "N",
+      "S"
+    ],
+    [
+      "T",
+      "I",
+      "N",
+      "Y",
+      "D",
+      "A",
+      "N",
+      "C",
+      "E",
+      "R",
+      ".",
+      "A",
+      "U",
+      "D",
+      "I"
+    ],
+    [
+      "O",
+      "N",
+      "G",
+      "O",
+      "I",
+      "N",
+      "G",
+      ".",
+      "S",
+      "M",
+      "I",
+      "L",
+      "E",
+      "Y",
+      "S"
+    ],
+    [
+      ".",
+      ".",
+      ".",
+      "U",
+      "S",
+      "T",
+      "E",
+      "D",
+      ".",
+      "A",
+      "L",
+      "I",
+      ".",
+      ".",
+      "."
+    ],
+    [
+      "C",
+      "A",
+      "S",
+      "T",
+      "S",
+      ".",
+      "S",
+      "M",
+      "A",
+      "L",
+      "L",
+      "T",
+      "O",
+      "W",
+      "N"
+    ],
+    [
+      "A",
+      "R",
+      "I",
+      "S",
+      "E",
+      "S",
+      ".",
+      "V",
+      "I",
+      "I",
+      ".",
+      "Y",
+      "U",
+      "R",
+      "I"
+    ],
+    [
+      "L",
+      "E",
+      "D",
+      ".",
+      "S",
+      "P",
+      "A",
+      ".",
+      "S",
+      "Z",
+      "A",
+      ".",
+      "T",
+      "I",
+      "N"
+    ],
+    [
+      "E",
+      "P",
+      "E",
+      "E",
+      ".",
+      "A",
+      "L",
+      "E",
+      ".",
+      "E",
+      "L",
+      "D",
+      "E",
+      "S",
+      "T"
+    ],
+    [
+      "B",
+      "A",
+      "B",
+      "Y",
+      "G",
+      "R",
+      "A",
+      "N",
+      "D",
+      ".",
+      "G",
+      "I",
+      "R",
+      "T",
+      "H"
+    ],
+    [
+      ".",
+      ".",
+      ".",
+      "E",
+      "E",
+      "K",
+      ".",
+      "D",
+      "O",
+      "J",
+      "O",
+      "S",
+      ".",
+      ".",
+      "."
+    ],
+    [
+      "U",
+      "N",
+      "K",
+      "E",
+      "M",
+      "P",
+      "T",
+      ".",
+      "C",
+      "U",
+      "R",
+      "A",
+      "C",
+      "A",
+      "O"
+    ],
+    [
+      "C",
+      "O",
+      "A",
+      "X",
+      ".",
+      "L",
+      "I",
+      "T",
+      "T",
+      "L",
+      "E",
+      "R",
+      "O",
+      "C",
+      "K"
+    ],
+    [
+      "L",
+      "A",
+      "L",
+      "A",
+      ".",
+      "U",
+      "N",
+      "S",
+      "E",
+      "E",
+      ".",
+      "M",
+      "O",
+      "R",
+      "E"
+    ],
+    [
+      "A",
+      "H",
+      "E",
+      "M",
+      ".",
+      "G",
+      "E",
+      "A",
+      "R",
+      "S",
+      ".",
+      "S",
+      "L",
+      "E",
+      "D"
+    ]
+  ],
+  "cellNumbers": [
+    [
+      1,
+      2,
+      3,
+      4,
+      0,
+      5,
+      6,
+      7,
+      8,
+      9,
+      0,
+      10,
+      11,
+      12,
+      13
+    ],
+    [
+      14,
+      0,
+      0,
+      0,
+      0,
+      15,
+      0,
+      0,
+      0,
+      0,
+      0,
+      16,
+      0,
+      0,
+      0
+    ],
+    [
+      17,
+      0,
+      0,
+      0,
+      18,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      19,
+      0,
+      0,
+      0
+    ],
+    [
+      20,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      21,
+      0,
+      22,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      23,
+      0,
+      0,
+      0,
+      24,
+      0,
+      25,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      26,
+      27,
+      28,
+      0,
+      0,
+      0,
+      29,
+      0,
+      30,
+      0,
+      0,
+      0,
+      31,
+      32,
+      33
+    ],
+    [
+      34,
+      0,
+      0,
+      0,
+      0,
+      35,
+      0,
+      36,
+      0,
+      0,
+      0,
+      37,
+      0,
+      0,
+      0
+    ],
+    [
+      38,
+      0,
+      0,
+      0,
+      39,
+      0,
+      40,
+      0,
+      41,
+      0,
+      42,
+      0,
+      43,
+      0,
+      0
+    ],
+    [
+      44,
+      0,
+      0,
+      45,
+      0,
+      46,
+      0,
+      47,
+      0,
+      48,
+      0,
+      49,
+      0,
+      0,
+      0
+    ],
+    [
+      50,
+      0,
+      0,
+      0,
+      51,
+      0,
+      0,
+      0,
+      52,
+      0,
+      53,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      54,
+      0,
+      0,
+      0,
+      55,
+      0,
+      56,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      57,
+      58,
+      59,
+      0,
+      0,
+      0,
+      60,
+      0,
+      61,
+      0,
+      0,
+      0,
+      62,
+      63,
+      64
+    ],
+    [
+      65,
+      0,
+      0,
+      0,
+      0,
+      66,
+      0,
+      67,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      68,
+      0,
+      0,
+      0,
+      0,
+      69,
+      0,
+      0,
+      0,
+      0,
+      0,
+      70,
+      0,
+      0,
+      0
+    ],
+    [
+      71,
+      0,
+      0,
+      0,
+      0,
+      72,
+      0,
+      0,
+      0,
+      0,
+      0,
+      73,
+      0,
+      0,
+      0
+    ]
+  ],
+  "clues": {
+    "across": [
+      {
+        "number": 1,
+        "clue": "Package under a Christmas tree",
+        "answer": "GIFT",
+        "row": 0,
+        "col": 0
+      },
+      {
+        "number": 5,
+        "clue": "Old-fashioned butter maker",
+        "answer": "CHURN",
+        "row": 0,
+        "col": 5
+      },
+      {
+        "number": 10,
+        "clue": "Branded cotton swab",
+        "answer": "QTIP",
+        "row": 0,
+        "col": 11
+      },
+      {
+        "number": 14,
+        "clue": "Minnesota congresswoman Ilhan",
+        "answer": "OMAR",
+        "row": 1,
+        "col": 0
+      },
+      {
+        "number": 15,
+        "clue": "In on, as a trend",
+        "answer": "HIPTO",
+        "row": 1,
+        "col": 5
+      },
+      {
+        "number": 16,
+        "clue": "Big coffee containers",
+        "answer": "URNS",
+        "row": 1,
+        "col": 11
+      },
+      {
+        "number": 17,
+        "clue": "1972 song by Elton John",
+        "answer": "TINYDANCER",
+        "row": 2,
+        "col": 0
+      },
+      {
+        "number": 19,
+        "clue": "Luxury auto whose logo is four overlapping rings",
+        "answer": "AUDI",
+        "row": 2,
+        "col": 11
+      },
+      {
+        "number": 20,
+        "clue": "In progress",
+        "answer": "ONGOING",
+        "row": 3,
+        "col": 0
+      },
+      {
+        "number": 21,
+        "clue": ":), ;), :D and others",
+        "answer": "SMILEYS",
+        "row": 3,
+        "col": 8
+      },
+      {
+        "number": 23,
+        "clue": "Formal \"you,\" in Spanish",
+        "answer": "USTED",
+        "row": 4,
+        "col": 3
+      },
+      {
+        "number": 25,
+        "clue": "Comedian Wong",
+        "answer": "ALI",
+        "row": 4,
+        "col": 9
+      },
+      {
+        "number": 26,
+        "clue": "Projects, as a shadow",
+        "answer": "CASTS",
+        "row": 5,
+        "col": 0
+      },
+      {
+        "number": 29,
+        "clue": "1985 song by John Cougar Mellencamp",
+        "answer": "SMALLTOWN",
+        "row": 5,
+        "col": 6
+      },
+      {
+        "number": 34,
+        "clue": "Comes to light",
+        "answer": "ARISES",
+        "row": 6,
+        "col": 0
+      },
+      {
+        "number": 36,
+        "clue": "X minus III, in old Rome",
+        "answer": "VII",
+        "row": 6,
+        "col": 7
+      },
+      {
+        "number": 37,
+        "clue": "Cosmonaut Gagarin",
+        "answer": "YURI",
+        "row": 6,
+        "col": 11
+      },
+      {
+        "number": 38,
+        "clue": "Held the reins",
+        "answer": "LED",
+        "row": 7,
+        "col": 0
+      },
+      {
+        "number": 39,
+        "clue": "Spot for a massage",
+        "answer": "SPA",
+        "row": 7,
+        "col": 4
+      },
+      {
+        "number": 41,
+        "clue": "R&B singer whose album \"SOS\" spent 100+ weeks in the Billboard top 10",
+        "answer": "SZA",
+        "row": 7,
+        "col": 8
+      },
+      {
+        "number": 43,
+        "clue": "Element used in bronze",
+        "answer": "TIN",
+        "row": 7,
+        "col": 12
+      },
+      {
+        "number": 44,
+        "clue": "Sporting blade",
+        "answer": "EPEE",
+        "row": 8,
+        "col": 0
+      },
+      {
+        "number": 46,
+        "clue": "Draft pick?",
+        "answer": "ALE",
+        "row": 8,
+        "col": 5
+      },
+      {
+        "number": 48,
+        "clue": "Firstborn",
+        "answer": "ELDEST",
+        "row": 8,
+        "col": 9
+      },
+      {
+        "number": 50,
+        "clue": "1987 song by Billy Joel and Ray Charles",
+        "answer": "BABYGRAND",
+        "row": 9,
+        "col": 0
+      },
+      {
+        "number": 53,
+        "clue": "Midsection measurement",
+        "answer": "GIRTH",
+        "row": 9,
+        "col": 10
+      },
+      {
+        "number": 54,
+        "clue": "Apt rhyme for \"shriek\"",
+        "answer": "EEK",
+        "row": 10,
+        "col": 3
+      },
+      {
+        "number": 55,
+        "clue": "Martial arts studios",
+        "answer": "DOJOS",
+        "row": 10,
+        "col": 7
+      },
+      {
+        "number": 57,
+        "clue": "Disheveled",
+        "answer": "UNKEMPT",
+        "row": 11,
+        "col": 0
+      },
+      {
+        "number": 61,
+        "clue": "Caribbean island with a liqueur named for it",
+        "answer": "CURACAO",
+        "row": 11,
+        "col": 8
+      },
+      {
+        "number": 65,
+        "clue": "Gently persuade",
+        "answer": "COAX",
+        "row": 12,
+        "col": 0
+      },
+      {
+        "number": 66,
+        "clue": "Capital of Arkansas ... or a description of 17-, 29- and 50-Across?",
+        "answer": "LITTLEROCK",
+        "row": 12,
+        "col": 5
+      },
+      {
+        "number": 68,
+        "clue": "In ___ land (daydreaming)",
+        "answer": "LALA",
+        "row": 13,
+        "col": 0
+      },
+      {
+        "number": 69,
+        "clue": "\"I wish I could ___ that!\"",
+        "answer": "UNSEE",
+        "row": 13,
+        "col": 5
+      },
+      {
+        "number": 70,
+        "clue": "A second helping, say",
+        "answer": "MORE",
+        "row": 13,
+        "col": 11
+      },
+      {
+        "number": 71,
+        "clue": "\"Excuse me ...\"",
+        "answer": "AHEM",
+        "row": 14,
+        "col": 0
+      },
+      {
+        "number": 72,
+        "clue": "Things shifted on a bicycle or in a car",
+        "answer": "GEARS",
+        "row": 14,
+        "col": 5
+      },
+      {
+        "number": 73,
+        "clue": "Winter coaster",
+        "answer": "SLED",
+        "row": 14,
+        "col": 11
+      }
+    ],
+    "down": [
+      {
+        "number": 1,
+        "clue": "___ Jail (space on a Monopoly board)",
+        "answer": "GOTO",
+        "row": 0,
+        "col": 0
+      },
+      {
+        "number": 2,
+        "clue": "\"Sign me up!\"",
+        "answer": "IMIN",
+        "row": 0,
+        "col": 1
+      },
+      {
+        "number": 3,
+        "clue": "Vampire's tooth",
+        "answer": "FANG",
+        "row": 0,
+        "col": 2
+      },
+      {
+        "number": 4,
+        "clue": "Auditions",
+        "answer": "TRYOUTS",
+        "row": 0,
+        "col": 3
+      },
+      {
+        "number": 5,
+        "clue": "\"U-S-A! U-S-A! ...,\" e.g.",
+        "answer": "CHANT",
+        "row": 0,
+        "col": 5
+      },
+      {
+        "number": 6,
+        "clue": "Movable joints on a door",
+        "answer": "HINGES",
+        "row": 0,
+        "col": 6
+      },
+      {
+        "number": 7,
+        "clue": "___ code (what most product packages have)",
+        "answer": "UPC",
+        "row": 0,
+        "col": 7
+      },
+      {
+        "number": 8,
+        "clue": "Google Maps options: Abbr.",
+        "answer": "RTES",
+        "row": 0,
+        "col": 8
+      },
+      {
+        "number": 9,
+        "clue": "Bring into the mainstream",
+        "answer": "NORMALIZE",
+        "row": 0,
+        "col": 9
+      },
+      {
+        "number": 10,
+        "clue": "Counterpart of quantity",
+        "answer": "QUALITY",
+        "row": 0,
+        "col": 11
+      },
+      {
+        "number": 11,
+        "clue": "Factual",
+        "answer": "TRUE",
+        "row": 0,
+        "col": 12
+      },
+      {
+        "number": 12,
+        "clue": "Where the N.F.L.'s Colts play, informally",
+        "answer": "INDY",
+        "row": 0,
+        "col": 13
+      },
+      {
+        "number": 13,
+        "clue": "Letters before omegas",
+        "answer": "PSIS",
+        "row": 0,
+        "col": 14
+      },
+      {
+        "number": 18,
+        "clue": "Insults",
+        "answer": "DISSES",
+        "row": 2,
+        "col": 4
+      },
+      {
+        "number": 22,
+        "clue": "Springfield is its capital: Abbr.",
+        "answer": "ILL",
+        "row": 3,
+        "col": 10
+      },
+      {
+        "number": 24,
+        "clue": "Org. with notoriously long lines",
+        "answer": "DMV",
+        "row": 4,
+        "col": 7
+      },
+      {
+        "number": 26,
+        "clue": "Biblical spy for Moses",
+        "answer": "CALEB",
+        "row": 5,
+        "col": 0
+      },
+      {
+        "number": 27,
+        "clue": "South American flatbread",
+        "answer": "AREPA",
+        "row": 5,
+        "col": 1
+      },
+      {
+        "number": 28,
+        "clue": "Lesser-played part of a 45",
+        "answer": "SIDEB",
+        "row": 5,
+        "col": 2
+      },
+      {
+        "number": 30,
+        "clue": "ChatGPT and Google Gemini, for two",
+        "answer": "AIS",
+        "row": 5,
+        "col": 8
+      },
+      {
+        "number": 31,
+        "clue": "Word before space or Mongolia",
+        "answer": "OUTER",
+        "row": 5,
+        "col": 12
+      },
+      {
+        "number": 32,
+        "clue": "Spot to find a pulse",
+        "answer": "WRIST",
+        "row": 5,
+        "col": 13
+      },
+      {
+        "number": 33,
+        "clue": "Final inning, typically",
+        "answer": "NINTH",
+        "row": 5,
+        "col": 14
+      },
+      {
+        "number": 35,
+        "clue": "Device for starting an engine",
+        "answer": "SPARKPLUG",
+        "row": 6,
+        "col": 5
+      },
+      {
+        "number": 40,
+        "clue": "In the style of",
+        "answer": "ALA",
+        "row": 7,
+        "col": 6
+      },
+      {
+        "number": 42,
+        "clue": "Former vice president who won a Nobel Peace Prize",
+        "answer": "ALGORE",
+        "row": 7,
+        "col": 10
+      },
+      {
+        "number": 45,
+        "clue": "Test taken at the 24-Down",
+        "answer": "EYEEXAM",
+        "row": 8,
+        "col": 3
+      },
+      {
+        "number": 47,
+        "clue": "Finale",
+        "answer": "END",
+        "row": 8,
+        "col": 7
+      },
+      {
+        "number": 49,
+        "clue": "Wins over with charm",
+        "answer": "DISARMS",
+        "row": 8,
+        "col": 11
+      },
+      {
+        "number": 51,
+        "clue": "Jewel",
+        "answer": "GEM",
+        "row": 9,
+        "col": 4
+      },
+      {
+        "number": 52,
+        "clue": "Pete who directed \"Up,\" \"Inside Out\" and \"Soul\"",
+        "answer": "DOCTER",
+        "row": 9,
+        "col": 8
+      },
+      {
+        "number": 56,
+        "clue": "Novelist Verne",
+        "answer": "JULES",
+        "row": 10,
+        "col": 9
+      },
+      {
+        "number": 57,
+        "clue": "The N.C.A.A.'s Bruins",
+        "answer": "UCLA",
+        "row": 11,
+        "col": 0
+      },
+      {
+        "number": 58,
+        "clue": "Biblical ark builder",
+        "answer": "NOAH",
+        "row": 11,
+        "col": 1
+      },
+      {
+        "number": 59,
+        "clue": "Dark leafy green",
+        "answer": "KALE",
+        "row": 11,
+        "col": 2
+      },
+      {
+        "number": 60,
+        "clue": "Fork prong",
+        "answer": "TINE",
+        "row": 11,
+        "col": 6
+      },
+      {
+        "number": 62,
+        "clue": "Chilly",
+        "answer": "COOL",
+        "row": 11,
+        "col": 12
+      },
+      {
+        "number": 63,
+        "clue": "Surveyor's measure",
+        "answer": "ACRE",
+        "row": 11,
+        "col": 13
+      },
+      {
+        "number": 64,
+        "clue": "Gave a thumbs-up",
+        "answer": "OKED",
+        "row": 11,
+        "col": 14
+      },
+      {
+        "number": 67,
+        "clue": "Airport screening grp.",
+        "answer": "TSA",
+        "row": 12,
+        "col": 7
+      }
+    ]
+  }
+}

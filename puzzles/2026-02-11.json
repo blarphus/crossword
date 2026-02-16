@@ -1,0 +1,1113 @@
+{
+  "date": "2026-02-11",
+  "title": "New York Times,Wednesday, February 11, 2026",
+  "author": "Joseph Gangi",
+  "editor": "Will Shortz",
+  "dimensions": {
+    "rows": 15,
+    "cols": 16
+  },
+  "grid": [
+    [
+      "W",
+      "A",
+      "L",
+      "R",
+      "U",
+      "S",
+      ".",
+      "S",
+      "H",
+      "O",
+      "E",
+      ".",
+      "A",
+      "S",
+      "I",
+      "F"
+    ],
+    [
+      "A",
+      "M",
+      "O",
+      "U",
+      "N",
+      "T",
+      ".",
+      "Y",
+      "O",
+      "U",
+      "L",
+      "O",
+      "S",
+      "T",
+      "M",
+      "E"
+    ],
+    [
+      "G",
+      "O",
+      "O",
+      "D",
+      "N",
+      "E",
+      "S",
+      "S",
+      "G",
+      "R",
+      "A",
+      "C",
+      "I",
+      "O",
+      "U",
+      "S"
+    ],
+    [
+      ".",
+      "S",
+      "N",
+      "E",
+      "E",
+      "R",
+      "A",
+      "T",
+      ".",
+      ".",
+      ".",
+      "T",
+      "A",
+      "R",
+      "P",
+      "S"
+    ],
+    [
+      ".",
+      ".",
+      ".",
+      ".",
+      "E",
+      "E",
+      "N",
+      ".",
+      "A",
+      "R",
+      "C",
+      "A",
+      "N",
+      "A",
+      ".",
+      "."
+    ],
+    [
+      "E",
+      "E",
+      "O",
+      ".",
+      "D",
+      "O",
+      "G",
+      "B",
+      "R",
+      "E",
+      "E",
+      "D",
+      ".",
+      "G",
+      "P",
+      "A"
+    ],
+    [
+      "D",
+      "E",
+      "F",
+      "I",
+      "E",
+      "S",
+      ".",
+      "L",
+      "I",
+      "F",
+      "E",
+      ".",
+      "B",
+      "E",
+      "A",
+      "M"
+    ],
+    [
+      "G",
+      "R",
+      "I",
+      "N",
+      "D",
+      ".",
+      "S",
+      "A",
+      "S",
+      "S",
+      ".",
+      "S",
+      "O",
+      "F",
+      "I",
+      "A"
+    ],
+    [
+      "E",
+      "I",
+      "N",
+      "S",
+      ".",
+      "M",
+      "I",
+      "R",
+      "E",
+      ".",
+      "C",
+      "A",
+      "T",
+      "E",
+      "R",
+      "S"
+    ],
+    [
+      "S",
+      "E",
+      "T",
+      ".",
+      "S",
+      "A",
+      "F",
+      "E",
+      "S",
+      "E",
+      "A",
+      "T",
+      ".",
+      "E",
+      "S",
+      "S"
+    ],
+    [
+      ".",
+      ".",
+      "E",
+      "J",
+      "E",
+      "C",
+      "T",
+      "S",
+      ".",
+      "O",
+      "P",
+      "I",
+      ".",
+      ".",
+      ".",
+      "."
+    ],
+    [
+      "L",
+      "O",
+      "R",
+      "D",
+      "E",
+      ".",
+      ".",
+      ".",
+      "E",
+      "N",
+      "S",
+      "N",
+      "A",
+      "R",
+      "E",
+      "."
+    ],
+    [
+      "G",
+      "R",
+      "E",
+      "A",
+      "T",
+      "B",
+      "A",
+      "L",
+      "L",
+      "S",
+      "O",
+      "F",
+      "F",
+      "I",
+      "R",
+      "E"
+    ],
+    [
+      "B",
+      "E",
+      "S",
+      "T",
+      "O",
+      "F",
+      "A",
+      "L",
+      "L",
+      ".",
+      "F",
+      "O",
+      "R",
+      "M",
+      "A",
+      "L"
+    ],
+    [
+      "T",
+      "O",
+      "T",
+      "E",
+      ".",
+      "F",
+      "A",
+      "C",
+      "E",
+      ".",
+      "F",
+      "R",
+      "O",
+      "S",
+      "T",
+      "S"
+    ]
+  ],
+  "cellNumbers": [
+    [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      0,
+      7,
+      8,
+      9,
+      10,
+      0,
+      11,
+      12,
+      13,
+      14
+    ],
+    [
+      15,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      16,
+      0,
+      0,
+      0,
+      17,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      18,
+      0,
+      0,
+      0,
+      0,
+      0,
+      19,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      20,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      21,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      0,
+      22,
+      0,
+      0,
+      0,
+      23,
+      24,
+      25,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      26,
+      27,
+      28,
+      0,
+      29,
+      0,
+      0,
+      30,
+      0,
+      0,
+      0,
+      0,
+      0,
+      31,
+      32,
+      33
+    ],
+    [
+      34,
+      0,
+      0,
+      35,
+      0,
+      0,
+      0,
+      36,
+      0,
+      0,
+      0,
+      0,
+      37,
+      0,
+      0,
+      0
+    ],
+    [
+      38,
+      0,
+      0,
+      0,
+      0,
+      0,
+      39,
+      0,
+      0,
+      0,
+      0,
+      40,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      41,
+      0,
+      0,
+      0,
+      0,
+      42,
+      0,
+      0,
+      0,
+      0,
+      43,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      44,
+      0,
+      0,
+      0,
+      45,
+      0,
+      0,
+      0,
+      0,
+      46,
+      0,
+      0,
+      0,
+      47,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      48,
+      49,
+      0,
+      0,
+      0,
+      0,
+      0,
+      50,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      51,
+      52,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      53,
+      0,
+      0,
+      0,
+      54,
+      55,
+      56,
+      0
+    ],
+    [
+      57,
+      0,
+      0,
+      0,
+      0,
+      58,
+      59,
+      60,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      61
+    ],
+    [
+      62,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      63,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      64,
+      0,
+      0,
+      0,
+      0,
+      65,
+      0,
+      0,
+      0,
+      0,
+      66,
+      0,
+      0,
+      0,
+      0,
+      0
+    ]
+  ],
+  "clues": {
+    "across": [
+      {
+        "number": 1,
+        "clue": "Lewis Carroll's \"The ___ and the Carpenter\"",
+        "answer": "WALRUS",
+        "row": 0,
+        "col": 0
+      },
+      {
+        "number": 7,
+        "clue": "Something you might leave at the front door when entering a house",
+        "answer": "SHOE",
+        "row": 0,
+        "col": 7
+      },
+      {
+        "number": 11,
+        "clue": "\"Yeah, right!\"",
+        "answer": "ASIF",
+        "row": 0,
+        "col": 12
+      },
+      {
+        "number": 15,
+        "clue": "Quantity",
+        "answer": "AMOUNT",
+        "row": 1,
+        "col": 0
+      },
+      {
+        "number": 16,
+        "clue": "Words from someone who failed to understand",
+        "answer": "YOULOSTME",
+        "row": 1,
+        "col": 7
+      },
+      {
+        "number": 18,
+        "clue": "\"Oh, for heaven's sake!\"",
+        "answer": "GOODNESSGRACIOUS",
+        "row": 2,
+        "col": 0
+      },
+      {
+        "number": 20,
+        "clue": "Show contempt for, in a way",
+        "answer": "SNEERAT",
+        "row": 3,
+        "col": 1
+      },
+      {
+        "number": 21,
+        "clue": "Rain delay coverings",
+        "answer": "TARPS",
+        "row": 3,
+        "col": 11
+      },
+      {
+        "number": 22,
+        "clue": "Poet's dusk",
+        "answer": "EEN",
+        "row": 4,
+        "col": 4
+      },
+      {
+        "number": 23,
+        "clue": "Mystical stuff",
+        "answer": "ARCANA",
+        "row": 4,
+        "col": 8
+      },
+      {
+        "number": 26,
+        "clue": "\"We don't discriminate in this workplace,\" in job ads",
+        "answer": "EEO",
+        "row": 5,
+        "col": 0
+      },
+      {
+        "number": 29,
+        "clue": "Newfoundland or Labrador retriever",
+        "answer": "DOGBREED",
+        "row": 5,
+        "col": 4
+      },
+      {
+        "number": 31,
+        "clue": "Transcript fig.",
+        "answer": "GPA",
+        "row": 5,
+        "col": 13
+      },
+      {
+        "number": 34,
+        "clue": "Openly resists",
+        "answer": "DEFIES",
+        "row": 6,
+        "col": 0
+      },
+      {
+        "number": 36,
+        "clue": "\"Then, window, let day in, and let ___ out\": Juliet",
+        "answer": "LIFE",
+        "row": 6,
+        "col": 7
+      },
+      {
+        "number": 37,
+        "clue": "Smile broadly",
+        "answer": "BEAM",
+        "row": 6,
+        "col": 12
+      },
+      {
+        "number": 38,
+        "clue": "Arduous routine",
+        "answer": "GRIND",
+        "row": 7,
+        "col": 0
+      },
+      {
+        "number": 39,
+        "clue": "Get smart?",
+        "answer": "SASS",
+        "row": 7,
+        "col": 6
+      },
+      {
+        "number": 40,
+        "clue": "\"Priscilla\" director Coppola",
+        "answer": "SOFIA",
+        "row": 7,
+        "col": 11
+      },
+      {
+        "number": 41,
+        "clue": "How a German count might get started",
+        "answer": "EINS",
+        "row": 8,
+        "col": 0
+      },
+      {
+        "number": 42,
+        "clue": "Swampy land",
+        "answer": "MIRE",
+        "row": 8,
+        "col": 5
+      },
+      {
+        "number": 43,
+        "clue": "Does the dishes?",
+        "answer": "CATERS",
+        "row": 8,
+        "col": 10
+      },
+      {
+        "number": 44,
+        "clue": "Complete collection",
+        "answer": "SET",
+        "row": 9,
+        "col": 0
+      },
+      {
+        "number": 45,
+        "clue": "Hoped-for prognosis for an election incumbent",
+        "answer": "SAFESEAT",
+        "row": 9,
+        "col": 4
+      },
+      {
+        "number": 47,
+        "clue": "Twisty curve",
+        "answer": "ESS",
+        "row": 9,
+        "col": 13
+      },
+      {
+        "number": 48,
+        "clue": "Spews out",
+        "answer": "EJECTS",
+        "row": 10,
+        "col": 2
+      },
+      {
+        "number": 50,
+        "clue": "Big name in nail polish",
+        "answer": "OPI",
+        "row": 10,
+        "col": 9
+      },
+      {
+        "number": 51,
+        "clue": "One-named singer with the 2017 platinum album \"Melodrama\"",
+        "answer": "LORDE",
+        "row": 11,
+        "col": 0
+      },
+      {
+        "number": 53,
+        "clue": "Trap",
+        "answer": "ENSNARE",
+        "row": 11,
+        "col": 8
+      },
+      {
+        "number": 57,
+        "clue": "1957 rock 'n' roll classic suggested by this puzzle's circled letters",
+        "answer": "GREATBALLSOFFIRE",
+        "row": 12,
+        "col": 0
+      },
+      {
+        "number": 62,
+        "clue": "Crème de la crème",
+        "answer": "BESTOFALL",
+        "row": 13,
+        "col": 0
+      },
+      {
+        "number": 63,
+        "clue": "Prom, e.g.",
+        "answer": "FORMAL",
+        "row": 13,
+        "col": 10
+      },
+      {
+        "number": 64,
+        "clue": "Iconic bit of NPR merch",
+        "answer": "TOTE",
+        "row": 14,
+        "col": 0
+      },
+      {
+        "number": 65,
+        "clue": "Confront",
+        "answer": "FACE",
+        "row": 14,
+        "col": 5
+      },
+      {
+        "number": 66,
+        "clue": "Puts icing on",
+        "answer": "FROSTS",
+        "row": 14,
+        "col": 10
+      }
+    ],
+    "down": [
+      {
+        "number": 1,
+        "clue": "Tail or finger motion",
+        "answer": "WAG",
+        "row": 0,
+        "col": 0
+      },
+      {
+        "number": 2,
+        "clue": "Andy's partner in an old radio sitcom",
+        "answer": "AMOS",
+        "row": 0,
+        "col": 1
+      },
+      {
+        "number": 3,
+        "clue": "State bird of Minnesota",
+        "answer": "LOON",
+        "row": 0,
+        "col": 2
+      },
+      {
+        "number": 4,
+        "clue": "Ill-mannered",
+        "answer": "RUDE",
+        "row": 0,
+        "col": 3
+      },
+      {
+        "number": 5,
+        "clue": "Superfluous",
+        "answer": "UNNEEDED",
+        "row": 0,
+        "col": 4
+      },
+      {
+        "number": 6,
+        "clue": "Purchases for some audiophiles",
+        "answer": "STEREOS",
+        "row": 0,
+        "col": 5
+      },
+      {
+        "number": 7,
+        "clue": "Part of GPS: Abbr.",
+        "answer": "SYST",
+        "row": 0,
+        "col": 7
+      },
+      {
+        "number": 8,
+        "clue": "Not share, as the covers",
+        "answer": "HOG",
+        "row": 0,
+        "col": 8
+      },
+      {
+        "number": 9,
+        "clue": "Taylor Swift's \"___ Song\"",
+        "answer": "OUR",
+        "row": 0,
+        "col": 9
+      },
+      {
+        "number": 10,
+        "clue": "She, in São Paulo",
+        "answer": "ELA",
+        "row": 0,
+        "col": 10
+      },
+      {
+        "number": 11,
+        "clue": "___ pear (applelike fruit)",
+        "answer": "ASIAN",
+        "row": 0,
+        "col": 12
+      },
+      {
+        "number": 12,
+        "clue": "Cost required to stow furniture, say",
+        "answer": "STORAGEFEE",
+        "row": 0,
+        "col": 13
+      },
+      {
+        "number": 13,
+        "clue": "\"My turn to play!\"",
+        "answer": "IMUP",
+        "row": 0,
+        "col": 14
+      },
+      {
+        "number": 14,
+        "clue": "Come clean, with \"up\"",
+        "answer": "FESS",
+        "row": 0,
+        "col": 15
+      },
+      {
+        "number": 17,
+        "clue": "Eightsome",
+        "answer": "OCTAD",
+        "row": 1,
+        "col": 11
+      },
+      {
+        "number": 19,
+        "clue": "Belted out",
+        "answer": "SANG",
+        "row": 2,
+        "col": 6
+      },
+      {
+        "number": 23,
+        "clue": "Comes into play",
+        "answer": "ARISES",
+        "row": 4,
+        "col": 8
+      },
+      {
+        "number": 24,
+        "clue": "Play callers?",
+        "answer": "REFS",
+        "row": 4,
+        "col": 9
+      },
+      {
+        "number": 25,
+        "clue": "It's for \"cookie,\" to Cookie Monster",
+        "answer": "CEE",
+        "row": 4,
+        "col": 10
+      },
+      {
+        "number": 26,
+        "clue": "Sides",
+        "answer": "EDGES",
+        "row": 5,
+        "col": 0
+      },
+      {
+        "number": 27,
+        "clue": "Inducing goose bumps",
+        "answer": "EERIE",
+        "row": 5,
+        "col": 1
+      },
+      {
+        "number": 28,
+        "clue": "Worth exploring",
+        "answer": "OFINTEREST",
+        "row": 5,
+        "col": 2
+      },
+      {
+        "number": 30,
+        "clue": "Plays at full blast",
+        "answer": "BLARES",
+        "row": 5,
+        "col": 7
+      },
+      {
+        "number": 32,
+        "clue": "What pants come in that shirts don't",
+        "answer": "PAIRS",
+        "row": 5,
+        "col": 14
+      },
+      {
+        "number": 33,
+        "clue": "Accumulate",
+        "answer": "AMASS",
+        "row": 5,
+        "col": 15
+      },
+      {
+        "number": 35,
+        "clue": "Useful contacts",
+        "answer": "INS",
+        "row": 6,
+        "col": 3
+      },
+      {
+        "number": 37,
+        "clue": "Online automaton",
+        "answer": "BOT",
+        "row": 6,
+        "col": 12
+      },
+      {
+        "number": 39,
+        "clue": "Search (through)",
+        "answer": "SIFT",
+        "row": 7,
+        "col": 6
+      },
+      {
+        "number": 40,
+        "clue": "Replaced as a substitute",
+        "answer": "SATINFOR",
+        "row": 7,
+        "col": 11
+      },
+      {
+        "number": 42,
+        "clue": "___ and cheese",
+        "answer": "MAC",
+        "row": 8,
+        "col": 5
+      },
+      {
+        "number": 43,
+        "clue": "Finishes with flair",
+        "answer": "CAPSOFF",
+        "row": 8,
+        "col": 10
+      },
+      {
+        "number": 45,
+        "clue": "Take care of, as a task",
+        "answer": "SEETO",
+        "row": 9,
+        "col": 4
+      },
+      {
+        "number": 46,
+        "clue": "Seeming eternities",
+        "answer": "EONS",
+        "row": 9,
+        "col": 9
+      },
+      {
+        "number": 49,
+        "clue": "Matchmaking site with a \"synagogue attendance\" filter",
+        "answer": "JDATE",
+        "row": 10,
+        "col": 3
+      },
+      {
+        "number": 51,
+        "clue": "Pride Month letters",
+        "answer": "LGBT",
+        "row": 11,
+        "col": 0
+      },
+      {
+        "number": 52,
+        "clue": "Black-and-white mouthful",
+        "answer": "OREO",
+        "row": 11,
+        "col": 1
+      },
+      {
+        "number": 53,
+        "clue": "Actress Fanning",
+        "answer": "ELLE",
+        "row": 11,
+        "col": 8
+      },
+      {
+        "number": 54,
+        "clue": "Lead-in to Cuban or Caribbean",
+        "answer": "AFRO",
+        "row": 11,
+        "col": 12
+      },
+      {
+        "number": 55,
+        "clue": "Glasses sans glass",
+        "answer": "RIMS",
+        "row": 11,
+        "col": 13
+      },
+      {
+        "number": 56,
+        "clue": "Q.E.D. part",
+        "answer": "ERAT",
+        "row": 11,
+        "col": 14
+      },
+      {
+        "number": 58,
+        "clue": "Fave pal",
+        "answer": "BFF",
+        "row": 12,
+        "col": 5
+      },
+      {
+        "number": 59,
+        "clue": "Small battery",
+        "answer": "AAA",
+        "row": 12,
+        "col": 6
+      },
+      {
+        "number": 60,
+        "clue": "Cousin of Inc.",
+        "answer": "LLC",
+        "row": 12,
+        "col": 7
+      },
+      {
+        "number": 61,
+        "clue": "Enrollment center?",
+        "answer": "ELS",
+        "row": 12,
+        "col": 15
+      }
+    ]
+  }
+}

@@ -1,0 +1,1048 @@
+{
+  "date": "2026-01-22",
+  "title": "New York Times,Thursday, January 22, 2026",
+  "author": "Joe DiPietro",
+  "editor": "Will Shortz",
+  "dimensions": {
+    "rows": 15,
+    "cols": 15
+  },
+  "grid": [
+    [
+      "P",
+      "I",
+      "N",
+      "T",
+      ".",
+      "V",
+      "S",
+      "O",
+      "P",
+      ".",
+      "A",
+      "N",
+      "T",
+      "I",
+      "C"
+    ],
+    [
+      "I",
+      "S",
+      "I",
+      "S",
+      ".",
+      "O",
+      "H",
+      "H",
+      "I",
+      ".",
+      "P",
+      "O",
+      "R",
+      "N",
+      "O"
+    ],
+    [
+      "T",
+      "I",
+      "C",
+      "K",
+      ".",
+      "C",
+      "O",
+      "M",
+      "E",
+      "R",
+      "E",
+      "D",
+      "A",
+      "S",
+      "S"
+    ],
+    [
+      "S",
+      "T",
+      "E",
+      "T",
+      "T",
+      "E",
+      "D",
+      ".",
+      "R",
+      "U",
+      "M",
+      ".",
+      "F",
+      "E",
+      "E"
+    ],
+    [
+      "A",
+      "N",
+      "T",
+      "S",
+      "Y",
+      ".",
+      ".",
+      "U",
+      "C",
+      "L",
+      "A",
+      ".",
+      "F",
+      "C",
+      "C"
+    ],
+    [
+      "W",
+      "O",
+      "R",
+      "K",
+      "I",
+      "N",
+      "G",
+      "R",
+      "E",
+      "E",
+      "N",
+      "N",
+      "I",
+      "T",
+      "."
+    ],
+    [
+      "S",
+      "T",
+      "Y",
+      ".",
+      "N",
+      "O",
+      "E",
+      "N",
+      "D",
+      ".",
+      ".",
+      "A",
+      "C",
+      "S",
+      "."
+    ],
+    [
+      ".",
+      ".",
+      ".",
+      "M",
+      "G",
+      "M",
+      "T",
+      ".",
+      "E",
+      "T",
+      "C",
+      "H",
+      ".",
+      ".",
+      "."
+    ],
+    [
+      ".",
+      "A",
+      "W",
+      "E",
+      ".",
+      ".",
+      "U",
+      "R",
+      "A",
+      "N",
+      "O",
+      ".",
+      "S",
+      "A",
+      "D"
+    ],
+    [
+      ".",
+      "L",
+      "O",
+      "R",
+      "E",
+      "D",
+      "P",
+      "O",
+      "R",
+      "T",
+      "U",
+      "N",
+      "I",
+      "T",
+      "Y"
+    ],
+    [
+      "M",
+      "L",
+      "K",
+      ".",
+      "V",
+      "A",
+      "S",
+      "T",
+      ".",
+      ".",
+      "R",
+      "O",
+      "G",
+      "E",
+      "N"
+    ],
+    [
+      "I",
+      "R",
+      "E",
+      ".",
+      "E",
+      "M",
+      "T",
+      ".",
+      "E",
+      "S",
+      "T",
+      "O",
+      "N",
+      "I",
+      "A"
+    ],
+    [
+      "X",
+      "I",
+      "N",
+      "G",
+      "R",
+      "E",
+      "E",
+      "N",
+      "U",
+      "T",
+      ".",
+      "D",
+      "A",
+      "T",
+      "S"
+    ],
+    [
+      "U",
+      "S",
+      "U",
+      "A",
+      "L",
+      ".",
+      "A",
+      "E",
+      "R",
+      "O",
+      ".",
+      "G",
+      "L",
+      "U",
+      "T"
+    ],
+    [
+      "P",
+      "E",
+      "P",
+      "P",
+      "Y",
+      ".",
+      "M",
+      "E",
+      "O",
+      "W",
+      ".",
+      "E",
+      "S",
+      "P",
+      "Y"
+    ]
+  ],
+  "cellNumbers": [
+    [
+      1,
+      2,
+      3,
+      4,
+      0,
+      5,
+      6,
+      7,
+      8,
+      0,
+      9,
+      10,
+      11,
+      12,
+      13
+    ],
+    [
+      14,
+      0,
+      0,
+      0,
+      0,
+      15,
+      0,
+      0,
+      0,
+      0,
+      16,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      17,
+      0,
+      0,
+      0,
+      0,
+      18,
+      0,
+      0,
+      0,
+      19,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      20,
+      0,
+      0,
+      0,
+      21,
+      0,
+      0,
+      0,
+      22,
+      0,
+      0,
+      0,
+      23,
+      0,
+      0
+    ],
+    [
+      24,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      25,
+      0,
+      0,
+      0,
+      0,
+      26,
+      0,
+      0
+    ],
+    [
+      27,
+      0,
+      0,
+      0,
+      0,
+      28,
+      29,
+      0,
+      0,
+      0,
+      0,
+      30,
+      0,
+      0,
+      0
+    ],
+    [
+      31,
+      0,
+      0,
+      0,
+      32,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      33,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      34,
+      0,
+      0,
+      0,
+      0,
+      35,
+      36,
+      37,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      38,
+      39,
+      0,
+      0,
+      0,
+      40,
+      41,
+      0,
+      0,
+      0,
+      0,
+      42,
+      43,
+      44
+    ],
+    [
+      0,
+      45,
+      0,
+      0,
+      46,
+      47,
+      0,
+      0,
+      0,
+      0,
+      0,
+      48,
+      0,
+      0,
+      0
+    ],
+    [
+      49,
+      0,
+      0,
+      0,
+      50,
+      0,
+      0,
+      0,
+      0,
+      0,
+      51,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      52,
+      0,
+      0,
+      0,
+      53,
+      0,
+      0,
+      0,
+      54,
+      55,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      56,
+      0,
+      0,
+      57,
+      0,
+      0,
+      0,
+      58,
+      0,
+      0,
+      0,
+      59,
+      0,
+      0,
+      0
+    ],
+    [
+      60,
+      0,
+      0,
+      0,
+      0,
+      0,
+      61,
+      0,
+      0,
+      0,
+      0,
+      62,
+      0,
+      0,
+      0
+    ],
+    [
+      63,
+      0,
+      0,
+      0,
+      0,
+      0,
+      64,
+      0,
+      0,
+      0,
+      0,
+      65,
+      0,
+      0,
+      0
+    ]
+  ],
+  "clues": {
+    "across": [
+      {
+        "number": 1,
+        "clue": "Purchase of ice cream or cream ale",
+        "answer": "PINT",
+        "row": 0,
+        "col": 0
+      },
+      {
+        "number": 5,
+        "clue": "Cognac label letters",
+        "answer": "VSOP",
+        "row": 0,
+        "col": 5
+      },
+      {
+        "number": 9,
+        "clue": "Escapade",
+        "answer": "ANTIC",
+        "row": 0,
+        "col": 10
+      },
+      {
+        "number": 14,
+        "clue": "Goddess depicted with cow's horns",
+        "answer": "ISIS",
+        "row": 1,
+        "col": 0
+      },
+      {
+        "number": 15,
+        "clue": "\"Hey, look who's here!\"",
+        "answer": "OHHI",
+        "row": 1,
+        "col": 5
+      },
+      {
+        "number": 16,
+        "clue": "Film without much wardrobe, informally",
+        "answer": "PORNO",
+        "row": 1,
+        "col": 10
+      },
+      {
+        "number": 17,
+        "clue": "Watch sound",
+        "answer": "TICK",
+        "row": 2,
+        "col": 0
+      },
+      {
+        "number": 18,
+        "clue": "Happens",
+        "answer": "COMESTOPASS",
+        "row": 2,
+        "col": 5
+      },
+      {
+        "number": 20,
+        "clue": "Left in",
+        "answer": "STETTED",
+        "row": 3,
+        "col": 0
+      },
+      {
+        "number": 22,
+        "clue": "Ingredient in a zombie",
+        "answer": "RUM",
+        "row": 3,
+        "col": 8
+      },
+      {
+        "number": 23,
+        "clue": "Late ___",
+        "answer": "FEE",
+        "row": 3,
+        "col": 12
+      },
+      {
+        "number": 24,
+        "clue": "Anxious",
+        "answer": "ANTSY",
+        "row": 4,
+        "col": 0
+      },
+      {
+        "number": 25,
+        "clue": "Francis Ford Coppola's alma mater, for short",
+        "answer": "UCLA",
+        "row": 4,
+        "col": 7
+      },
+      {
+        "number": 26,
+        "clue": "Org. that watches television",
+        "answer": "FCC",
+        "row": 4,
+        "col": 12
+      },
+      {
+        "number": 27,
+        "clue": "Tackling the task at hand",
+        "answer": "WORKINGONIT",
+        "row": 5,
+        "col": 0
+      },
+      {
+        "number": 31,
+        "clue": "Dump",
+        "answer": "STY",
+        "row": 6,
+        "col": 0
+      },
+      {
+        "number": 32,
+        "clue": "Unceasingly",
+        "answer": "NOEND",
+        "row": 6,
+        "col": 4
+      },
+      {
+        "number": 33,
+        "clue": "Hotel room coolers, for short",
+        "answer": "ACS",
+        "row": 6,
+        "col": 11
+      },
+      {
+        "number": 34,
+        "clue": "Band with the 2008 platinum single \"Electric Feel\"",
+        "answer": "MGMT",
+        "row": 7,
+        "col": 3
+      },
+      {
+        "number": 35,
+        "clue": "Cut (in)",
+        "answer": "ETCH",
+        "row": 7,
+        "col": 8
+      },
+      {
+        "number": 38,
+        "clue": "Flabbergasted feeling",
+        "answer": "AWE",
+        "row": 8,
+        "col": 1
+      },
+      {
+        "number": 40,
+        "clue": "Prefix meaning \"heavens,\" as the name of a planet suggests",
+        "answer": "URANO",
+        "row": 8,
+        "col": 6
+      },
+      {
+        "number": 42,
+        "clue": "Low",
+        "answer": "SAD",
+        "row": 8,
+        "col": 12
+      },
+      {
+        "number": 45,
+        "clue": "Result of missing the boat",
+        "answer": "LOSTOPPORTUNITY",
+        "row": 9,
+        "col": 1
+      },
+      {
+        "number": 49,
+        "clue": "Activist who was Time's 1963 Man of the Year, familiarly",
+        "answer": "MLK",
+        "row": 10,
+        "col": 0
+      },
+      {
+        "number": 50,
+        "clue": "Sweeping",
+        "answer": "VAST",
+        "row": 10,
+        "col": 4
+      },
+      {
+        "number": 51,
+        "clue": "Seth of Apple TV's \"Platonic\"",
+        "answer": "ROGEN",
+        "row": 10,
+        "col": 10
+      },
+      {
+        "number": 52,
+        "clue": "Furious feeling",
+        "answer": "IRE",
+        "row": 11,
+        "col": 0
+      },
+      {
+        "number": 53,
+        "clue": "Rescue squad pro",
+        "answer": "EMT",
+        "row": 11,
+        "col": 4
+      },
+      {
+        "number": 54,
+        "clue": "Country whose seven-letter name can be spelled using only one-point Scrabble tiles",
+        "answer": "ESTONIA",
+        "row": 11,
+        "col": 8
+      },
+      {
+        "number": 56,
+        "clue": "Striking through",
+        "answer": "XINGOUT",
+        "row": 12,
+        "col": 0
+      },
+      {
+        "number": 59,
+        "clue": "\"___ what I'm talkin' 'bout!\"",
+        "answer": "DATS",
+        "row": 12,
+        "col": 11
+      },
+      {
+        "number": 60,
+        "clue": "Standard",
+        "answer": "USUAL",
+        "row": 13,
+        "col": 0
+      },
+      {
+        "number": 61,
+        "clue": "Lead-in to -drome",
+        "answer": "AERO",
+        "row": 13,
+        "col": 6
+      },
+      {
+        "number": 62,
+        "clue": "Oversupply",
+        "answer": "GLUT",
+        "row": 13,
+        "col": 11
+      },
+      {
+        "number": 63,
+        "clue": "Full of energy",
+        "answer": "PEPPY",
+        "row": 14,
+        "col": 0
+      },
+      {
+        "number": 64,
+        "clue": "___ Mix",
+        "answer": "MEOW",
+        "row": 14,
+        "col": 6
+      },
+      {
+        "number": 65,
+        "clue": "Catch a glimpse of",
+        "answer": "ESPY",
+        "row": 14,
+        "col": 11
+      }
+    ],
+    "down": [
+      {
+        "number": 1,
+        "clue": "Tools requiring two people",
+        "answer": "PITSAWS",
+        "row": 0,
+        "col": 0
+      },
+      {
+        "number": 2,
+        "clue": "\"Am I wrong about that?\"",
+        "answer": "ISITNOT",
+        "row": 0,
+        "col": 1
+      },
+      {
+        "number": 3,
+        "clue": "\"Please, I know better than that\"",
+        "answer": "NICETRY",
+        "row": 0,
+        "col": 2
+      },
+      {
+        "number": 4,
+        "clue": "\"You know better than that\"",
+        "answer": "TSKTSK",
+        "row": 0,
+        "col": 3
+      },
+      {
+        "number": 5,
+        "clue": "Sotto ___",
+        "answer": "VOCE",
+        "row": 0,
+        "col": 5
+      },
+      {
+        "number": 6,
+        "clue": "Sporting flats, say",
+        "answer": "SHOD",
+        "row": 0,
+        "col": 6
+      },
+      {
+        "number": 7,
+        "clue": "Omega, in physics",
+        "answer": "OHM",
+        "row": 0,
+        "col": 7
+      },
+      {
+        "number": 8,
+        "clue": "Approximately 84% of American women have at least one",
+        "answer": "PIERCEDEAR",
+        "row": 0,
+        "col": 8
+      },
+      {
+        "number": 9,
+        "clue": "Early ancestor",
+        "answer": "APEMAN",
+        "row": 0,
+        "col": 10
+      },
+      {
+        "number": 10,
+        "clue": "(The) OK",
+        "answer": "NOD",
+        "row": 0,
+        "col": 11
+      },
+      {
+        "number": 11,
+        "clue": "With 42-Down, they tell you when to stop and go ... as seen in this puzzle's theme",
+        "answer": "TRAFFIC",
+        "row": 0,
+        "col": 12
+      },
+      {
+        "number": 12,
+        "clue": "Bees, but not birds",
+        "answer": "INSECTS",
+        "row": 0,
+        "col": 13
+      },
+      {
+        "number": 13,
+        "clue": "Trig ratio",
+        "answer": "COSEC",
+        "row": 0,
+        "col": 14
+      },
+      {
+        "number": 19,
+        "clue": "Kick butt, so to speak",
+        "answer": "RULE",
+        "row": 2,
+        "col": 9
+      },
+      {
+        "number": 21,
+        "clue": "Like a run that sends the game into extra innings, say",
+        "answer": "TYING",
+        "row": 3,
+        "col": 4
+      },
+      {
+        "number": 25,
+        "clue": "Buffet table item",
+        "answer": "URN",
+        "row": 4,
+        "col": 7
+      },
+      {
+        "number": 28,
+        "clue": "___ de plume",
+        "answer": "NOM",
+        "row": 5,
+        "col": 5
+      },
+      {
+        "number": 29,
+        "clue": "Increase one's intensity",
+        "answer": "GETUPSTEAM",
+        "row": 5,
+        "col": 6
+      },
+      {
+        "number": 30,
+        "clue": "\"Hard pass\"",
+        "answer": "NAH",
+        "row": 5,
+        "col": 11
+      },
+      {
+        "number": 34,
+        "clue": "Mal de ___",
+        "answer": "MER",
+        "row": 7,
+        "col": 3
+      },
+      {
+        "number": 36,
+        "clue": "Channel with the longtime slogan \"We Know Drama\"",
+        "answer": "TNT",
+        "row": 7,
+        "col": 9
+      },
+      {
+        "number": 37,
+        "clue": "Legal setting",
+        "answer": "COURT",
+        "row": 7,
+        "col": 10
+      },
+      {
+        "number": 38,
+        "clue": "37-Down order",
+        "answer": "ALLRISE",
+        "row": 8,
+        "col": 1
+      },
+      {
+        "number": 39,
+        "clue": "Roused",
+        "answer": "WOKENUP",
+        "row": 8,
+        "col": 2
+      },
+      {
+        "number": 41,
+        "clue": "Turn to mush, maybe",
+        "answer": "ROT",
+        "row": 8,
+        "col": 7
+      },
+      {
+        "number": 42,
+        "clue": "See 11-Down",
+        "answer": "SIGNALS",
+        "row": 8,
+        "col": 12
+      },
+      {
+        "number": 43,
+        "clue": "Loved every second",
+        "answer": "ATEITUP",
+        "row": 8,
+        "col": 13
+      },
+      {
+        "number": 44,
+        "clue": "The New York Islanders in the early 1980s, e.g.",
+        "answer": "DYNASTY",
+        "row": 8,
+        "col": 14
+      },
+      {
+        "number": 46,
+        "clue": "Early pop music's ___ Brothers",
+        "answer": "EVERLY",
+        "row": 9,
+        "col": 4
+      },
+      {
+        "number": 47,
+        "clue": "Honorific title",
+        "answer": "DAME",
+        "row": 9,
+        "col": 5
+      },
+      {
+        "number": 48,
+        "clue": "Pestering type",
+        "answer": "NOODGE",
+        "row": 9,
+        "col": 11
+      },
+      {
+        "number": 49,
+        "clue": "Minor snafu",
+        "answer": "MIXUP",
+        "row": 10,
+        "col": 0
+      },
+      {
+        "number": 54,
+        "clue": "Mark's successor",
+        "answer": "EURO",
+        "row": 11,
+        "col": 8
+      },
+      {
+        "number": 55,
+        "clue": "Put away",
+        "answer": "STOW",
+        "row": 11,
+        "col": 9
+      },
+      {
+        "number": 57,
+        "clue": "Space between here and there",
+        "answer": "GAP",
+        "row": 12,
+        "col": 3
+      },
+      {
+        "number": 58,
+        "clue": "French word between two surnames",
+        "answer": "NEE",
+        "row": 12,
+        "col": 7
+      }
+    ]
+  }
+}

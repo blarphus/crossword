@@ -1,0 +1,1034 @@
+{
+  "date": "2026-01-17",
+  "title": "New York Times,Saturday, January 17, 2026",
+  "author": "Adam Aaronson",
+  "editor": "Will Shortz",
+  "dimensions": {
+    "rows": 15,
+    "cols": 15
+  },
+  "grid": [
+    [
+      "F",
+      "A",
+      "C",
+      "E",
+      "P",
+      "A",
+      "L",
+      "M",
+      "S",
+      ".",
+      "D",
+      "A",
+      "I",
+      "S",
+      "Y"
+    ],
+    [
+      "B",
+      "R",
+      "A",
+      "N",
+      "D",
+      "N",
+      "A",
+      "M",
+      "E",
+      ".",
+      "E",
+      "L",
+      "O",
+      "P",
+      "E"
+    ],
+    [
+      "O",
+      "U",
+      "T",
+      "O",
+      "F",
+      "T",
+      "I",
+      "M",
+      "E",
+      ".",
+      "L",
+      "E",
+      "N",
+      "I",
+      "N"
+    ],
+    [
+      "M",
+      "B",
+      "A",
+      "S",
+      ".",
+      "O",
+      "D",
+      "D",
+      ".",
+      "M",
+      "I",
+      "X",
+      "I",
+      "N",
+      "S"
+    ],
+    [
+      "B",
+      "A",
+      "N",
+      ".",
+      "K",
+      "N",
+      "I",
+      "C",
+      "K",
+      "K",
+      "N",
+      "A",
+      "C",
+      "K",
+      "."
+    ],
+    [
+      ".",
+      ".",
+      ".",
+      "R",
+      "A",
+      "I",
+      "N",
+      "C",
+      "O",
+      "A",
+      "T",
+      ".",
+      "B",
+      "I",
+      "D"
+    ],
+    [
+      ".",
+      "C",
+      "A",
+      "I",
+      "R",
+      "O",
+      ".",
+      "C",
+      "O",
+      "Y",
+      ".",
+      "C",
+      "O",
+      "C",
+      "A"
+    ],
+    [
+      "F",
+      "O",
+      "I",
+      "S",
+      "T",
+      ".",
+      "M",
+      "L",
+      "K",
+      ".",
+      "L",
+      "A",
+      "N",
+      "K",
+      "Y"
+    ],
+    [
+      "B",
+      "A",
+      "S",
+      "K",
+      ".",
+      "S",
+      "A",
+      "X",
+      ".",
+      "M",
+      "O",
+      "L",
+      "D",
+      "S",
+      "."
+    ],
+    [
+      "I",
+      "L",
+      "L",
+      ".",
+      "F",
+      "A",
+      "U",
+      "X",
+      "N",
+      "A",
+      "I",
+      "F",
+      ".",
+      ".",
+      "."
+    ],
+    [
+      ".",
+      "M",
+      "E",
+      "G",
+      "A",
+      "P",
+      "I",
+      "X",
+      "E",
+      "L",
+      "S",
+      ".",
+      "G",
+      "A",
+      "P"
+    ],
+    [
+      "R",
+      "I",
+      "S",
+      "E",
+      "R",
+      "S",
+      ".",
+      "V",
+      "E",
+      "T",
+      ".",
+      "C",
+      "A",
+      "S",
+      "E"
+    ],
+    [
+      "I",
+      "N",
+      "E",
+      "R",
+      "T",
+      ".",
+      "S",
+      "I",
+      "D",
+      "E",
+      "W",
+      "A",
+      "L",
+      "K",
+      "S"
+    ],
+    [
+      "T",
+      "E",
+      "A",
+      "M",
+      "S",
+      ".",
+      "T",
+      "I",
+      "N",
+      "D",
+      "E",
+      "R",
+      "B",
+      "I",
+      "O"
+    ],
+    [
+      "A",
+      "R",
+      "T",
+      "S",
+      "Y",
+      ".",
+      "P",
+      "I",
+      "T",
+      "S",
+      "T",
+      "A",
+      "I",
+      "N",
+      "S"
+    ]
+  ],
+  "cellNumbers": [
+    [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      0,
+      10,
+      11,
+      12,
+      13,
+      14
+    ],
+    [
+      15,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      16,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      17,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      18,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      19,
+      0,
+      0,
+      0,
+      0,
+      20,
+      0,
+      0,
+      0,
+      21,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      22,
+      0,
+      0,
+      0,
+      23,
+      0,
+      0,
+      0,
+      24,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      25,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      26,
+      0,
+      27
+    ],
+    [
+      0,
+      28,
+      29,
+      0,
+      0,
+      0,
+      0,
+      30,
+      0,
+      0,
+      0,
+      31,
+      0,
+      0,
+      0
+    ],
+    [
+      32,
+      0,
+      0,
+      0,
+      0,
+      0,
+      33,
+      0,
+      0,
+      0,
+      34,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      35,
+      0,
+      0,
+      0,
+      0,
+      36,
+      0,
+      0,
+      0,
+      37,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      38,
+      0,
+      0,
+      0,
+      39,
+      0,
+      0,
+      0,
+      40,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      41,
+      0,
+      42,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      43,
+      44,
+      45
+    ],
+    [
+      46,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      47,
+      0,
+      0,
+      0,
+      48,
+      0,
+      0,
+      0
+    ],
+    [
+      49,
+      0,
+      0,
+      0,
+      0,
+      0,
+      50,
+      0,
+      0,
+      0,
+      51,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      52,
+      0,
+      0,
+      0,
+      0,
+      0,
+      53,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      54,
+      0,
+      0,
+      0,
+      0,
+      0,
+      55,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ]
+  ],
+  "clues": {
+    "across": [
+      {
+        "number": 1,
+        "clue": "Expressions of disbelief or exasperation",
+        "answer": "FACEPALMS",
+        "row": 0,
+        "col": 0
+      },
+      {
+        "number": 10,
+        "clue": "What \"margarita\" means in Spanish",
+        "answer": "DAISY",
+        "row": 0,
+        "col": 10
+      },
+      {
+        "number": 15,
+        "clue": "Reputable, in a way",
+        "answer": "BRANDNAME",
+        "row": 1,
+        "col": 0
+      },
+      {
+        "number": 16,
+        "clue": "What Anora and Vanya do in 2024's \"Anora\"",
+        "answer": "ELOPE",
+        "row": 1,
+        "col": 10
+      },
+      {
+        "number": 17,
+        "clue": "Too late, say",
+        "answer": "OUTOFTIME",
+        "row": 2,
+        "col": 0
+      },
+      {
+        "number": 18,
+        "clue": "Advocate for the political mobilization of the proletariat",
+        "answer": "LENIN",
+        "row": 2,
+        "col": 10
+      },
+      {
+        "number": 19,
+        "clue": "People often manage with them, in brief",
+        "answer": "MBAS",
+        "row": 3,
+        "col": 0
+      },
+      {
+        "number": 20,
+        "clue": "You might say \"Hmm\" when something is this",
+        "answer": "ODD",
+        "row": 3,
+        "col": 5
+      },
+      {
+        "number": 21,
+        "clue": "Toppings blended with ice cream",
+        "answer": "MIXINS",
+        "row": 3,
+        "col": 9
+      },
+      {
+        "number": 22,
+        "clue": "Anti-troll measure",
+        "answer": "BAN",
+        "row": 4,
+        "col": 0
+      },
+      {
+        "number": 23,
+        "clue": "Tchotchke",
+        "answer": "KNICKKNACK",
+        "row": 4,
+        "col": 4
+      },
+      {
+        "number": 25,
+        "clue": "Protection from drops",
+        "answer": "RAINCOAT",
+        "row": 5,
+        "col": 3
+      },
+      {
+        "number": 26,
+        "clue": "With 27-Down, fateful time for a sorority pledge",
+        "answer": "BID",
+        "row": 5,
+        "col": 12
+      },
+      {
+        "number": 28,
+        "clue": "City in Illinois's \"Little Egypt\" region",
+        "answer": "CAIRO",
+        "row": 6,
+        "col": 1
+      },
+      {
+        "number": 30,
+        "clue": "Demure",
+        "answer": "COY",
+        "row": 6,
+        "col": 7
+      },
+      {
+        "number": 31,
+        "clue": "Plant with psychoactive leaves",
+        "answer": "COCA",
+        "row": 6,
+        "col": 11
+      },
+      {
+        "number": 32,
+        "clue": "Offload (on)",
+        "answer": "FOIST",
+        "row": 7,
+        "col": 0
+      },
+      {
+        "number": 33,
+        "clue": "Famous monogram found backward in the alphabet",
+        "answer": "MLK",
+        "row": 7,
+        "col": 6
+      },
+      {
+        "number": 34,
+        "clue": "Tall and thin",
+        "answer": "LANKY",
+        "row": 7,
+        "col": 10
+      },
+      {
+        "number": 35,
+        "clue": "Revel (in)",
+        "answer": "BASK",
+        "row": 8,
+        "col": 0
+      },
+      {
+        "number": 36,
+        "clue": "One of five in a typical big band",
+        "answer": "SAX",
+        "row": 8,
+        "col": 5
+      },
+      {
+        "number": 37,
+        "clue": "Archetypes",
+        "answer": "MOLDS",
+        "row": 8,
+        "col": 9
+      },
+      {
+        "number": 38,
+        "clue": "\"All that really matters is if your rhymes was ___\" (MF Doom lyric)",
+        "answer": "ILL",
+        "row": 9,
+        "col": 0
+      },
+      {
+        "number": 39,
+        "clue": "Artificially unsophisticated",
+        "answer": "FAUXNAIF",
+        "row": 9,
+        "col": 4
+      },
+      {
+        "number": 41,
+        "clue": "Units for a high-resolution camera",
+        "answer": "MEGAPIXELS",
+        "row": 10,
+        "col": 1
+      },
+      {
+        "number": 43,
+        "clue": "Interval",
+        "answer": "GAP",
+        "row": 10,
+        "col": 12
+      },
+      {
+        "number": 46,
+        "clue": "Setups for some elaborate group pictures",
+        "answer": "RISERS",
+        "row": 11,
+        "col": 0
+      },
+      {
+        "number": 47,
+        "clue": "Subject to careful appraisal",
+        "answer": "VET",
+        "row": 11,
+        "col": 7
+      },
+      {
+        "number": 48,
+        "clue": "Lawyer's assignment",
+        "answer": "CASE",
+        "row": 11,
+        "col": 11
+      },
+      {
+        "number": 49,
+        "clue": "Not budging",
+        "answer": "INERT",
+        "row": 12,
+        "col": 0
+      },
+      {
+        "number": 50,
+        "clue": "Ones running along a road",
+        "answer": "SIDEWALKS",
+        "row": 12,
+        "col": 6
+      },
+      {
+        "number": 52,
+        "clue": "Bracket contents",
+        "answer": "TEAMS",
+        "row": 13,
+        "col": 0
+      },
+      {
+        "number": 53,
+        "clue": "Where someone's height may be stretched?",
+        "answer": "TINDERBIO",
+        "row": 13,
+        "col": 6
+      },
+      {
+        "number": 54,
+        "clue": "With 39-Down, pretentiously creative",
+        "answer": "ARTSY",
+        "row": 14,
+        "col": 0
+      },
+      {
+        "number": 55,
+        "clue": "What antiperspirants can prevent",
+        "answer": "PITSTAINS",
+        "row": 14,
+        "col": 6
+      }
+    ],
+    "down": [
+      {
+        "number": 1,
+        "clue": "Crude thing to drop, familiarly",
+        "answer": "FBOMB",
+        "row": 0,
+        "col": 0
+      },
+      {
+        "number": 2,
+        "clue": "Westernmost territory of the Netherlands",
+        "answer": "ARUBA",
+        "row": 0,
+        "col": 1
+      },
+      {
+        "number": 3,
+        "clue": "Board game with resources",
+        "answer": "CATAN",
+        "row": 0,
+        "col": 2
+      },
+      {
+        "number": 4,
+        "clue": "Grandson of Eve",
+        "answer": "ENOS",
+        "row": 0,
+        "col": 3
+      },
+      {
+        "number": 5,
+        "clue": "Many an attachment",
+        "answer": "PDF",
+        "row": 0,
+        "col": 4
+      },
+      {
+        "number": 6,
+        "clue": "___ Carlos Jobim, father of the bossa nova",
+        "answer": "ANTONIO",
+        "row": 0,
+        "col": 5
+      },
+      {
+        "number": 7,
+        "clue": "Made, as an easy basketball shot",
+        "answer": "LAIDIN",
+        "row": 0,
+        "col": 6
+      },
+      {
+        "number": 8,
+        "clue": "Longest number writable in standard Roman numerals",
+        "answer": "MMMDCCCLXXXVIII",
+        "row": 0,
+        "col": 7
+      },
+      {
+        "number": 9,
+        "clue": "Spy",
+        "answer": "SEE",
+        "row": 0,
+        "col": 8
+      },
+      {
+        "number": 10,
+        "clue": "Use a roller on, as a jacket",
+        "answer": "DELINT",
+        "row": 0,
+        "col": 10
+      },
+      {
+        "number": 11,
+        "clue": "Digital assistant",
+        "answer": "ALEXA",
+        "row": 0,
+        "col": 11
+      },
+      {
+        "number": 12,
+        "clue": "In which opposites attract",
+        "answer": "IONICBOND",
+        "row": 0,
+        "col": 12
+      },
+      {
+        "number": 13,
+        "clue": "Flashy taekwondo moves",
+        "answer": "SPINKICKS",
+        "row": 0,
+        "col": 13
+      },
+      {
+        "number": 14,
+        "clue": "Cravings",
+        "answer": "YENS",
+        "row": 0,
+        "col": 14
+      },
+      {
+        "number": 21,
+        "clue": "\"All right,\" folksily",
+        "answer": "MKAY",
+        "row": 3,
+        "col": 9
+      },
+      {
+        "number": 23,
+        "clue": "Super Mario ___",
+        "answer": "KART",
+        "row": 4,
+        "col": 4
+      },
+      {
+        "number": 24,
+        "clue": "Eccentric",
+        "answer": "KOOK",
+        "row": 4,
+        "col": 8
+      },
+      {
+        "number": 25,
+        "clue": "Cybersecurity assessment",
+        "answer": "RISK",
+        "row": 5,
+        "col": 3
+      },
+      {
+        "number": 27,
+        "clue": "See 26-Across",
+        "answer": "DAY",
+        "row": 5,
+        "col": 14
+      },
+      {
+        "number": 28,
+        "clue": "Worker who's the subject of the song \"Sixteen Tons\"",
+        "answer": "COALMINER",
+        "row": 6,
+        "col": 1
+      },
+      {
+        "number": 29,
+        "clue": "Cabin choice",
+        "answer": "AISLESEAT",
+        "row": 6,
+        "col": 2
+      },
+      {
+        "number": 31,
+        "clue": "Baby rhino",
+        "answer": "CALF",
+        "row": 6,
+        "col": 11
+      },
+      {
+        "number": 32,
+        "clue": "Part of the D.O.J.",
+        "answer": "FBI",
+        "row": 7,
+        "col": 0
+      },
+      {
+        "number": 33,
+        "clue": "So-called \"Valley Isle\"",
+        "answer": "MAUI",
+        "row": 7,
+        "col": 6
+      },
+      {
+        "number": 34,
+        "clue": "Writer Lowry",
+        "answer": "LOIS",
+        "row": 7,
+        "col": 10
+      },
+      {
+        "number": 36,
+        "clue": "Good marks?",
+        "answer": "SAPS",
+        "row": 8,
+        "col": 5
+      },
+      {
+        "number": 37,
+        "clue": "Egg cream alternatives",
+        "answer": "MALTEDS",
+        "row": 8,
+        "col": 9
+      },
+      {
+        "number": 39,
+        "clue": "See 54-Across",
+        "answer": "FARTSY",
+        "row": 9,
+        "col": 4
+      },
+      {
+        "number": 40,
+        "clue": "Quaint contraction",
+        "answer": "NEEDNT",
+        "row": 9,
+        "col": 8
+      },
+      {
+        "number": 42,
+        "clue": "Gentlemen, jocularly",
+        "answer": "GERMS",
+        "row": 10,
+        "col": 3
+      },
+      {
+        "number": 43,
+        "clue": "Korean barbecue rib dish",
+        "answer": "GALBI",
+        "row": 10,
+        "col": 12
+      },
+      {
+        "number": 44,
+        "clue": "Greet hospitably at the door",
+        "answer": "ASKIN",
+        "row": 10,
+        "col": 13
+      },
+      {
+        "number": 45,
+        "clue": "Dough at a taquería",
+        "answer": "PESOS",
+        "row": 10,
+        "col": 14
+      },
+      {
+        "number": 46,
+        "clue": "Servant in \"The Handmaid's Tale\"",
+        "answer": "RITA",
+        "row": 11,
+        "col": 0
+      },
+      {
+        "number": 48,
+        "clue": "Beloved, in Italian",
+        "answer": "CARA",
+        "row": 11,
+        "col": 11
+      },
+      {
+        "number": 50,
+        "clue": "Product with the additive zinc dithiophosphate",
+        "answer": "STP",
+        "row": 12,
+        "col": 6
+      },
+      {
+        "number": 51,
+        "clue": "Like the weather in much of Equatorial Guinea",
+        "answer": "WET",
+        "row": 12,
+        "col": 10
+      }
+    ]
+  }
+}

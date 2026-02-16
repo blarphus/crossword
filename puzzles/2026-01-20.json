@@ -1,0 +1,1048 @@
+{
+  "date": "2026-01-20",
+  "title": "New York Times,Tuesday, January 20, 2026",
+  "author": "Jonathan Raksin",
+  "editor": "Will Shortz",
+  "dimensions": {
+    "rows": 15,
+    "cols": 15
+  },
+  "grid": [
+    [
+      "P",
+      "O",
+      "S",
+      "I",
+      "E",
+      "S",
+      ".",
+      "I",
+      "F",
+      "S",
+      "O",
+      ".",
+      "A",
+      "S",
+      "P"
+    ],
+    [
+      "G",
+      "R",
+      "A",
+      "M",
+      "M",
+      "Y",
+      ".",
+      "S",
+      "O",
+      "N",
+      "A",
+      "T",
+      "I",
+      "N",
+      "A"
+    ],
+    [
+      "A",
+      "D",
+      "L",
+      "I",
+      "B",
+      "S",
+      ".",
+      "L",
+      "O",
+      "I",
+      "T",
+      "E",
+      "R",
+      "E",
+      "R"
+    ],
+    [
+      ".",
+      ".",
+      ".",
+      "N",
+      "A",
+      "T",
+      "O",
+      "A",
+      "L",
+      "P",
+      "H",
+      "A",
+      "B",
+      "E",
+      "T"
+    ],
+    [
+      "A",
+      "T",
+      "L",
+      ".",
+      "R",
+      "E",
+      "X",
+      ".",
+      ".",
+      ".",
+      ".",
+      "M",
+      "A",
+      "R",
+      "Y"
+    ],
+    [
+      "G",
+      "R",
+      "E",
+      "E",
+      "K",
+      "M",
+      "Y",
+      "T",
+      "H",
+      "O",
+      "L",
+      "O",
+      "G",
+      "Y",
+      "."
+    ],
+    [
+      "R",
+      "A",
+      "I",
+      "N",
+      ".",
+      ".",
+      ".",
+      "W",
+      "A",
+      "W",
+      "A",
+      ".",
+      ".",
+      ".",
+      "."
+    ],
+    [
+      "A",
+      "M",
+      "A",
+      "Z",
+      "O",
+      "N",
+      "W",
+      "A",
+      "R",
+      "E",
+      "H",
+      "O",
+      "U",
+      "S",
+      "E"
+    ],
+    [
+      ".",
+      ".",
+      ".",
+      ".",
+      "R",
+      "O",
+      "T",
+      "I",
+      ".",
+      ".",
+      ".",
+      "W",
+      "E",
+      "L",
+      "T"
+    ],
+    [
+      ".",
+      "T",
+      "H",
+      "E",
+      "G",
+      "R",
+      "A",
+      "N",
+      "D",
+      "C",
+      "A",
+      "N",
+      "Y",
+      "O",
+      "N"
+    ],
+    [
+      "N",
+      "E",
+      "I",
+      "N",
+      ".",
+      ".",
+      ".",
+      ".",
+      "O",
+      "R",
+      "C",
+      ".",
+      "S",
+      "P",
+      "A"
+    ],
+    [
+      "E",
+      "C",
+      "H",
+      "O",
+      "L",
+      "O",
+      "C",
+      "A",
+      "T",
+      "I",
+      "O",
+      "N",
+      ".",
+      ".",
+      "."
+    ],
+    [
+      "W",
+      "H",
+      "A",
+      "L",
+      "E",
+      "P",
+      "O",
+      "D",
+      ".",
+      "T",
+      "R",
+      "O",
+      "O",
+      "P",
+      "S"
+    ],
+    [
+      "L",
+      "I",
+      "T",
+      "A",
+      "F",
+      "I",
+      "R",
+      "E",
+      ".",
+      "I",
+      "N",
+      "A",
+      "R",
+      "U",
+      "T"
+    ],
+    [
+      "Y",
+      "E",
+      "S",
+      ".",
+      "T",
+      "E",
+      "E",
+      "N",
+      ".",
+      "C",
+      "S",
+      "H",
+      "A",
+      "R",
+      "P"
+    ]
+  ],
+  "cellNumbers": [
+    [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      0,
+      7,
+      8,
+      9,
+      10,
+      0,
+      11,
+      12,
+      13
+    ],
+    [
+      14,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      15,
+      0,
+      0,
+      0,
+      16,
+      0,
+      0,
+      0
+    ],
+    [
+      17,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      18,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      19,
+      0,
+      0,
+      20,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      21,
+      22,
+      23,
+      0,
+      24,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      25,
+      0,
+      0,
+      0
+    ],
+    [
+      26,
+      0,
+      0,
+      27,
+      0,
+      0,
+      0,
+      28,
+      29,
+      30,
+      31,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      32,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      33,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      34,
+      0,
+      0,
+      0,
+      35,
+      36,
+      37,
+      0,
+      0,
+      0,
+      0,
+      38,
+      39,
+      40,
+      41
+    ],
+    [
+      0,
+      0,
+      0,
+      0,
+      42,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      43,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      44,
+      45,
+      46,
+      0,
+      0,
+      0,
+      0,
+      47,
+      48,
+      49,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      50,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      51,
+      0,
+      0,
+      0,
+      52,
+      0,
+      0
+    ],
+    [
+      53,
+      0,
+      0,
+      0,
+      54,
+      55,
+      56,
+      57,
+      0,
+      0,
+      0,
+      58,
+      0,
+      0,
+      0
+    ],
+    [
+      59,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      60,
+      0,
+      0,
+      61,
+      62,
+      63
+    ],
+    [
+      64,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      65,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      66,
+      0,
+      0,
+      0,
+      67,
+      0,
+      0,
+      0,
+      0,
+      68,
+      0,
+      0,
+      0,
+      0,
+      0
+    ]
+  ],
+  "clues": {
+    "across": [
+      {
+        "number": 1,
+        "clue": "Small bouquets",
+        "answer": "POSIES",
+        "row": 0,
+        "col": 0
+      },
+      {
+        "number": 7,
+        "clue": "\"In that case ...\"",
+        "answer": "IFSO",
+        "row": 0,
+        "col": 7
+      },
+      {
+        "number": 11,
+        "clue": "Cleopatra's killer",
+        "answer": "ASP",
+        "row": 0,
+        "col": 12
+      },
+      {
+        "number": 14,
+        "clue": "One of a record 30+ for Beyoncé",
+        "answer": "GRAMMY",
+        "row": 1,
+        "col": 0
+      },
+      {
+        "number": 15,
+        "clue": "Short piano piece",
+        "answer": "SONATINA",
+        "row": 1,
+        "col": 7
+      },
+      {
+        "number": 17,
+        "clue": "Improvises",
+        "answer": "ADLIBS",
+        "row": 2,
+        "col": 0
+      },
+      {
+        "number": 18,
+        "clue": "One who's hanging around",
+        "answer": "LOITERER",
+        "row": 2,
+        "col": 7
+      },
+      {
+        "number": 19,
+        "clue": "It begins with Alfa and ends with Zulu",
+        "answer": "NATOALPHABET",
+        "row": 3,
+        "col": 3
+      },
+      {
+        "number": 21,
+        "clue": "The Falcons, on scoreboards",
+        "answer": "ATL",
+        "row": 4,
+        "col": 0
+      },
+      {
+        "number": 24,
+        "clue": "Follower of \"T.\"",
+        "answer": "REX",
+        "row": 4,
+        "col": 4
+      },
+      {
+        "number": 25,
+        "clue": "Figure depicted in Michelangelo's \"Pietà\"",
+        "answer": "MARY",
+        "row": 4,
+        "col": 11
+      },
+      {
+        "number": 26,
+        "clue": "Hellenistic storytelling",
+        "answer": "GREEKMYTHOLOGY",
+        "row": 5,
+        "col": 0
+      },
+      {
+        "number": 32,
+        "clue": "Parade spoiler",
+        "answer": "RAIN",
+        "row": 6,
+        "col": 0
+      },
+      {
+        "number": 33,
+        "clue": "East Coast convenience store chain with a reduplicative name",
+        "answer": "WAWA",
+        "row": 6,
+        "col": 7
+      },
+      {
+        "number": 34,
+        "clue": "Modern pickup spot for delivery drivers",
+        "answer": "AMAZONWAREHOUSE",
+        "row": 7,
+        "col": 0
+      },
+      {
+        "number": 42,
+        "clue": "Flatbread from India",
+        "answer": "ROTI",
+        "row": 8,
+        "col": 4
+      },
+      {
+        "number": 43,
+        "clue": "Fight night souvenir, perhaps",
+        "answer": "WELT",
+        "row": 8,
+        "col": 11
+      },
+      {
+        "number": 44,
+        "clue": "Historic destination for Pueblo pilgrimages",
+        "answer": "THEGRANDCANYON",
+        "row": 9,
+        "col": 1
+      },
+      {
+        "number": 50,
+        "clue": "Düsseldorf denial",
+        "answer": "NEIN",
+        "row": 10,
+        "col": 0
+      },
+      {
+        "number": 51,
+        "clue": "Video game creature often depicted with green skin",
+        "answer": "ORC",
+        "row": 10,
+        "col": 8
+      },
+      {
+        "number": 52,
+        "clue": "One place to find a Brazilian",
+        "answer": "SPA",
+        "row": 10,
+        "col": 12
+      },
+      {
+        "number": 53,
+        "clue": "Skill shared by bats and dolphins ... or, when read as two words, what 19-, 26-, 34- and 44-Across each is",
+        "answer": "ECHOLOCATION",
+        "row": 11,
+        "col": 0
+      },
+      {
+        "number": 59,
+        "clue": "Group of orcas",
+        "answer": "WHALEPOD",
+        "row": 12,
+        "col": 0
+      },
+      {
+        "number": 60,
+        "clue": "Groups of scouts",
+        "answer": "TROOPS",
+        "row": 12,
+        "col": 9
+      },
+      {
+        "number": 64,
+        "clue": "Suddenly motivated, with \"under\"",
+        "answer": "LITAFIRE",
+        "row": 13,
+        "col": 0
+      },
+      {
+        "number": 65,
+        "clue": "Stuck",
+        "answer": "INARUT",
+        "row": 13,
+        "col": 9
+      },
+      {
+        "number": 66,
+        "clue": "\"Amen!\"",
+        "answer": "YES",
+        "row": 14,
+        "col": 0
+      },
+      {
+        "number": 67,
+        "clue": "Romeo or Juliet, notably",
+        "answer": "TEEN",
+        "row": 14,
+        "col": 4
+      },
+      {
+        "number": 68,
+        "clue": "D flat equivalent",
+        "answer": "CSHARP",
+        "row": 14,
+        "col": 9
+      }
+    ],
+    "down": [
+      {
+        "number": 1,
+        "clue": "Tour overseer, for short",
+        "answer": "PGA",
+        "row": 0,
+        "col": 0
+      },
+      {
+        "number": 2,
+        "clue": "Chicago airport code",
+        "answer": "ORD",
+        "row": 0,
+        "col": 1
+      },
+      {
+        "number": 3,
+        "clue": "___ Minella (\"The Muppet Show\" Muppet)",
+        "answer": "SAL",
+        "row": 0,
+        "col": 2
+      },
+      {
+        "number": 4,
+        "clue": "Poker declaration",
+        "answer": "IMIN",
+        "row": 0,
+        "col": 3
+      },
+      {
+        "number": 5,
+        "clue": "Set sail",
+        "answer": "EMBARK",
+        "row": 0,
+        "col": 4
+      },
+      {
+        "number": 6,
+        "clue": "The \"S\" of A.B.S.",
+        "answer": "SYSTEM",
+        "row": 0,
+        "col": 5
+      },
+      {
+        "number": 7,
+        "clue": "Mallorca, por ejemplo",
+        "answer": "ISLA",
+        "row": 0,
+        "col": 7
+      },
+      {
+        "number": 8,
+        "clue": "One pitied by Mr. T, in a catchphrase",
+        "answer": "FOOL",
+        "row": 0,
+        "col": 8
+      },
+      {
+        "number": 9,
+        "clue": "Scissor cut",
+        "answer": "SNIP",
+        "row": 0,
+        "col": 9
+      },
+      {
+        "number": 10,
+        "clue": "Words with one's right hand raised",
+        "answer": "OATH",
+        "row": 0,
+        "col": 10
+      },
+      {
+        "number": 11,
+        "clue": "Novel feature of the 1974 Olds Toronado",
+        "answer": "AIRBAG",
+        "row": 0,
+        "col": 12
+      },
+      {
+        "number": 12,
+        "clue": "Visibly disdainful",
+        "answer": "SNEERY",
+        "row": 0,
+        "col": 13
+      },
+      {
+        "number": 13,
+        "clue": "Shindig",
+        "answer": "PARTY",
+        "row": 0,
+        "col": 14
+      },
+      {
+        "number": 16,
+        "clue": "\"I love you,\" in Spanish",
+        "answer": "TEAMO",
+        "row": 1,
+        "col": 11
+      },
+      {
+        "number": 20,
+        "clue": "Prefix for element #8",
+        "answer": "OXY",
+        "row": 3,
+        "col": 6
+      },
+      {
+        "number": 21,
+        "clue": "Indian tourist city",
+        "answer": "AGRA",
+        "row": 4,
+        "col": 0
+      },
+      {
+        "number": 22,
+        "clue": "Transport between terminals",
+        "answer": "TRAM",
+        "row": 4,
+        "col": 1
+      },
+      {
+        "number": 23,
+        "clue": "\"Star Wars\" princess",
+        "answer": "LEIA",
+        "row": 4,
+        "col": 2
+      },
+      {
+        "number": 27,
+        "clue": "Split ___ (New Wave band whose name sounds like a hair problem)",
+        "answer": "ENZ",
+        "row": 5,
+        "col": 3
+      },
+      {
+        "number": 28,
+        "clue": "American author whose life span closely coincided with Halley's comet visits",
+        "answer": "TWAIN",
+        "row": 5,
+        "col": 7
+      },
+      {
+        "number": 29,
+        "clue": "Sarcastic laugh syllable",
+        "answer": "HAR",
+        "row": 5,
+        "col": 8
+      },
+      {
+        "number": 30,
+        "clue": "Be behind",
+        "answer": "OWE",
+        "row": 5,
+        "col": 9
+      },
+      {
+        "number": 31,
+        "clue": "___-di-dah",
+        "answer": "LAH",
+        "row": 5,
+        "col": 10
+      },
+      {
+        "number": 35,
+        "clue": "See 47-Down",
+        "answer": "ORG",
+        "row": 7,
+        "col": 4
+      },
+      {
+        "number": 36,
+        "clue": "Negative logic gate that works similarly to \"and\"",
+        "answer": "NOR",
+        "row": 7,
+        "col": 5
+      },
+      {
+        "number": 37,
+        "clue": "Sports grp. for Coco Gauff",
+        "answer": "WTA",
+        "row": 7,
+        "col": 6
+      },
+      {
+        "number": 38,
+        "clue": "Not lease, say",
+        "answer": "OWN",
+        "row": 7,
+        "col": 11
+      },
+      {
+        "number": 39,
+        "clue": "One-eighties",
+        "answer": "UEYS",
+        "row": 7,
+        "col": 12
+      },
+      {
+        "number": 40,
+        "clue": "Unappetizing food",
+        "answer": "SLOP",
+        "row": 7,
+        "col": 13
+      },
+      {
+        "number": 41,
+        "clue": "Europe's highest volcano",
+        "answer": "ETNA",
+        "row": 7,
+        "col": 14
+      },
+      {
+        "number": 44,
+        "clue": "Computer whiz",
+        "answer": "TECHIE",
+        "row": 9,
+        "col": 1
+      },
+      {
+        "number": 45,
+        "clue": "Drum kit components descended from \"sock cymbals\"",
+        "answer": "HIHATS",
+        "row": 9,
+        "col": 2
+      },
+      {
+        "number": 46,
+        "clue": "___ Holmes, Netflix character played by Millie Bobby Brown",
+        "answer": "ENOLA",
+        "row": 9,
+        "col": 3
+      },
+      {
+        "number": 47,
+        "clue": "With 35-Down, URL ending for Wikipedia",
+        "answer": "DOT",
+        "row": 9,
+        "col": 8
+      },
+      {
+        "number": 48,
+        "clue": "Any poster on Yelp, essentially",
+        "answer": "CRITIC",
+        "row": 9,
+        "col": 9
+      },
+      {
+        "number": 49,
+        "clue": "Squirrel's hoard",
+        "answer": "ACORNS",
+        "row": 9,
+        "col": 10
+      },
+      {
+        "number": 50,
+        "clue": "Just now",
+        "answer": "NEWLY",
+        "row": 10,
+        "col": 0
+      },
+      {
+        "number": 54,
+        "clue": "West side?",
+        "answer": "LEFT",
+        "row": 11,
+        "col": 4
+      },
+      {
+        "number": 55,
+        "clue": "Mayberry boy of '60s TV",
+        "answer": "OPIE",
+        "row": 11,
+        "col": 5
+      },
+      {
+        "number": 56,
+        "clue": "McIntosh (or Macintosh) component",
+        "answer": "CORE",
+        "row": 11,
+        "col": 6
+      },
+      {
+        "number": 57,
+        "clue": "Port of Yemen",
+        "answer": "ADEN",
+        "row": 11,
+        "col": 7
+      },
+      {
+        "number": 58,
+        "clue": "One famously preparing for a flood",
+        "answer": "NOAH",
+        "row": 11,
+        "col": 11
+      },
+      {
+        "number": 61,
+        "clue": "\"... ___ lack thereof\"",
+        "answer": "ORA",
+        "row": 12,
+        "col": 12
+      },
+      {
+        "number": 62,
+        "clue": "Brita competitor",
+        "answer": "PUR",
+        "row": 12,
+        "col": 13
+      },
+      {
+        "number": 63,
+        "clue": "Pennzoil competitor",
+        "answer": "STP",
+        "row": 12,
+        "col": 14
+      }
+    ]
+  }
+}

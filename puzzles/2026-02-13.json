@@ -1,0 +1,1057 @@
+{
+  "date": "2026-02-13",
+  "title": "New York Times,Friday, February 13, 2026",
+  "author": "Evan Mulvihill",
+  "editor": "Will Shortz",
+  "dimensions": {
+    "rows": 15,
+    "cols": 16
+  },
+  "grid": [
+    [
+      "T",
+      "S",
+      "A",
+      ".",
+      "P",
+      "S",
+      "S",
+      "T",
+      ".",
+      ".",
+      "L",
+      "A",
+      "S",
+      "T",
+      "S",
+      "."
+    ],
+    [
+      "H",
+      "E",
+      "L",
+      "L",
+      "Y",
+      "E",
+      "A",
+      "H",
+      ".",
+      "F",
+      "I",
+      "R",
+      "E",
+      "H",
+      "A",
+      "T"
+    ],
+    [
+      "I",
+      "C",
+      "E",
+      "A",
+      "R",
+      "E",
+      "N",
+      "A",
+      ".",
+      "I",
+      "V",
+      "O",
+      "T",
+      "E",
+      "N",
+      "O"
+    ],
+    [
+      "N",
+      "U",
+      "T",
+      "S",
+      "O",
+      ".",
+      "M",
+      "I",
+      "F",
+      "F",
+      "E",
+      "D",
+      ".",
+      "R",
+      "D",
+      "A"
+    ],
+    [
+      "G",
+      "R",
+      "A",
+      "S",
+      ".",
+      "T",
+      "A",
+      "I",
+      "L",
+      "E",
+      "D",
+      ".",
+      "N",
+      "A",
+      "B",
+      "S"
+    ],
+    [
+      "Y",
+      "E",
+      "P",
+      ".",
+      "C",
+      "I",
+      "R",
+      "C",
+      "A",
+      ".",
+      ".",
+      "C",
+      "O",
+      "V",
+      "E",
+      "T"
+    ],
+    [
+      ".",
+      ".",
+      ".",
+      "M",
+      "O",
+      "V",
+      "I",
+      "E",
+      "T",
+      "R",
+      "A",
+      "I",
+      "L",
+      "E",
+      "R",
+      "S"
+    ],
+    [
+      ".",
+      "D",
+      "I",
+      "A",
+      "M",
+      "O",
+      "N",
+      "D",
+      "E",
+      "A",
+      "R",
+      "R",
+      "I",
+      "N",
+      "G",
+      "."
+    ],
+    [
+      "M",
+      "I",
+      "N",
+      "N",
+      "E",
+      "S",
+      "O",
+      "T",
+      "A",
+      "N",
+      "I",
+      "C",
+      "E",
+      ".",
+      ".",
+      "."
+    ],
+    [
+      "A",
+      "V",
+      "A",
+      "N",
+      "T",
+      ".",
+      ".",
+      "E",
+      "R",
+      "A",
+      "S",
+      "E",
+      ".",
+      "S",
+      "I",
+      "S"
+    ],
+    [
+      "H",
+      "E",
+      "R",
+      "A",
+      ".",
+      "B",
+      "E",
+      "A",
+      "T",
+      "L",
+      "E",
+      ".",
+      "Z",
+      "I",
+      "N",
+      "C"
+    ],
+    [
+      "A",
+      "B",
+      "A",
+      ".",
+      "S",
+      "A",
+      "Y",
+      "S",
+      "H",
+      "I",
+      ".",
+      "D",
+      "I",
+      "E",
+      "G",
+      "O"
+    ],
+    [
+      "L",
+      "A",
+      "B",
+      "N",
+      "O",
+      "T",
+      "E",
+      ".",
+      "E",
+      "G",
+      "G",
+      "D",
+      "O",
+      "N",
+      "O",
+      "R"
+    ],
+    [
+      "O",
+      "R",
+      "I",
+      "O",
+      "L",
+      "E",
+      "S",
+      ".",
+      "R",
+      "H",
+      "I",
+      "A",
+      "N",
+      "N",
+      "O",
+      "N"
+    ],
+    [
+      ".",
+      "S",
+      "C",
+      "R",
+      "O",
+      "D",
+      ".",
+      ".",
+      "S",
+      "T",
+      "A",
+      "Y",
+      ".",
+      "A",
+      "D",
+      "S"
+    ]
+  ],
+  "cellNumbers": [
+    [
+      1,
+      2,
+      3,
+      0,
+      4,
+      5,
+      6,
+      7,
+      0,
+      0,
+      8,
+      9,
+      10,
+      11,
+      12,
+      0
+    ],
+    [
+      13,
+      0,
+      0,
+      14,
+      0,
+      0,
+      0,
+      0,
+      0,
+      15,
+      0,
+      0,
+      0,
+      0,
+      0,
+      16
+    ],
+    [
+      17,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      18,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      19,
+      0,
+      0,
+      0,
+      0,
+      0,
+      20,
+      0,
+      21,
+      0,
+      0,
+      0,
+      0,
+      22,
+      0,
+      0
+    ],
+    [
+      23,
+      0,
+      0,
+      0,
+      0,
+      24,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      25,
+      0,
+      0,
+      0
+    ],
+    [
+      26,
+      0,
+      0,
+      0,
+      27,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      28,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      29,
+      0,
+      0,
+      0,
+      0,
+      0,
+      30,
+      31,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      32,
+      33,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      34,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      35,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      36,
+      0,
+      0,
+      0,
+      0,
+      0,
+      37,
+      38,
+      39
+    ],
+    [
+      40,
+      0,
+      0,
+      0,
+      0,
+      41,
+      42,
+      0,
+      0,
+      0,
+      0,
+      0,
+      43,
+      0,
+      0,
+      0
+    ],
+    [
+      44,
+      0,
+      0,
+      0,
+      45,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      46,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      47,
+      0,
+      0,
+      48,
+      0,
+      0,
+      0,
+      0,
+      49,
+      0,
+      50,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      51,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      52,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      53,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      54,
+      0,
+      0,
+      0,
+      0,
+      55,
+      0,
+      0
+    ]
+  ],
+  "clues": {
+    "across": [
+      {
+        "number": 1,
+        "clue": "Org. with checkpoints",
+        "answer": "TSA",
+        "row": 0,
+        "col": 0
+      },
+      {
+        "number": 4,
+        "clue": "Poke accompaniment, at times",
+        "answer": "PSST",
+        "row": 0,
+        "col": 4
+      },
+      {
+        "number": 8,
+        "clue": "Shoe-shaping tools",
+        "answer": "LASTS",
+        "row": 0,
+        "col": 10
+      },
+      {
+        "number": 13,
+        "clue": "\"Abso-freaking-lutely!\"",
+        "answer": "HELLYEAH",
+        "row": 1,
+        "col": 0
+      },
+      {
+        "number": 15,
+        "clue": "A red plastic one might be worn on Halloween",
+        "answer": "FIREHAT",
+        "row": 1,
+        "col": 9
+      },
+      {
+        "number": 17,
+        "clue": "Skating venue",
+        "answer": "ICEARENA",
+        "row": 2,
+        "col": 0
+      },
+      {
+        "number": 18,
+        "clue": "\"Thumbs-down from me\"",
+        "answer": "IVOTENO",
+        "row": 2,
+        "col": 9
+      },
+      {
+        "number": 19,
+        "clue": "Bonkers",
+        "answer": "NUTSO",
+        "row": 3,
+        "col": 0
+      },
+      {
+        "number": 20,
+        "clue": "A little sore, say",
+        "answer": "MIFFED",
+        "row": 3,
+        "col": 6
+      },
+      {
+        "number": 22,
+        "clue": "It's what you should take, in brief",
+        "answer": "RDA",
+        "row": 3,
+        "col": 13
+      },
+      {
+        "number": 23,
+        "clue": "Lundi ___, festive Monday observance in New Orleans",
+        "answer": "GRAS",
+        "row": 4,
+        "col": 0
+      },
+      {
+        "number": 24,
+        "clue": "Went after",
+        "answer": "TAILED",
+        "row": 4,
+        "col": 5
+      },
+      {
+        "number": 25,
+        "clue": "Catches",
+        "answer": "NABS",
+        "row": 4,
+        "col": 12
+      },
+      {
+        "number": 26,
+        "clue": "Casual assent",
+        "answer": "YEP",
+        "row": 5,
+        "col": 0
+      },
+      {
+        "number": 27,
+        "clue": "Dating qualifier",
+        "answer": "CIRCA",
+        "row": 5,
+        "col": 4
+      },
+      {
+        "number": 28,
+        "clue": "Really fancy?",
+        "answer": "COVET",
+        "row": 5,
+        "col": 11
+      },
+      {
+        "number": 29,
+        "clue": "They don't give you the full picture",
+        "answer": "MOVIETRAILERS",
+        "row": 6,
+        "col": 3
+      },
+      {
+        "number": 32,
+        "clue": "The 14.54-carat Apollo Blue, e.g., which sold for more than $42 million in 2017",
+        "answer": "DIAMONDEARRING",
+        "row": 7,
+        "col": 1
+      },
+      {
+        "number": 34,
+        "clue": "Polite, friendly stereotype from the Midwest",
+        "answer": "MINNESOTANICE",
+        "row": 8,
+        "col": 0
+      },
+      {
+        "number": 35,
+        "clue": "Le contraire de \"après\"",
+        "answer": "AVANT",
+        "row": 9,
+        "col": 0
+      },
+      {
+        "number": 36,
+        "clue": "Clear a sentence?",
+        "answer": "ERASE",
+        "row": 9,
+        "col": 7
+      },
+      {
+        "number": 37,
+        "clue": "\"Girl!\"",
+        "answer": "SIS",
+        "row": 9,
+        "col": 13
+      },
+      {
+        "number": 40,
+        "clue": "Goddess often depicted with peacocks",
+        "answer": "HERA",
+        "row": 10,
+        "col": 0
+      },
+      {
+        "number": 41,
+        "clue": "Someone singing \"Something\"",
+        "answer": "BEATLE",
+        "row": 10,
+        "col": 5
+      },
+      {
+        "number": 43,
+        "clue": "Alphabetically last nutrient in a multivitamin, often",
+        "answer": "ZINC",
+        "row": 10,
+        "col": 12
+      },
+      {
+        "number": 44,
+        "clue": "Counsel council, for short",
+        "answer": "ABA",
+        "row": 11,
+        "col": 0
+      },
+      {
+        "number": 45,
+        "clue": "Gives a wave, maybe",
+        "answer": "SAYSHI",
+        "row": 11,
+        "col": 4
+      },
+      {
+        "number": 46,
+        "clue": "\"Andor\" actor ___ Luna",
+        "answer": "DIEGO",
+        "row": 11,
+        "col": 11
+      },
+      {
+        "number": 47,
+        "clue": "Research scientist's jotting",
+        "answer": "LABNOTE",
+        "row": 12,
+        "col": 0
+      },
+      {
+        "number": 49,
+        "clue": "Visitor to a fertility clinic. maybe",
+        "answer": "EGGDONOR",
+        "row": 12,
+        "col": 8
+      },
+      {
+        "number": 51,
+        "clue": "Birds whose name comes from the Latin word for \"golden\"",
+        "answer": "ORIOLES",
+        "row": 13,
+        "col": 0
+      },
+      {
+        "number": 52,
+        "clue": "1976 Fleetwood Mac hit said to be inspired by a Welsh witch",
+        "answer": "RHIANNON",
+        "row": 13,
+        "col": 8
+      },
+      {
+        "number": 53,
+        "clue": "Provincetown catch",
+        "answer": "SCROD",
+        "row": 14,
+        "col": 1
+      },
+      {
+        "number": 54,
+        "clue": "Hit's counterpart",
+        "answer": "STAY",
+        "row": 14,
+        "col": 8
+      },
+      {
+        "number": 55,
+        "clue": "Spots",
+        "answer": "ADS",
+        "row": 14,
+        "col": 13
+      }
+    ],
+    "down": [
+      {
+        "number": 1,
+        "clue": "Widget",
+        "answer": "THINGY",
+        "row": 0,
+        "col": 0
+      },
+      {
+        "number": 2,
+        "clue": "Guarded",
+        "answer": "SECURE",
+        "row": 0,
+        "col": 1
+      },
+      {
+        "number": 3,
+        "clue": "It's handled at the bar",
+        "answer": "ALETAP",
+        "row": 0,
+        "col": 2
+      },
+      {
+        "number": 4,
+        "clue": "One with a burning passion?",
+        "answer": "PYRO",
+        "row": 0,
+        "col": 4
+      },
+      {
+        "number": 5,
+        "clue": "Bishop's locale",
+        "answer": "SEE",
+        "row": 0,
+        "col": 5
+      },
+      {
+        "number": 6,
+        "clue": "Tiny nation claiming over 1,700 years of self-governance",
+        "answer": "SANMARINO",
+        "row": 0,
+        "col": 6
+      },
+      {
+        "number": 7,
+        "clue": "Cold drinks often topped with evaporated milk",
+        "answer": "THAIICEDTEAS",
+        "row": 0,
+        "col": 7
+      },
+      {
+        "number": 8,
+        "clue": "___ experience",
+        "answer": "LIVED",
+        "row": 0,
+        "col": 10
+      },
+      {
+        "number": 9,
+        "clue": "Longtime teammate of Derek Jeter, familiarly",
+        "answer": "AROD",
+        "row": 0,
+        "col": 11
+      },
+      {
+        "number": 10,
+        "clue": "Group of reps",
+        "answer": "SET",
+        "row": 0,
+        "col": 12
+      },
+      {
+        "number": 11,
+        "clue": "Poem so beloved by Abraham Lincoln that he carried it in his pocket and memorized it",
+        "answer": "THERAVEN",
+        "row": 0,
+        "col": 13
+      },
+      {
+        "number": 12,
+        "clue": "Sheryl ___, author of the 2013 best seller \"Lean In\"",
+        "answer": "SANDBERG",
+        "row": 0,
+        "col": 14
+      },
+      {
+        "number": 14,
+        "clue": "Many a bonny bairn",
+        "answer": "LASS",
+        "row": 1,
+        "col": 3
+      },
+      {
+        "number": 15,
+        "clue": "Sharp wind?",
+        "answer": "FIFE",
+        "row": 1,
+        "col": 9
+      },
+      {
+        "number": 16,
+        "clue": "Offerings at a reception",
+        "answer": "TOASTS",
+        "row": 1,
+        "col": 15
+      },
+      {
+        "number": 21,
+        "clue": "Ones who don't believe in global revolutions?",
+        "answer": "FLATEARTHERS",
+        "row": 3,
+        "col": 8
+      },
+      {
+        "number": 24,
+        "clue": "Saves for later, in a way",
+        "answer": "TIVOS",
+        "row": 4,
+        "col": 5
+      },
+      {
+        "number": 25,
+        "clue": "\"Seriously!\"",
+        "answer": "NOLIE",
+        "row": 4,
+        "col": 12
+      },
+      {
+        "number": 27,
+        "clue": "Teammate of Cupid in \"A Visit From St. Nicholas\"",
+        "answer": "COMET",
+        "row": 5,
+        "col": 4
+      },
+      {
+        "number": 28,
+        "clue": "Mythological figure who turns men into pigs",
+        "answer": "CIRCE",
+        "row": 5,
+        "col": 11
+      },
+      {
+        "number": 29,
+        "clue": "Spiritual sustenance",
+        "answer": "MANNA",
+        "row": 6,
+        "col": 3
+      },
+      {
+        "number": 30,
+        "clue": "Sped right through the stop signal",
+        "answer": "RANALIGHT",
+        "row": 6,
+        "col": 9
+      },
+      {
+        "number": 31,
+        "clue": "Pop up",
+        "answer": "ARISE",
+        "row": 6,
+        "col": 10
+      },
+      {
+        "number": 32,
+        "clue": "Ones offering cheap shots?",
+        "answer": "DIVEBARS",
+        "row": 7,
+        "col": 1
+      },
+      {
+        "number": 33,
+        "clue": "How the Quran is written",
+        "answer": "INARABIC",
+        "row": 7,
+        "col": 2
+      },
+      {
+        "number": 34,
+        "clue": "Honolulu thank you",
+        "answer": "MAHALO",
+        "row": 8,
+        "col": 0
+      },
+      {
+        "number": 37,
+        "clue": "Ferruginous pigment",
+        "answer": "SIENNA",
+        "row": 9,
+        "col": 13
+      },
+      {
+        "number": 38,
+        "clue": "Close (with)",
+        "answer": "INGOOD",
+        "row": 9,
+        "col": 14
+      },
+      {
+        "number": 39,
+        "clue": "Puts down",
+        "answer": "SCORNS",
+        "row": 9,
+        "col": 15
+      },
+      {
+        "number": 41,
+        "clue": "Like some breath",
+        "answer": "BATED",
+        "row": 10,
+        "col": 5
+      },
+      {
+        "number": 42,
+        "clue": "Blinkers?",
+        "answer": "EYES",
+        "row": 10,
+        "col": 6
+      },
+      {
+        "number": 43,
+        "clue": "Canyon with a much-hiked section called the Narrows",
+        "answer": "ZION",
+        "row": 10,
+        "col": 12
+      },
+      {
+        "number": 45,
+        "clue": "Word with guitar or go",
+        "answer": "SOLO",
+        "row": 11,
+        "col": 4
+      },
+      {
+        "number": 46,
+        "clue": "Historic event the French call \"le jour J\"",
+        "answer": "DDAY",
+        "row": 11,
+        "col": 11
+      },
+      {
+        "number": 48,
+        "clue": "\"___ I!\" (negative reply)",
+        "answer": "NOR",
+        "row": 12,
+        "col": 3
+      },
+      {
+        "number": 50,
+        "clue": "Director Coppola of 2024's \"The Last Showgirl\"",
+        "answer": "GIA",
+        "row": 12,
+        "col": 10
+      }
+    ]
+  }
+}

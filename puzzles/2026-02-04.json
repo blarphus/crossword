@@ -1,0 +1,1076 @@
+{
+  "date": "2026-02-04",
+  "title": "New York Times,Wednesday, February 4, 2026",
+  "author": "Hanh Huynh and Ted Mayer",
+  "editor": "Will Shortz",
+  "dimensions": {
+    "rows": 15,
+    "cols": 15
+  },
+  "grid": [
+    [
+      "D",
+      "E",
+      "L",
+      "H",
+      "I",
+      ".",
+      "B",
+      "L",
+      "A",
+      "B",
+      "S",
+      ".",
+      "O",
+      "M",
+      "G"
+    ],
+    [
+      "I",
+      "V",
+      "I",
+      "E",
+      "D",
+      ".",
+      "B",
+      "O",
+      "G",
+      "I",
+      "E",
+      ".",
+      "N",
+      "I",
+      "A"
+    ],
+    [
+      "V",
+      "I",
+      "S",
+      "I",
+      "O",
+      "N",
+      "Q",
+      "U",
+      "E",
+      "S",
+      "T",
+      ".",
+      "T",
+      "N",
+      "T"
+    ],
+    [
+      "A",
+      "L",
+      "A",
+      "S",
+      "N",
+      "O",
+      ".",
+      "T",
+      "I",
+      "C",
+      ".",
+      "G",
+      "H",
+      "E",
+      "E"
+    ],
+    [
+      ".",
+      ".",
+      ".",
+      "T",
+      "T",
+      "O",
+      "P",
+      ".",
+      "S",
+      "U",
+      "S",
+      "I",
+      "E",
+      ".",
+      "."
+    ],
+    [
+      "E",
+      "K",
+      "G",
+      "S",
+      ".",
+      "B",
+      "A",
+      "R",
+      "M",
+      "I",
+      "T",
+      "Z",
+      "V",
+      "A",
+      "H"
+    ],
+    [
+      "R",
+      "E",
+      "I",
+      ".",
+      "I",
+      "S",
+      "L",
+      "E",
+      ".",
+      "T",
+      "I",
+      "M",
+      "E",
+      "L",
+      "Y"
+    ],
+    [
+      "R",
+      "A",
+      "V",
+      "E",
+      "N",
+      ".",
+      "M",
+      "I",
+      "C",
+      ".",
+      "F",
+      "O",
+      "R",
+      "T",
+      "E"
+    ],
+    [
+      "O",
+      "N",
+      "E",
+      "S",
+      "E",
+      "C",
+      ".",
+      "G",
+      "O",
+      "O",
+      "F",
+      ".",
+      "G",
+      "E",
+      "N"
+    ],
+    [
+      "R",
+      "U",
+      "M",
+      "S",
+      "P",
+      "R",
+      "I",
+      "N",
+      "G",
+      "A",
+      ".",
+      "T",
+      "E",
+      "R",
+      "A"
+    ],
+    [
+      ".",
+      ".",
+      "E",
+      "A",
+      "T",
+      "A",
+      "T",
+      ".",
+      "S",
+      "T",
+      "A",
+      "R",
+      ".",
+      ".",
+      "."
+    ],
+    [
+      "D",
+      "E",
+      "F",
+      "Y",
+      ".",
+      "T",
+      "A",
+      "S",
+      ".",
+      "E",
+      "R",
+      "O",
+      "I",
+      "C",
+      "A"
+    ],
+    [
+      "O",
+      "B",
+      "I",
+      ".",
+      "H",
+      "E",
+      "L",
+      "L",
+      "O",
+      "N",
+      "E",
+      "W",
+      "M",
+      "A",
+      "N"
+    ],
+    [
+      "M",
+      "A",
+      "V",
+      ".",
+      "B",
+      "R",
+      "I",
+      "A",
+      "R",
+      ".",
+      "P",
+      "E",
+      "A",
+      "T",
+      "Y"
+    ],
+    [
+      "E",
+      "Y",
+      "E",
+      ".",
+      "O",
+      "S",
+      "A",
+      "G",
+      "E",
+      ".",
+      "A",
+      "L",
+      "C",
+      "O",
+      "A"
+    ]
+  ],
+  "cellNumbers": [
+    [
+      1,
+      2,
+      3,
+      4,
+      5,
+      0,
+      6,
+      7,
+      8,
+      9,
+      10,
+      0,
+      11,
+      12,
+      13
+    ],
+    [
+      14,
+      0,
+      0,
+      0,
+      0,
+      0,
+      15,
+      0,
+      0,
+      0,
+      0,
+      0,
+      16,
+      0,
+      0
+    ],
+    [
+      17,
+      0,
+      0,
+      0,
+      0,
+      18,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      19,
+      0,
+      0
+    ],
+    [
+      20,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      21,
+      0,
+      0,
+      0,
+      22,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      23,
+      0,
+      0,
+      24,
+      0,
+      25,
+      0,
+      26,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      27,
+      28,
+      29,
+      0,
+      0,
+      30,
+      0,
+      31,
+      0,
+      0,
+      0,
+      0,
+      0,
+      32,
+      33
+    ],
+    [
+      34,
+      0,
+      0,
+      0,
+      35,
+      0,
+      0,
+      0,
+      0,
+      36,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      37,
+      0,
+      0,
+      38,
+      0,
+      0,
+      39,
+      0,
+      40,
+      0,
+      41,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      42,
+      0,
+      0,
+      0,
+      0,
+      43,
+      0,
+      44,
+      0,
+      45,
+      0,
+      0,
+      46,
+      0,
+      0
+    ],
+    [
+      47,
+      0,
+      0,
+      0,
+      0,
+      0,
+      48,
+      0,
+      0,
+      0,
+      0,
+      49,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      50,
+      0,
+      0,
+      0,
+      0,
+      0,
+      51,
+      0,
+      52,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      53,
+      54,
+      0,
+      0,
+      0,
+      55,
+      0,
+      56,
+      0,
+      57,
+      0,
+      0,
+      58,
+      59,
+      60
+    ],
+    [
+      61,
+      0,
+      0,
+      0,
+      62,
+      0,
+      0,
+      0,
+      63,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      64,
+      0,
+      0,
+      0,
+      65,
+      0,
+      0,
+      0,
+      0,
+      0,
+      66,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      67,
+      0,
+      0,
+      0,
+      68,
+      0,
+      0,
+      0,
+      0,
+      0,
+      69,
+      0,
+      0,
+      0,
+      0
+    ]
+  ],
+  "clues": {
+    "across": [
+      {
+        "number": 1,
+        "clue": "Indian megacity of 16+ million",
+        "answer": "DELHI",
+        "row": 0,
+        "col": 0
+      },
+      {
+        "number": 6,
+        "clue": "Talks too much",
+        "answer": "BLABS",
+        "row": 0,
+        "col": 6
+      },
+      {
+        "number": 11,
+        "clue": "Text initialism that's the name of a 2010 Usher hit",
+        "answer": "OMG",
+        "row": 0,
+        "col": 12
+      },
+      {
+        "number": 14,
+        "clue": "Like some walls at Harvard and Dartmouth",
+        "answer": "IVIED",
+        "row": 1,
+        "col": 0
+      },
+      {
+        "number": 15,
+        "clue": "\"Casablanca\" actor's nickname",
+        "answer": "BOGIE",
+        "row": 1,
+        "col": 6
+      },
+      {
+        "number": 16,
+        "clue": "Actress Long or Peeples",
+        "answer": "NIA",
+        "row": 1,
+        "col": 12
+      },
+      {
+        "number": 17,
+        "clue": "Native American rite of passage",
+        "answer": "VISIONQUEST",
+        "row": 2,
+        "col": 0
+      },
+      {
+        "number": 19,
+        "clue": "Explosive item for Wile E. Coyote",
+        "answer": "TNT",
+        "row": 2,
+        "col": 12
+      },
+      {
+        "number": 20,
+        "clue": "\"I wish it were so\"",
+        "answer": "ALASNO",
+        "row": 3,
+        "col": 0
+      },
+      {
+        "number": 21,
+        "clue": "Behavioral quirk",
+        "answer": "TIC",
+        "row": 3,
+        "col": 7
+      },
+      {
+        "number": 22,
+        "clue": "Clarified butter",
+        "answer": "GHEE",
+        "row": 3,
+        "col": 11
+      },
+      {
+        "number": 23,
+        "clue": "Roof type with removable panels",
+        "answer": "TTOP",
+        "row": 4,
+        "col": 3
+      },
+      {
+        "number": 25,
+        "clue": "Girl encouraged to wake up, in a 1957 #1 Everly Brothers hit",
+        "answer": "SUSIE",
+        "row": 4,
+        "col": 8
+      },
+      {
+        "number": 27,
+        "clue": "Heartbeat tests, in brief",
+        "answer": "EKGS",
+        "row": 5,
+        "col": 0
+      },
+      {
+        "number": 30,
+        "clue": "Jewish rite of passage",
+        "answer": "BARMITZVAH",
+        "row": 5,
+        "col": 5
+      },
+      {
+        "number": 34,
+        "clue": "L.L.Bean competitor",
+        "answer": "REI",
+        "row": 6,
+        "col": 0
+      },
+      {
+        "number": 35,
+        "clue": "\"___ of Dogs\" (2018 film)",
+        "answer": "ISLE",
+        "row": 6,
+        "col": 4
+      },
+      {
+        "number": 36,
+        "clue": "Occurring at an appropriate moment",
+        "answer": "TIMELY",
+        "row": 6,
+        "col": 9
+      },
+      {
+        "number": 37,
+        "clue": "N.F.L. player in a purple uniform",
+        "answer": "RAVEN",
+        "row": 7,
+        "col": 0
+      },
+      {
+        "number": 39,
+        "clue": "What might help someone be loud and clear?",
+        "answer": "MIC",
+        "row": 7,
+        "col": 6
+      },
+      {
+        "number": 41,
+        "clue": "Strong point",
+        "answer": "FORTE",
+        "row": 7,
+        "col": 10
+      },
+      {
+        "number": 42,
+        "clue": "\"I'll be right with you\"",
+        "answer": "ONESEC",
+        "row": 8,
+        "col": 0
+      },
+      {
+        "number": 44,
+        "clue": "Screw up",
+        "answer": "GOOF",
+        "row": 8,
+        "col": 7
+      },
+      {
+        "number": 46,
+        "clue": "Lead-in to X, Y or Z",
+        "answer": "GEN",
+        "row": 8,
+        "col": 12
+      },
+      {
+        "number": 47,
+        "clue": "Amish rite of passage",
+        "answer": "RUMSPRINGA",
+        "row": 9,
+        "col": 0
+      },
+      {
+        "number": 49,
+        "clue": "More than giga-, less than peta-",
+        "answer": "TERA",
+        "row": 9,
+        "col": 11
+      },
+      {
+        "number": 50,
+        "clue": "Really plague",
+        "answer": "EATAT",
+        "row": 10,
+        "col": 2
+      },
+      {
+        "number": 51,
+        "clue": "Each \"point\" of Taurus's horns, e.g.",
+        "answer": "STAR",
+        "row": 10,
+        "col": 8
+      },
+      {
+        "number": 53,
+        "clue": "Stand up to",
+        "answer": "DEFY",
+        "row": 11,
+        "col": 0
+      },
+      {
+        "number": 55,
+        "clue": "Profs' aides",
+        "answer": "TAS",
+        "row": 11,
+        "col": 5
+      },
+      {
+        "number": 57,
+        "clue": "Beethoven work originally titled \"Bonaparte,\" after Napoleon",
+        "answer": "EROICA",
+        "row": 11,
+        "col": 9
+      },
+      {
+        "number": 61,
+        "clue": "Kimono sash",
+        "answer": "OBI",
+        "row": 12,
+        "col": 0
+      },
+      {
+        "number": 62,
+        "clue": "\"Seinfeld\" catchphrase ... or, when parsed as three words, how a participant of 17-, 30- or 47-Across might be greeted?",
+        "answer": "HELLONEWMAN",
+        "row": 12,
+        "col": 4
+      },
+      {
+        "number": 64,
+        "clue": "Dallas baller",
+        "answer": "MAV",
+        "row": 13,
+        "col": 0
+      },
+      {
+        "number": 65,
+        "clue": "Kind of pipe or patch",
+        "answer": "BRIAR",
+        "row": 13,
+        "col": 4
+      },
+      {
+        "number": 66,
+        "clue": "Like an Islay single malt, to Scotch enthusiasts",
+        "answer": "PEATY",
+        "row": 13,
+        "col": 10
+      },
+      {
+        "number": 67,
+        "clue": "Ball one or ball two?",
+        "answer": "EYE",
+        "row": 14,
+        "col": 0
+      },
+      {
+        "number": 68,
+        "clue": "Great Plains nation",
+        "answer": "OSAGE",
+        "row": 14,
+        "col": 4
+      },
+      {
+        "number": 69,
+        "clue": "Pittsburgh-based industrial giant",
+        "answer": "ALCOA",
+        "row": 14,
+        "col": 10
+      }
+    ],
+    "down": [
+      {
+        "number": 1,
+        "clue": "Melodramatic sort",
+        "answer": "DIVA",
+        "row": 0,
+        "col": 0
+      },
+      {
+        "number": 2,
+        "clue": "Like Cinderella's stepmother",
+        "answer": "EVIL",
+        "row": 0,
+        "col": 1
+      },
+      {
+        "number": 3,
+        "clue": "Rapper in K-pop's Blackpink",
+        "answer": "LISA",
+        "row": 0,
+        "col": 2
+      },
+      {
+        "number": 4,
+        "clue": "Jobs in \"Heat\" and \"Ocean's Eleven\"",
+        "answer": "HEISTS",
+        "row": 0,
+        "col": 3
+      },
+      {
+        "number": 5,
+        "clue": "Lead-in to know or care",
+        "answer": "IDONT",
+        "row": 0,
+        "col": 4
+      },
+      {
+        "number": 6,
+        "clue": "Potato chip flavor, informally",
+        "answer": "BBQ",
+        "row": 0,
+        "col": 6
+      },
+      {
+        "number": 7,
+        "clue": "Ruffian",
+        "answer": "LOUT",
+        "row": 0,
+        "col": 7
+      },
+      {
+        "number": 8,
+        "clue": "Workplace concern for seniors",
+        "answer": "AGEISM",
+        "row": 0,
+        "col": 8
+      },
+      {
+        "number": 9,
+        "clue": "British cookie",
+        "answer": "BISCUIT",
+        "row": 0,
+        "col": 9
+      },
+      {
+        "number": 10,
+        "clue": "10 squats at the gym, perhaps",
+        "answer": "SET",
+        "row": 0,
+        "col": 10
+      },
+      {
+        "number": 11,
+        "clue": "Facing an imminent prospect (of)",
+        "answer": "ONTHEVERGE",
+        "row": 0,
+        "col": 12
+      },
+      {
+        "number": 12,
+        "clue": "\"None for you!\"",
+        "answer": "MINE",
+        "row": 0,
+        "col": 13
+      },
+      {
+        "number": 13,
+        "clue": "Right out of the ___",
+        "answer": "GATE",
+        "row": 0,
+        "col": 14
+      },
+      {
+        "number": 18,
+        "clue": "Rookies, to gamers",
+        "answer": "NOOBS",
+        "row": 2,
+        "col": 5
+      },
+      {
+        "number": 22,
+        "clue": "Doohickey",
+        "answer": "GIZMO",
+        "row": 3,
+        "col": 11
+      },
+      {
+        "number": 24,
+        "clue": "Sources of lines for a reading, maybe",
+        "answer": "PALM",
+        "row": 4,
+        "col": 6
+      },
+      {
+        "number": 26,
+        "clue": "Like some upper lips and drinks",
+        "answer": "STIFF",
+        "row": 4,
+        "col": 10
+      },
+      {
+        "number": 27,
+        "clue": "Unforced ___ (athlete's concern)",
+        "answer": "ERROR",
+        "row": 5,
+        "col": 0
+      },
+      {
+        "number": 28,
+        "clue": "Reeves of \"Hardball\"",
+        "answer": "KEANU",
+        "row": 5,
+        "col": 1
+      },
+      {
+        "number": 29,
+        "clue": "\"Up top!\"",
+        "answer": "GIVEMEFIVE",
+        "row": 5,
+        "col": 2
+      },
+      {
+        "number": 31,
+        "clue": "Ruler's length?",
+        "answer": "REIGN",
+        "row": 5,
+        "col": 7
+      },
+      {
+        "number": 32,
+        "clue": "Cuff or hem, say",
+        "answer": "ALTER",
+        "row": 5,
+        "col": 13
+      },
+      {
+        "number": 33,
+        "clue": "Any of Scar's underlings in \"The Lion King\"",
+        "answer": "HYENA",
+        "row": 5,
+        "col": 14
+      },
+      {
+        "number": 35,
+        "clue": "Unfit for the job",
+        "answer": "INEPT",
+        "row": 6,
+        "col": 4
+      },
+      {
+        "number": 38,
+        "clue": "Bar exam component",
+        "answer": "ESSAY",
+        "row": 7,
+        "col": 3
+      },
+      {
+        "number": 40,
+        "clue": "Gear parts",
+        "answer": "COGS",
+        "row": 7,
+        "col": 8
+      },
+      {
+        "number": 43,
+        "clue": "Completely collapses",
+        "answer": "CRATERS",
+        "row": 8,
+        "col": 5
+      },
+      {
+        "number": 45,
+        "clue": "Like some Quaker products",
+        "answer": "OATEN",
+        "row": 8,
+        "col": 9
+      },
+      {
+        "number": 48,
+        "clue": "Where you are when in Roma",
+        "answer": "ITALIA",
+        "row": 9,
+        "col": 6
+      },
+      {
+        "number": 49,
+        "clue": "Cement spreader",
+        "answer": "TROWEL",
+        "row": 9,
+        "col": 11
+      },
+      {
+        "number": 52,
+        "clue": "Snack similar to a gordita",
+        "answer": "AREPA",
+        "row": 10,
+        "col": 10
+      },
+      {
+        "number": 53,
+        "clue": "Noggin",
+        "answer": "DOME",
+        "row": 11,
+        "col": 0
+      },
+      {
+        "number": 54,
+        "clue": "Site for online bids",
+        "answer": "EBAY",
+        "row": 11,
+        "col": 1
+      },
+      {
+        "number": 56,
+        "clue": "Foundry waste",
+        "answer": "SLAG",
+        "row": 11,
+        "col": 7
+      },
+      {
+        "number": 58,
+        "clue": "Part of a line at an Apple Store",
+        "answer": "IMAC",
+        "row": 11,
+        "col": 12
+      },
+      {
+        "number": 59,
+        "clue": "Adversary of Julius Caesar",
+        "answer": "CATO",
+        "row": 11,
+        "col": 13
+      },
+      {
+        "number": 60,
+        "clue": "Actress Taylor-Joy of \"The Gorge\"",
+        "answer": "ANYA",
+        "row": 11,
+        "col": 14
+      },
+      {
+        "number": 62,
+        "clue": "\"The Penguin\" airer",
+        "answer": "HBO",
+        "row": 12,
+        "col": 4
+      },
+      {
+        "number": 63,
+        "clue": "Foundry material",
+        "answer": "ORE",
+        "row": 12,
+        "col": 8
+      }
+    ]
+  }
+}

@@ -1,0 +1,1062 @@
+{
+  "date": "2026-02-12",
+  "title": "New York Times,Thursday, February 12, 2026",
+  "author": "Kareem Ayas",
+  "editor": "Will Shortz",
+  "dimensions": {
+    "rows": 15,
+    "cols": 15
+  },
+  "grid": [
+    [
+      "D",
+      "W",
+      "E",
+      "L",
+      "L",
+      ".",
+      ".",
+      "G",
+      "U",
+      "A",
+      "M",
+      ".",
+      "M",
+      "E",
+      "N"
+    ],
+    [
+      "R",
+      "A",
+      "D",
+      "I",
+      "A",
+      "N",
+      ".",
+      "I",
+      "N",
+      "C",
+      "A",
+      ".",
+      "O",
+      "X",
+      "O"
+    ],
+    [
+      "O",
+      "W",
+      "E",
+      "S",
+      "T",
+      "O",
+      ".",
+      "S",
+      "H",
+      "U",
+      "T",
+      "O",
+      "U",
+      "T",
+      "S"
+    ],
+    [
+      "P",
+      "A",
+      "N",
+      "T",
+      "E",
+      "R",
+      "A",
+      ".",
+      "O",
+      "R",
+      "E",
+      "L",
+      "S",
+      "E",
+      "."
+    ],
+    [
+      ".",
+      ".",
+      ".",
+      "E",
+      "X",
+      "I",
+      "T",
+      ".",
+      "L",
+      "A",
+      "D",
+      "D",
+      "E",
+      "R",
+      "S"
+    ],
+    [
+      ".",
+      "S",
+      "E",
+      "E",
+      ".",
+      ".",
+      "S",
+      "A",
+      "Y",
+      ".",
+      ".",
+      "E",
+      "T",
+      "N",
+      "A"
+    ],
+    [
+      "A",
+      "T",
+      "V",
+      ".",
+      "I",
+      "B",
+      "E",
+      "X",
+      ".",
+      "C",
+      "O",
+      "R",
+      "R",
+      "A",
+      "L"
+    ],
+    [
+      "D",
+      "E",
+      "E",
+      ".",
+      "C",
+      "L",
+      "A",
+      "M",
+      "S",
+      "U",
+      "P",
+      ".",
+      "A",
+      "L",
+      "T"
+    ],
+    [
+      "L",
+      "A",
+      "N",
+      "C",
+      "E",
+      "T",
+      ".",
+      "E",
+      "N",
+      "D",
+      "S",
+      ".",
+      "P",
+      "L",
+      "Y"
+    ],
+    [
+      "I",
+      "L",
+      "S",
+      "A",
+      ".",
+      ".",
+      "D",
+      "N",
+      "A",
+      ".",
+      ".",
+      "P",
+      "S",
+      "Y",
+      "."
+    ],
+    [
+      "B",
+      "A",
+      "T",
+      "I",
+      "S",
+      "T",
+      "E",
+      ".",
+      "R",
+      "O",
+      "M",
+      "A",
+      ".",
+      ".",
+      "."
+    ],
+    [
+      ".",
+      "K",
+      "E",
+      "N",
+      "N",
+      "E",
+      "L",
+      ".",
+      "F",
+      "L",
+      "A",
+      "M",
+      "I",
+      "N",
+      "G"
+    ],
+    [
+      "G",
+      "I",
+      "V",
+      "E",
+      "A",
+      "H",
+      "U",
+      "G",
+      ".",
+      "E",
+      "X",
+      "E",
+      "T",
+      "E",
+      "R"
+    ],
+    [
+      "U",
+      "S",
+      "E",
+      ".",
+      "C",
+      "E",
+      "D",
+      "E",
+      ".",
+      "S",
+      "I",
+      "L",
+      "I",
+      "C",
+      "A"
+    ],
+    [
+      "M",
+      "S",
+      "N",
+      ".",
+      "K",
+      "E",
+      "E",
+      "L",
+      ".",
+      ".",
+      "M",
+      "A",
+      "S",
+      "K",
+      "S"
+    ]
+  ],
+  "cellNumbers": [
+    [
+      1,
+      2,
+      3,
+      4,
+      5,
+      0,
+      0,
+      6,
+      7,
+      8,
+      9,
+      0,
+      10,
+      11,
+      12
+    ],
+    [
+      13,
+      0,
+      0,
+      0,
+      0,
+      14,
+      0,
+      15,
+      0,
+      0,
+      0,
+      0,
+      16,
+      0,
+      0
+    ],
+    [
+      17,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      18,
+      0,
+      0,
+      0,
+      19,
+      0,
+      0,
+      0
+    ],
+    [
+      20,
+      0,
+      0,
+      0,
+      0,
+      0,
+      21,
+      0,
+      22,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      23,
+      0,
+      0,
+      0,
+      0,
+      24,
+      0,
+      0,
+      0,
+      0,
+      0,
+      25
+    ],
+    [
+      0,
+      26,
+      27,
+      0,
+      0,
+      0,
+      28,
+      29,
+      0,
+      0,
+      0,
+      30,
+      0,
+      0,
+      0
+    ],
+    [
+      31,
+      0,
+      0,
+      0,
+      32,
+      33,
+      0,
+      0,
+      0,
+      34,
+      35,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      36,
+      0,
+      0,
+      0,
+      37,
+      0,
+      0,
+      0,
+      38,
+      0,
+      0,
+      0,
+      39,
+      0,
+      0
+    ],
+    [
+      40,
+      0,
+      0,
+      41,
+      0,
+      0,
+      0,
+      42,
+      0,
+      0,
+      0,
+      0,
+      43,
+      0,
+      0
+    ],
+    [
+      44,
+      0,
+      0,
+      0,
+      0,
+      0,
+      45,
+      0,
+      0,
+      0,
+      0,
+      46,
+      0,
+      0,
+      0
+    ],
+    [
+      47,
+      0,
+      0,
+      0,
+      48,
+      49,
+      0,
+      0,
+      50,
+      51,
+      52,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      53,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      54,
+      0,
+      0,
+      0,
+      55,
+      56,
+      57
+    ],
+    [
+      58,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      59,
+      0,
+      60,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      61,
+      0,
+      0,
+      0,
+      62,
+      0,
+      0,
+      0,
+      0,
+      63,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      64,
+      0,
+      0,
+      0,
+      65,
+      0,
+      0,
+      0,
+      0,
+      0,
+      66,
+      0,
+      0,
+      0,
+      0
+    ]
+  ],
+  "clues": {
+    "across": [
+      {
+        "number": 1,
+        "clue": "*Succeed",
+        "answer": "DOWELL",
+        "row": 0,
+        "col": 0
+      },
+      {
+        "number": 6,
+        "clue": "Home of War in the Pacific National Historical Park",
+        "answer": "GUAM",
+        "row": 0,
+        "col": 7
+      },
+      {
+        "number": 10,
+        "clue": "Sign on some restroom doors",
+        "answer": "MEN",
+        "row": 0,
+        "col": 12
+      },
+      {
+        "number": 13,
+        "clue": "Angular unit of measurement",
+        "answer": "RADIAN",
+        "row": 1,
+        "col": 0
+      },
+      {
+        "number": 15,
+        "clue": "Sapa ___ (\"the only emperor\" in Quechua)",
+        "answer": "INCA",
+        "row": 1,
+        "col": 7
+      },
+      {
+        "number": 16,
+        "clue": "Kitchen gadget brand",
+        "answer": "OXO",
+        "row": 1,
+        "col": 12
+      },
+      {
+        "number": 17,
+        "clue": "Must pay",
+        "answer": "OWESTO",
+        "row": 2,
+        "col": 0
+      },
+      {
+        "number": 18,
+        "clue": "*Public messages of appreciation",
+        "answer": "SHOUTOUTS",
+        "row": 2,
+        "col": 7
+      },
+      {
+        "number": 20,
+        "clue": "Heavy metal band whose name is a big cat in Spanish",
+        "answer": "PANTERA",
+        "row": 3,
+        "col": 0
+      },
+      {
+        "number": 22,
+        "clue": "Alternatively ... !!!",
+        "answer": "ORELSE",
+        "row": 3,
+        "col": 8
+      },
+      {
+        "number": 23,
+        "clue": "Sign out?",
+        "answer": "EXIT",
+        "row": 4,
+        "col": 3
+      },
+      {
+        "number": 24,
+        "clue": "Firehouse supply",
+        "answer": "LADDERS",
+        "row": 4,
+        "col": 8
+      },
+      {
+        "number": 26,
+        "clue": "Take out, in a way",
+        "answer": "SEE",
+        "row": 5,
+        "col": 1
+      },
+      {
+        "number": 28,
+        "clue": "\"An idea ...\"",
+        "answer": "SAY",
+        "row": 5,
+        "col": 6
+      },
+      {
+        "number": 30,
+        "clue": "Mount known to produce rare volcanic \"smoke rings\"",
+        "answer": "ETNA",
+        "row": 5,
+        "col": 11
+      },
+      {
+        "number": 31,
+        "clue": "Off-road ride, for short",
+        "answer": "ATV",
+        "row": 6,
+        "col": 0
+      },
+      {
+        "number": 32,
+        "clue": "Horned mountain climber",
+        "answer": "IBEX",
+        "row": 6,
+        "col": 4
+      },
+      {
+        "number": 34,
+        "clue": "Pen",
+        "answer": "CORRAL",
+        "row": 6,
+        "col": 9
+      },
+      {
+        "number": 36,
+        "clue": "Dennis's sister on \"It's Always Sunny in Philadelphia\"",
+        "answer": "DEE",
+        "row": 7,
+        "col": 0
+      },
+      {
+        "number": 37,
+        "clue": "*New England-style chowder, for one",
+        "answer": "CLAMSOUP",
+        "row": 7,
+        "col": 4
+      },
+      {
+        "number": 39,
+        "clue": "___-weekly (mag type)",
+        "answer": "ALT",
+        "row": 7,
+        "col": 12
+      },
+      {
+        "number": 40,
+        "clue": "Small surgical instrument",
+        "answer": "LANCET",
+        "row": 8,
+        "col": 0
+      },
+      {
+        "number": 42,
+        "clue": "Wraps up",
+        "answer": "ENDS",
+        "row": 8,
+        "col": 7
+      },
+      {
+        "number": 43,
+        "clue": "Wield",
+        "answer": "PLY",
+        "row": 8,
+        "col": 12
+      },
+      {
+        "number": 44,
+        "clue": "Ingrid Bergman's \"Casablanca\" role",
+        "answer": "ILSA",
+        "row": 9,
+        "col": 0
+      },
+      {
+        "number": 45,
+        "clue": "Stuff with strands",
+        "answer": "DNA",
+        "row": 9,
+        "col": 6
+      },
+      {
+        "number": 46,
+        "clue": "College subj. that can be evolutionary or behavioral",
+        "answer": "PSY",
+        "row": 9,
+        "col": 11
+      },
+      {
+        "number": 47,
+        "clue": "Lightweight fabric for a handkerchief",
+        "answer": "BATISTE",
+        "row": 10,
+        "col": 0
+      },
+      {
+        "number": 50,
+        "clue": "Tomato type",
+        "answer": "ROMA",
+        "row": 10,
+        "col": 8
+      },
+      {
+        "number": 53,
+        "clue": "Pet project?",
+        "answer": "KENNEL",
+        "row": 11,
+        "col": 1
+      },
+      {
+        "number": 54,
+        "clue": "*Long-legged wader",
+        "answer": "FLAMINGO",
+        "row": 11,
+        "col": 8
+      },
+      {
+        "number": 58,
+        "clue": "Provide comfort, in a way ... or a hint to the answers to the four starred Across clues",
+        "answer": "GIVEAHUG",
+        "row": 12,
+        "col": 0
+      },
+      {
+        "number": 60,
+        "clue": "Northeastern prep school or its town",
+        "answer": "EXETER",
+        "row": 12,
+        "col": 9
+      },
+      {
+        "number": 61,
+        "clue": "\"What's the ___?!\"",
+        "answer": "USE",
+        "row": 13,
+        "col": 0
+      },
+      {
+        "number": 62,
+        "clue": "Surrender",
+        "answer": "CEDE",
+        "row": 13,
+        "col": 4
+      },
+      {
+        "number": 63,
+        "clue": "Ceramics component",
+        "answer": "SILICA",
+        "row": 13,
+        "col": 9
+      },
+      {
+        "number": 64,
+        "clue": "Web portal with a butterfly logo",
+        "answer": "MSN",
+        "row": 14,
+        "col": 0
+      },
+      {
+        "number": 65,
+        "clue": "Schooner's stabilizer",
+        "answer": "KEEL",
+        "row": 14,
+        "col": 4
+      },
+      {
+        "number": 66,
+        "clue": "Some spa treatments",
+        "answer": "MASKS",
+        "row": 14,
+        "col": 10
+      }
+    ],
+    "down": [
+      {
+        "number": 1,
+        "clue": "What a phone call or new album might do",
+        "answer": "DROP",
+        "row": 0,
+        "col": 0
+      },
+      {
+        "number": 2,
+        "clue": "7-Eleven competitor on the East Coast",
+        "answer": "WAWA",
+        "row": 0,
+        "col": 1
+      },
+      {
+        "number": 3,
+        "clue": "Tree of knowledge locale",
+        "answer": "EDEN",
+        "row": 0,
+        "col": 2
+      },
+      {
+        "number": 4,
+        "clue": "Directory name",
+        "answer": "LISTEE",
+        "row": 0,
+        "col": 3
+      },
+      {
+        "number": 5,
+        "clue": "*Behind in payment",
+        "answer": "LATE",
+        "row": 0,
+        "col": 4
+      },
+      {
+        "number": 6,
+        "clue": "Ones \"over there\" in \"Over There,\" in brief",
+        "answer": "GIS",
+        "row": 0,
+        "col": 7
+      },
+      {
+        "number": 7,
+        "clue": "Sacrilegious",
+        "answer": "UNHOLY",
+        "row": 0,
+        "col": 8
+      },
+      {
+        "number": 8,
+        "clue": "Legend, e.g.",
+        "answer": "ACURA",
+        "row": 0,
+        "col": 9
+      },
+      {
+        "number": 9,
+        "clue": "Beat in chess",
+        "answer": "MATED",
+        "row": 0,
+        "col": 10
+      },
+      {
+        "number": 10,
+        "clue": "Mechanisms that are often spring-loaded",
+        "answer": "MOUSETRAPS",
+        "row": 0,
+        "col": 12
+      },
+      {
+        "number": 11,
+        "clue": "*Forevermore",
+        "answer": "ETERNALLY",
+        "row": 0,
+        "col": 13
+      },
+      {
+        "number": 12,
+        "clue": "Us, in Spanish",
+        "answer": "NOS",
+        "row": 0,
+        "col": 14
+      },
+      {
+        "number": 14,
+        "clue": "Sushi seaweed type",
+        "answer": "NORI",
+        "row": 1,
+        "col": 5
+      },
+      {
+        "number": 19,
+        "clue": "From further back",
+        "answer": "OLDER",
+        "row": 2,
+        "col": 11
+      },
+      {
+        "number": 21,
+        "clue": "Befuddled",
+        "answer": "ATSEA",
+        "row": 3,
+        "col": 6
+      },
+      {
+        "number": 25,
+        "clue": "Coarse, as language",
+        "answer": "SALTY",
+        "row": 4,
+        "col": 14
+      },
+      {
+        "number": 26,
+        "clue": "Quickly smooch ... or a hint to the answers to the four starred Down clues",
+        "answer": "STEALAKISS",
+        "row": 5,
+        "col": 1
+      },
+      {
+        "number": 27,
+        "clue": "Square",
+        "answer": "EVENSTEVEN",
+        "row": 5,
+        "col": 2
+      },
+      {
+        "number": 29,
+        "clue": "*Word appearing 51 times in the New Testament",
+        "answer": "AMEN",
+        "row": 5,
+        "col": 7
+      },
+      {
+        "number": 31,
+        "clue": "Speak extemporaneously",
+        "answer": "ADLIB",
+        "row": 6,
+        "col": 0
+      },
+      {
+        "number": 32,
+        "clue": "Makeup of some shelves",
+        "answer": "ICE",
+        "row": 6,
+        "col": 4
+      },
+      {
+        "number": 33,
+        "clue": "Lunch item usually eaten with two hands, in brief",
+        "answer": "BLT",
+        "row": 6,
+        "col": 5
+      },
+      {
+        "number": 34,
+        "clue": "Cow's mouthful",
+        "answer": "CUD",
+        "row": 6,
+        "col": 9
+      },
+      {
+        "number": 35,
+        "clue": "Photo ___",
+        "answer": "OPS",
+        "row": 6,
+        "col": 10
+      },
+      {
+        "number": 38,
+        "clue": "Wolf (down)",
+        "answer": "SNARF",
+        "row": 7,
+        "col": 8
+      },
+      {
+        "number": 41,
+        "clue": "Michael nominated for Oscars in five different decades",
+        "answer": "CAINE",
+        "row": 8,
+        "col": 3
+      },
+      {
+        "number": 45,
+        "clue": "Fool",
+        "answer": "DELUDE",
+        "row": 9,
+        "col": 6
+      },
+      {
+        "number": 46,
+        "clue": "Hollywood's Anderson or Bach",
+        "answer": "PAMELA",
+        "row": 9,
+        "col": 11
+      },
+      {
+        "number": 48,
+        "clue": "Nosh",
+        "answer": "SNACK",
+        "row": 10,
+        "col": 4
+      },
+      {
+        "number": 49,
+        "clue": "Little laugh",
+        "answer": "TEHEE",
+        "row": 10,
+        "col": 5
+      },
+      {
+        "number": 51,
+        "clue": "Sounds from un estadio",
+        "answer": "OLES",
+        "row": 10,
+        "col": 9
+      },
+      {
+        "number": 52,
+        "clue": "*Severely harm",
+        "answer": "MAIM",
+        "row": 10,
+        "col": 10
+      },
+      {
+        "number": 55,
+        "clue": "Words of affirmation",
+        "answer": "ITIS",
+        "row": 11,
+        "col": 12
+      },
+      {
+        "number": 56,
+        "clue": "Resting place for a boa",
+        "answer": "NECK",
+        "row": 11,
+        "col": 13
+      },
+      {
+        "number": 57,
+        "clue": "Pâté de foie ___",
+        "answer": "GRAS",
+        "row": 11,
+        "col": 14
+      },
+      {
+        "number": 58,
+        "clue": "Unpleasant discovery under a desk",
+        "answer": "GUM",
+        "row": 12,
+        "col": 0
+      },
+      {
+        "number": 59,
+        "clue": "Hair raiser?",
+        "answer": "GEL",
+        "row": 12,
+        "col": 7
+      }
+    ]
+  }
+}

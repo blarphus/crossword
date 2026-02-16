@@ -1,0 +1,1127 @@
+{
+  "date": "2026-02-03",
+  "title": "New York Times,Tuesday, February 3, 2026",
+  "author": "Nate Cardin",
+  "editor": "Will Shortz",
+  "dimensions": {
+    "rows": 15,
+    "cols": 16
+  },
+  "grid": [
+    [
+      "N",
+      "A",
+      "S",
+      "C",
+      "A",
+      "R",
+      ".",
+      "T",
+      "O",
+      "T",
+      "E",
+      "S",
+      ".",
+      "S",
+      "A",
+      "T"
+    ],
+    [
+      "I",
+      "Q",
+      "U",
+      "O",
+      "T",
+      "E",
+      ".",
+      "W",
+      "H",
+      "A",
+      "M",
+      "O",
+      ".",
+      "H",
+      "B",
+      "O"
+    ],
+    [
+      "T",
+      "U",
+      "N",
+      "N",
+      "E",
+      "L",
+      "V",
+      "I",
+      "S",
+      "I",
+      "O",
+      "N",
+      ".",
+      "A",
+      "L",
+      "L"
+    ],
+    [
+      "E",
+      "A",
+      "S",
+      "T",
+      ".",
+      "I",
+      "A",
+      "G",
+      "O",
+      ".",
+      "T",
+      "A",
+      "S",
+      "K",
+      "E",
+      "D"
+    ],
+    [
+      ".",
+      ".",
+      ".",
+      "O",
+      "V",
+      "E",
+      "N",
+      "S",
+      ".",
+      "H",
+      "I",
+      "T",
+      "M",
+      "E",
+      ".",
+      "."
+    ],
+    [
+      "T",
+      "V",
+      "G",
+      "U",
+      "I",
+      "D",
+      "E",
+      ".",
+      "B",
+      "E",
+      "C",
+      "A",
+      "U",
+      "S",
+      "E",
+      "."
+    ],
+    [
+      "B",
+      "A",
+      "R",
+      "R",
+      "E",
+      ".",
+      ".",
+      "S",
+      "O",
+      "L",
+      "O",
+      ".",
+      "T",
+      "H",
+      "A",
+      "T"
+    ],
+    [
+      "S",
+      "P",
+      "A",
+      ".",
+      "W",
+      "E",
+      "T",
+      "P",
+      "A",
+      "I",
+      "N",
+      "T",
+      ".",
+      "A",
+      "G",
+      "E"
+    ],
+    [
+      "P",
+      "E",
+      "D",
+      "I",
+      ".",
+      "Y",
+      "E",
+      "A",
+      "R",
+      ".",
+      ".",
+      "U",
+      "N",
+      "C",
+      "L",
+      "E"
+    ],
+    [
+      ".",
+      "S",
+      "E",
+      "C",
+      "R",
+      "E",
+      "C",
+      "Y",
+      ".",
+      "S",
+      "T",
+      "R",
+      "O",
+      "K",
+      "E",
+      "S"
+    ],
+    [
+      ".",
+      ".",
+      "L",
+      "E",
+      "A",
+      "S",
+      "H",
+      ".",
+      "B",
+      "U",
+      "R",
+      "N",
+      "T",
+      ".",
+      ".",
+      "."
+    ],
+    [
+      "S",
+      "P",
+      "E",
+      "E",
+      "D",
+      "O",
+      ".",
+      "F",
+      "I",
+      "R",
+      "E",
+      ".",
+      "H",
+      "A",
+      "H",
+      "A"
+    ],
+    [
+      "M",
+      "A",
+      "V",
+      ".",
+      "I",
+      "N",
+      "S",
+      "I",
+      "D",
+      "E",
+      "V",
+      "O",
+      "I",
+      "C",
+      "E",
+      "S"
+    ],
+    [
+      "O",
+      "N",
+      "E",
+      ".",
+      "S",
+      "M",
+      "I",
+      "L",
+      "E",
+      ".",
+      "O",
+      "W",
+      "N",
+      "E",
+      "R",
+      "S"
+    ],
+    [
+      "G",
+      "E",
+      "L",
+      ".",
+      "H",
+      "E",
+      "X",
+      "E",
+      "S",
+      ".",
+      "R",
+      "E",
+      "G",
+      "R",
+      "E",
+      "T"
+    ]
+  ],
+  "cellNumbers": [
+    [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      0,
+      7,
+      8,
+      9,
+      10,
+      11,
+      0,
+      12,
+      13,
+      14
+    ],
+    [
+      15,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      16,
+      0,
+      0,
+      0,
+      0,
+      0,
+      17,
+      0,
+      0
+    ],
+    [
+      18,
+      0,
+      0,
+      0,
+      0,
+      0,
+      19,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      20,
+      0,
+      0
+    ],
+    [
+      21,
+      0,
+      0,
+      0,
+      0,
+      22,
+      0,
+      0,
+      0,
+      0,
+      23,
+      0,
+      24,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      25,
+      26,
+      0,
+      0,
+      0,
+      0,
+      27,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      28,
+      29,
+      30,
+      0,
+      0,
+      0,
+      0,
+      0,
+      31,
+      0,
+      0,
+      0,
+      0,
+      0,
+      32,
+      0
+    ],
+    [
+      33,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      34,
+      0,
+      0,
+      0,
+      0,
+      35,
+      0,
+      0,
+      36
+    ],
+    [
+      37,
+      0,
+      0,
+      0,
+      38,
+      39,
+      40,
+      0,
+      0,
+      0,
+      0,
+      41,
+      0,
+      42,
+      0,
+      0
+    ],
+    [
+      43,
+      0,
+      0,
+      44,
+      0,
+      45,
+      0,
+      0,
+      0,
+      0,
+      0,
+      46,
+      47,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      48,
+      0,
+      0,
+      49,
+      0,
+      0,
+      0,
+      0,
+      50,
+      51,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      52,
+      0,
+      0,
+      0,
+      0,
+      0,
+      53,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      54,
+      55,
+      0,
+      0,
+      0,
+      0,
+      0,
+      56,
+      0,
+      0,
+      0,
+      0,
+      57,
+      58,
+      59,
+      60
+    ],
+    [
+      61,
+      0,
+      0,
+      0,
+      62,
+      0,
+      63,
+      0,
+      0,
+      0,
+      0,
+      64,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      65,
+      0,
+      0,
+      0,
+      66,
+      0,
+      0,
+      0,
+      0,
+      0,
+      67,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      68,
+      0,
+      0,
+      0,
+      69,
+      0,
+      0,
+      0,
+      0,
+      0,
+      70,
+      0,
+      0,
+      0,
+      0,
+      0
+    ]
+  ],
+  "clues": {
+    "across": [
+      {
+        "number": 1,
+        "clue": "Daytona 500 org.",
+        "answer": "NASCAR",
+        "row": 0,
+        "col": 0
+      },
+      {
+        "number": 7,
+        "clue": "Cloth shopping bags",
+        "answer": "TOTES",
+        "row": 0,
+        "col": 7
+      },
+      {
+        "number": 12,
+        "clue": "Advanced to the next round of musical chairs, say",
+        "answer": "SAT",
+        "row": 0,
+        "col": 13
+      },
+      {
+        "number": 15,
+        "clue": "\"Their exact words were ...\"",
+        "answer": "IQUOTE",
+        "row": 1,
+        "col": 0
+      },
+      {
+        "number": 16,
+        "clue": "Toy company behind Frisbees and Hula Hoops",
+        "answer": "WHAMO",
+        "row": 1,
+        "col": 7
+      },
+      {
+        "number": 17,
+        "clue": "\"Sex and the City\" network",
+        "answer": "HBO",
+        "row": 1,
+        "col": 13
+      },
+      {
+        "number": 18,
+        "clue": "Narrow, focused perspective",
+        "answer": "TUNNELVISION",
+        "row": 2,
+        "col": 0
+      },
+      {
+        "number": 20,
+        "clue": "\"___ for one and one for ___!\"",
+        "answer": "ALL",
+        "row": 2,
+        "col": 13
+      },
+      {
+        "number": 21,
+        "clue": "E, on a compass",
+        "answer": "EAST",
+        "row": 3,
+        "col": 0
+      },
+      {
+        "number": 22,
+        "clue": "Villain in Shakespeare's \"Othello\" and Disney's \"Aladdin\"",
+        "answer": "IAGO",
+        "row": 3,
+        "col": 5
+      },
+      {
+        "number": 23,
+        "clue": "Assigned a job",
+        "answer": "TASKED",
+        "row": 3,
+        "col": 10
+      },
+      {
+        "number": 25,
+        "clue": "Pizzeria fixtures",
+        "answer": "OVENS",
+        "row": 4,
+        "col": 3
+      },
+      {
+        "number": 27,
+        "clue": "Blackjack player's request",
+        "answer": "HITME",
+        "row": 4,
+        "col": 9
+      },
+      {
+        "number": 28,
+        "clue": "Magazine for the small screen since 1953",
+        "answer": "TVGUIDE",
+        "row": 5,
+        "col": 0
+      },
+      {
+        "number": 31,
+        "clue": "Parent's curt response to a kid's \"But why?\"",
+        "answer": "BECAUSE",
+        "row": 5,
+        "col": 8
+      },
+      {
+        "number": 33,
+        "clue": "Ballet dancer's handrail",
+        "answer": "BARRE",
+        "row": 6,
+        "col": 0
+      },
+      {
+        "number": 34,
+        "clue": "Unaccompanied",
+        "answer": "SOLO",
+        "row": 6,
+        "col": 7
+      },
+      {
+        "number": 35,
+        "clue": "\"You can say ___ again!\"",
+        "answer": "THAT",
+        "row": 6,
+        "col": 12
+      },
+      {
+        "number": 37,
+        "clue": "Place for a seaweed body wrap",
+        "answer": "SPA",
+        "row": 7,
+        "col": 0
+      },
+      {
+        "number": 38,
+        "clue": "Sign near a freshly applied coat",
+        "answer": "WETPAINT",
+        "row": 7,
+        "col": 4
+      },
+      {
+        "number": 42,
+        "clue": "Number represented by candles on a cake",
+        "answer": "AGE",
+        "row": 7,
+        "col": 13
+      },
+      {
+        "number": 43,
+        "clue": "Toe treatment, in brief",
+        "answer": "PEDI",
+        "row": 8,
+        "col": 0
+      },
+      {
+        "number": 45,
+        "clue": "___ of the Horse (2026 in the Chinese zodiac)",
+        "answer": "YEAR",
+        "row": 8,
+        "col": 5
+      },
+      {
+        "number": 46,
+        "clue": "''You win! I give up!''",
+        "answer": "UNCLE",
+        "row": 8,
+        "col": 11
+      },
+      {
+        "number": 48,
+        "clue": "One might be sworn to it",
+        "answer": "SECRECY",
+        "row": 9,
+        "col": 1
+      },
+      {
+        "number": 50,
+        "clue": "Golf count",
+        "answer": "STROKES",
+        "row": 9,
+        "col": 9
+      },
+      {
+        "number": 52,
+        "clue": "Dog harness attachment",
+        "answer": "LEASH",
+        "row": 10,
+        "col": 2
+      },
+      {
+        "number": 53,
+        "clue": "Beyond well-done",
+        "answer": "BURNT",
+        "row": 10,
+        "col": 8
+      },
+      {
+        "number": 54,
+        "clue": "Maker of skintight swimwear",
+        "answer": "SPEEDO",
+        "row": 11,
+        "col": 0
+      },
+      {
+        "number": 56,
+        "clue": "Exceptionally good, in Gen Z slang",
+        "answer": "FIRE",
+        "row": 11,
+        "col": 7
+      },
+      {
+        "number": 57,
+        "clue": "\"Very funny!\"",
+        "answer": "HAHA",
+        "row": 11,
+        "col": 12
+      },
+      {
+        "number": 61,
+        "clue": "Dallas N.B.A. player, for short",
+        "answer": "MAV",
+        "row": 12,
+        "col": 0
+      },
+      {
+        "number": 62,
+        "clue": "What children should use at the library ... and a literal description of the circled letters in this puzzle",
+        "answer": "INSIDEVOICES",
+        "row": 12,
+        "col": 4
+      },
+      {
+        "number": 65,
+        "clue": "Any number raised to the 0th power",
+        "answer": "ONE",
+        "row": 13,
+        "col": 0
+      },
+      {
+        "number": 66,
+        "clue": "\"Say cheese!\"",
+        "answer": "SMILE",
+        "row": 13,
+        "col": 4
+      },
+      {
+        "number": 67,
+        "clue": "People with custody of things, typically",
+        "answer": "OWNERS",
+        "row": 13,
+        "col": 10
+      },
+      {
+        "number": 68,
+        "clue": "Toothpaste type",
+        "answer": "GEL",
+        "row": 14,
+        "col": 0
+      },
+      {
+        "number": 69,
+        "clue": "Evil spells",
+        "answer": "HEXES",
+        "row": 14,
+        "col": 4
+      },
+      {
+        "number": 70,
+        "clue": "Feel remorse about",
+        "answer": "REGRET",
+        "row": 14,
+        "col": 10
+      }
+    ],
+    "down": [
+      {
+        "number": 1,
+        "clue": "Evening, in ads",
+        "answer": "NITE",
+        "row": 0,
+        "col": 0
+      },
+      {
+        "number": 2,
+        "clue": "Blue-green hue",
+        "answer": "AQUA",
+        "row": 0,
+        "col": 1
+      },
+      {
+        "number": 3,
+        "clue": "Pair orbited by the fictional planet Tatooine",
+        "answer": "SUNS",
+        "row": 0,
+        "col": 2
+      },
+      {
+        "number": 4,
+        "clue": "Use makeup to sculpt and define, as facial features",
+        "answer": "CONTOUR",
+        "row": 0,
+        "col": 3
+      },
+      {
+        "number": 5,
+        "clue": "Had a meal",
+        "answer": "ATE",
+        "row": 0,
+        "col": 4
+      },
+      {
+        "number": 6,
+        "clue": "Depended (on)",
+        "answer": "RELIED",
+        "row": 0,
+        "col": 5
+      },
+      {
+        "number": 7,
+        "clue": "Tiny tree branches",
+        "answer": "TWIGS",
+        "row": 0,
+        "col": 7
+      },
+      {
+        "number": 8,
+        "clue": "Very",
+        "answer": "OHSO",
+        "row": 0,
+        "col": 8
+      },
+      {
+        "number": 9,
+        "clue": "Word before chi or after mai",
+        "answer": "TAI",
+        "row": 0,
+        "col": 9
+      },
+      {
+        "number": 10,
+        "clue": "8-) or ;-P",
+        "answer": "EMOTICON",
+        "row": 0,
+        "col": 10
+      },
+      {
+        "number": 11,
+        "clue": "Beethoven's \"Moonlight ___\"",
+        "answer": "SONATA",
+        "row": 0,
+        "col": 11
+      },
+      {
+        "number": 12,
+        "clue": "Burger chain with custard-based drinks",
+        "answer": "SHAKESHACK",
+        "row": 0,
+        "col": 13
+      },
+      {
+        "number": 13,
+        "clue": "Ready, willing and ___",
+        "answer": "ABLE",
+        "row": 0,
+        "col": 14
+      },
+      {
+        "number": 14,
+        "clue": "Spilled the beans",
+        "answer": "TOLD",
+        "row": 0,
+        "col": 15
+      },
+      {
+        "number": 19,
+        "clue": "Rooftop accessory often shaped like a rooster atop an arrow",
+        "answer": "VANE",
+        "row": 2,
+        "col": 6
+      },
+      {
+        "number": 24,
+        "clue": "Salacious material",
+        "answer": "SMUT",
+        "row": 3,
+        "col": 12
+      },
+      {
+        "number": 26,
+        "clue": "Oceanfront room feature",
+        "answer": "VIEW",
+        "row": 4,
+        "col": 4
+      },
+      {
+        "number": 27,
+        "clue": "Prefix with pad or port",
+        "answer": "HELI",
+        "row": 4,
+        "col": 9
+      },
+      {
+        "number": 28,
+        "clue": "One of eight in a stick of butter: Abbr.",
+        "answer": "TBSP",
+        "row": 5,
+        "col": 0
+      },
+      {
+        "number": 29,
+        "clue": "Uses an e-cigarette",
+        "answer": "VAPES",
+        "row": 5,
+        "col": 1
+      },
+      {
+        "number": 30,
+        "clue": "Stage of education",
+        "answer": "GRADELEVEL",
+        "row": 5,
+        "col": 2
+      },
+      {
+        "number": 31,
+        "clue": "Tusked swine",
+        "answer": "BOAR",
+        "row": 5,
+        "col": 8
+      },
+      {
+        "number": 32,
+        "clue": "Bird on Mexico's flag",
+        "answer": "EAGLE",
+        "row": 5,
+        "col": 14
+      },
+      {
+        "number": 34,
+        "clue": "Fix, at the vet's",
+        "answer": "SPAY",
+        "row": 6,
+        "col": 7
+      },
+      {
+        "number": 36,
+        "clue": "Some concert souvenirs",
+        "answer": "TEES",
+        "row": 6,
+        "col": 15
+      },
+      {
+        "number": 39,
+        "clue": "\"Look this way, class\"",
+        "answer": "EYESONME",
+        "row": 7,
+        "col": 5
+      },
+      {
+        "number": 40,
+        "clue": "The \"T\" in STEM, informally",
+        "answer": "TECH",
+        "row": 7,
+        "col": 6
+      },
+      {
+        "number": 41,
+        "clue": "Go sour, as milk",
+        "answer": "TURN",
+        "row": 7,
+        "col": 11
+      },
+      {
+        "number": 44,
+        "clue": "Slurpee alternative",
+        "answer": "ICEE",
+        "row": 8,
+        "col": 3
+      },
+      {
+        "number": 47,
+        "clue": "Potentially suspicious response to \"What are you doing?\"",
+        "answer": "NOTHING",
+        "row": 8,
+        "col": 12
+      },
+      {
+        "number": 49,
+        "clue": "Red bit in a salad",
+        "answer": "RADISH",
+        "row": 9,
+        "col": 4
+      },
+      {
+        "number": 50,
+        "clue": "\"You betcha!\"",
+        "answer": "SURE",
+        "row": 9,
+        "col": 9
+      },
+      {
+        "number": 51,
+        "clue": "The ___ Project (mental health organization for LGBTQ+ youth)",
+        "answer": "TREVOR",
+        "row": 9,
+        "col": 10
+      },
+      {
+        "number": 53,
+        "clue": "___ one's time (waits patiently)",
+        "answer": "BIDES",
+        "row": 10,
+        "col": 8
+      },
+      {
+        "number": 54,
+        "clue": "Skyline haze",
+        "answer": "SMOG",
+        "row": 11,
+        "col": 0
+      },
+      {
+        "number": 55,
+        "clue": "Window section",
+        "answer": "PANE",
+        "row": 11,
+        "col": 1
+      },
+      {
+        "number": 56,
+        "clue": "Submit one's taxes",
+        "answer": "FILE",
+        "row": 11,
+        "col": 7
+      },
+      {
+        "number": 58,
+        "clue": "Taiwanese PC maker",
+        "answer": "ACER",
+        "row": 11,
+        "col": 13
+      },
+      {
+        "number": 59,
+        "clue": "\"Present!\"",
+        "answer": "HERE",
+        "row": 11,
+        "col": 14
+      },
+      {
+        "number": 60,
+        "clue": "The \"A\" in T.A.: Abbr.",
+        "answer": "ASST",
+        "row": 11,
+        "col": 15
+      },
+      {
+        "number": 63,
+        "clue": "Highest roll of a standard die",
+        "answer": "SIX",
+        "row": 12,
+        "col": 6
+      },
+      {
+        "number": 64,
+        "clue": "Have debts",
+        "answer": "OWE",
+        "row": 12,
+        "col": 11
+      }
+    ]
+  }
+}

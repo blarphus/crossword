@@ -1,0 +1,992 @@
+{
+  "date": "2026-01-24",
+  "title": "New York Times,Saturday, January 24, 2026",
+  "author": "Adrian Johnson and Ryan McCarty",
+  "editor": "Will Shortz",
+  "dimensions": {
+    "rows": 15,
+    "cols": 15
+  },
+  "grid": [
+    [
+      ".",
+      ".",
+      ".",
+      "M",
+      "E",
+      "T",
+      "A",
+      "T",
+      ".",
+      "D",
+      "I",
+      "S",
+      "P",
+      "E",
+      "L"
+    ],
+    [
+      ".",
+      ".",
+      "S",
+      "E",
+      "N",
+      "I",
+      "O",
+      "R",
+      "C",
+      "E",
+      "N",
+      "T",
+      "E",
+      "R",
+      "S"
+    ],
+    [
+      ".",
+      "G",
+      "E",
+      "N",
+      "D",
+      "E",
+      "R",
+      "E",
+      "U",
+      "P",
+      "H",
+      "O",
+      "R",
+      "I",
+      "A"
+    ],
+    [
+      "S",
+      "E",
+      "C",
+      "U",
+      "R",
+      "I",
+      "T",
+      "Y",
+      "B",
+      "L",
+      "A",
+      "N",
+      "K",
+      "E",
+      "T"
+    ],
+    [
+      "I",
+      "T",
+      "T",
+      ".",
+      "A",
+      "N",
+      "A",
+      ".",
+      ".",
+      "O",
+      "L",
+      "E",
+      ".",
+      ".",
+      "."
+    ],
+    [
+      "A",
+      "S",
+      "I",
+      "A",
+      "N",
+      "S",
+      ".",
+      "T",
+      "A",
+      "R",
+      "E",
+      ".",
+      "S",
+      "K",
+      "A"
+    ],
+    [
+      ".",
+      "W",
+      "O",
+      "N",
+      "T",
+      ".",
+      "P",
+      "A",
+      "P",
+      "E",
+      "R",
+      "T",
+      "H",
+      "I",
+      "N"
+    ],
+    [
+      "P",
+      "I",
+      "N",
+      "T",
+      ".",
+      "E",
+      "U",
+      "R",
+      "O",
+      "S",
+      ".",
+      "H",
+      "O",
+      "S",
+      "T"
+    ],
+    [
+      "I",
+      "S",
+      "A",
+      "I",
+      "D",
+      "S",
+      "T",
+      "O",
+      "P",
+      ".",
+      "M",
+      "O",
+      "W",
+      "S",
+      "."
+    ],
+    [
+      "G",
+      "E",
+      "L",
+      ".",
+      "O",
+      "C",
+      "H",
+      "S",
+      ".",
+      "T",
+      "U",
+      "R",
+      "B",
+      "A",
+      "N"
+    ],
+    [
+      ".",
+      ".",
+      ".",
+      "U",
+      "G",
+      "H",
+      ".",
+      ".",
+      "D",
+      "E",
+      "N",
+      ".",
+      "O",
+      "R",
+      "E"
+    ],
+    [
+      "A",
+      "V",
+      "E",
+      "N",
+      "G",
+      "E",
+      "R",
+      "S",
+      "E",
+      "N",
+      "D",
+      "G",
+      "A",
+      "M",
+      "E"
+    ],
+    [
+      "H",
+      "A",
+      "L",
+      "L",
+      "O",
+      "W",
+      "E",
+      "E",
+      "N",
+      "P",
+      "A",
+      "R",
+      "T",
+      "Y",
+      "."
+    ],
+    [
+      "O",
+      "N",
+      "L",
+      "I",
+      "N",
+      "E",
+      "C",
+      "A",
+      "S",
+      "I",
+      "N",
+      "O",
+      "S",
+      ".",
+      "."
+    ],
+    [
+      "Y",
+      "E",
+      "E",
+      "T",
+      "E",
+      "D",
+      ".",
+      "R",
+      "E",
+      "N",
+      "E",
+      "W",
+      ".",
+      ".",
+      "."
+    ]
+  ],
+  "cellNumbers": [
+    [
+      0,
+      0,
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      0,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11
+    ],
+    [
+      0,
+      0,
+      12,
+      0,
+      0,
+      0,
+      0,
+      0,
+      13,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      14,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      15,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      16,
+      0,
+      0,
+      0,
+      17,
+      0,
+      0,
+      0,
+      0,
+      18,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      19,
+      0,
+      0,
+      20,
+      0,
+      0,
+      0,
+      21,
+      22,
+      0,
+      0,
+      0,
+      23,
+      24,
+      25
+    ],
+    [
+      0,
+      26,
+      0,
+      0,
+      0,
+      0,
+      27,
+      0,
+      0,
+      0,
+      0,
+      28,
+      0,
+      0,
+      0
+    ],
+    [
+      29,
+      0,
+      0,
+      0,
+      0,
+      30,
+      0,
+      0,
+      0,
+      0,
+      0,
+      31,
+      0,
+      0,
+      0
+    ],
+    [
+      32,
+      0,
+      0,
+      0,
+      33,
+      0,
+      0,
+      0,
+      0,
+      0,
+      34,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      35,
+      0,
+      0,
+      0,
+      36,
+      0,
+      0,
+      0,
+      0,
+      37,
+      0,
+      0,
+      0,
+      0,
+      38
+    ],
+    [
+      0,
+      0,
+      0,
+      39,
+      0,
+      0,
+      0,
+      0,
+      40,
+      0,
+      0,
+      0,
+      41,
+      0,
+      0
+    ],
+    [
+      42,
+      43,
+      44,
+      0,
+      0,
+      0,
+      45,
+      46,
+      0,
+      0,
+      0,
+      47,
+      0,
+      0,
+      0
+    ],
+    [
+      48,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      49,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      50,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      51,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ]
+  ],
+  "clues": {
+    "across": [
+      {
+        "number": 1,
+        "clue": "Used as a rendezvous point",
+        "answer": "METAT",
+        "row": 0,
+        "col": 3
+      },
+      {
+        "number": 6,
+        "clue": "Put to rest",
+        "answer": "DISPEL",
+        "row": 0,
+        "col": 9
+      },
+      {
+        "number": 12,
+        "clue": "Hangouts for golden agers",
+        "answer": "SENIORCENTERS",
+        "row": 1,
+        "col": 2
+      },
+      {
+        "number": 14,
+        "clue": "Feeling that a new haircut or a new set of clothes might bring",
+        "answer": "GENDEREUPHORIA",
+        "row": 2,
+        "col": 1
+      },
+      {
+        "number": 15,
+        "clue": "Child support?",
+        "answer": "SECURITYBLANKET",
+        "row": 3,
+        "col": 0
+      },
+      {
+        "number": 16,
+        "clue": "\"The Addams Family\" member voiced by Snoop Dogg in 2019",
+        "answer": "ITT",
+        "row": 4,
+        "col": 0
+      },
+      {
+        "number": 17,
+        "clue": "___ Ivanovic, former #1-ranked female tennis player",
+        "answer": "ANA",
+        "row": 4,
+        "col": 4
+      },
+      {
+        "number": 18,
+        "clue": "Copa Mundial chant",
+        "answer": "OLE",
+        "row": 4,
+        "col": 9
+      },
+      {
+        "number": 19,
+        "clue": "Afghans, e.g.",
+        "answer": "ASIANS",
+        "row": 5,
+        "col": 0
+      },
+      {
+        "number": 21,
+        "clue": "Empty vehicle weight",
+        "answer": "TARE",
+        "row": 5,
+        "col": 7
+      },
+      {
+        "number": 23,
+        "clue": "Horn-heavy genre",
+        "answer": "SKA",
+        "row": 5,
+        "col": 12
+      },
+      {
+        "number": 26,
+        "clue": "Practice",
+        "answer": "WONT",
+        "row": 6,
+        "col": 1
+      },
+      {
+        "number": 27,
+        "clue": "Very flimsy, as an argument",
+        "answer": "PAPERTHIN",
+        "row": 6,
+        "col": 6
+      },
+      {
+        "number": 29,
+        "clue": "What a stein might hold",
+        "answer": "PINT",
+        "row": 7,
+        "col": 0
+      },
+      {
+        "number": 30,
+        "clue": "How change comes in the Baltics",
+        "answer": "EUROS",
+        "row": 7,
+        "col": 5
+      },
+      {
+        "number": 31,
+        "clue": "Bevy",
+        "answer": "HOST",
+        "row": 7,
+        "col": 11
+      },
+      {
+        "number": 32,
+        "clue": "\"Enough already!\"",
+        "answer": "ISAIDSTOP",
+        "row": 8,
+        "col": 0
+      },
+      {
+        "number": 34,
+        "clue": "Knocks the top off of",
+        "answer": "MOWS",
+        "row": 8,
+        "col": 10
+      },
+      {
+        "number": 35,
+        "clue": "Not remain loose",
+        "answer": "GEL",
+        "row": 9,
+        "col": 0
+      },
+      {
+        "number": 36,
+        "clue": "1960s protest singer Phil",
+        "answer": "OCHS",
+        "row": 9,
+        "col": 4
+      },
+      {
+        "number": 37,
+        "clue": "It may wind up at the top of one's head",
+        "answer": "TURBAN",
+        "row": 9,
+        "col": 9
+      },
+      {
+        "number": 39,
+        "clue": "\"Again?!!\"",
+        "answer": "UGH",
+        "row": 10,
+        "col": 3
+      },
+      {
+        "number": 40,
+        "clue": "Home for the winter, say",
+        "answer": "DEN",
+        "row": 10,
+        "col": 8
+      },
+      {
+        "number": 41,
+        "clue": "Approx. 25% of it consists of national forests",
+        "answer": "ORE",
+        "row": 10,
+        "col": 12
+      },
+      {
+        "number": 42,
+        "clue": "Penultimate film in a series of 23",
+        "answer": "AVENGERSENDGAME",
+        "row": 11,
+        "col": 0
+      },
+      {
+        "number": 48,
+        "clue": "Scene for a skeleton crew?",
+        "answer": "HALLOWEENPARTY",
+        "row": 12,
+        "col": 0
+      },
+      {
+        "number": 49,
+        "clue": "Where one might hope to find good deals on the internet?",
+        "answer": "ONLINECASINOS",
+        "row": 13,
+        "col": 0
+      },
+      {
+        "number": 50,
+        "clue": "Chucked, informally",
+        "answer": "YEETED",
+        "row": 14,
+        "col": 0
+      },
+      {
+        "number": 51,
+        "clue": "Roll over, in a way",
+        "answer": "RENEW",
+        "row": 14,
+        "col": 7
+      }
+    ],
+    "down": [
+      {
+        "number": 1,
+        "clue": "Course catalog?",
+        "answer": "MENU",
+        "row": 0,
+        "col": 3
+      },
+      {
+        "number": 2,
+        "clue": "Means of closing up a vent",
+        "answer": "ENDRANT",
+        "row": 0,
+        "col": 4
+      },
+      {
+        "number": 3,
+        "clue": "Some joint promotions",
+        "answer": "TIEINS",
+        "row": 0,
+        "col": 5
+      },
+      {
+        "number": 4,
+        "clue": "Conduit from a ventricle",
+        "answer": "AORTA",
+        "row": 0,
+        "col": 6
+      },
+      {
+        "number": 5,
+        "clue": "Four minus one",
+        "answer": "TREY",
+        "row": 0,
+        "col": 7
+      },
+      {
+        "number": 6,
+        "clue": "Really, really regrets",
+        "answer": "DEPLORES",
+        "row": 0,
+        "col": 9
+      },
+      {
+        "number": 7,
+        "clue": "Remedy for some intake problems",
+        "answer": "INHALER",
+        "row": 0,
+        "col": 10
+      },
+      {
+        "number": 8,
+        "clue": "Skip it!",
+        "answer": "STONE",
+        "row": 0,
+        "col": 11
+      },
+      {
+        "number": 9,
+        "clue": "Suddenly pay attention, with \"up\"",
+        "answer": "PERK",
+        "row": 0,
+        "col": 12
+      },
+      {
+        "number": 10,
+        "clue": "Native American people known as the \"Nation du Chat\"",
+        "answer": "ERIE",
+        "row": 0,
+        "col": 13
+      },
+      {
+        "number": 11,
+        "clue": "Exam on which 44-Down got a near-perfect score",
+        "answer": "LSAT",
+        "row": 0,
+        "col": 14
+      },
+      {
+        "number": 12,
+        "clue": "Furniture that's designed to break down?",
+        "answer": "SECTIONAL",
+        "row": 1,
+        "col": 2
+      },
+      {
+        "number": 13,
+        "clue": "One breaking a 108-year drought in 2016",
+        "answer": "CUB",
+        "row": 1,
+        "col": 8
+      },
+      {
+        "number": 14,
+        "clue": "Catches on",
+        "answer": "GETSWISE",
+        "row": 2,
+        "col": 1
+      },
+      {
+        "number": 15,
+        "clue": "Australian singer with the 2014 #1 album \"1000 Forms of Fear\"",
+        "answer": "SIA",
+        "row": 3,
+        "col": 0
+      },
+      {
+        "number": 20,
+        "clue": "Prefix with piracy",
+        "answer": "ANTI",
+        "row": 5,
+        "col": 3
+      },
+      {
+        "number": 21,
+        "clue": "Staple vegetables in Hawaiian cooking",
+        "answer": "TAROS",
+        "row": 5,
+        "col": 7
+      },
+      {
+        "number": 22,
+        "clue": "Each",
+        "answer": "APOP",
+        "row": 5,
+        "col": 8
+      },
+      {
+        "number": 23,
+        "clue": "Puts on a big display",
+        "answer": "SHOWBOATS",
+        "row": 5,
+        "col": 12
+      },
+      {
+        "number": 24,
+        "clue": "Fan group that often wears black-and-white face paint",
+        "answer": "KISSARMY",
+        "row": 5,
+        "col": 13
+      },
+      {
+        "number": 25,
+        "clue": "\"The Dove and the ___\" (Aesop fable)",
+        "answer": "ANT",
+        "row": 5,
+        "col": 14
+      },
+      {
+        "number": 27,
+        "clue": "Charlie with the 2016 hit \"We Don't Talk Anymore\"",
+        "answer": "PUTH",
+        "row": 6,
+        "col": 6
+      },
+      {
+        "number": 28,
+        "clue": "God who rides in a chariot pulled by two giant magical goats",
+        "answer": "THOR",
+        "row": 6,
+        "col": 11
+      },
+      {
+        "number": 29,
+        "clue": "It'll never fly!",
+        "answer": "PIG",
+        "row": 7,
+        "col": 0
+      },
+      {
+        "number": 30,
+        "clue": "Forwent",
+        "answer": "ESCHEWED",
+        "row": 7,
+        "col": 5
+      },
+      {
+        "number": 33,
+        "clue": "Dad-blasted",
+        "answer": "DOGGONE",
+        "row": 8,
+        "col": 4
+      },
+      {
+        "number": 34,
+        "clue": "Pedestrian",
+        "answer": "MUNDANE",
+        "row": 8,
+        "col": 10
+      },
+      {
+        "number": 37,
+        "clue": "Split component, at times",
+        "answer": "TENPIN",
+        "row": 9,
+        "col": 9
+      },
+      {
+        "number": 38,
+        "clue": "Called on one's birthday?",
+        "answer": "NEE",
+        "row": 9,
+        "col": 14
+      },
+      {
+        "number": 39,
+        "clue": "Dark",
+        "answer": "UNLIT",
+        "row": 10,
+        "col": 3
+      },
+      {
+        "number": 40,
+        "clue": "Like tungsten",
+        "answer": "DENSE",
+        "row": 10,
+        "col": 8
+      },
+      {
+        "number": 42,
+        "clue": "Main greeting",
+        "answer": "AHOY",
+        "row": 11,
+        "col": 0
+      },
+      {
+        "number": 43,
+        "clue": "Pointer that changes with the weather",
+        "answer": "VANE",
+        "row": 11,
+        "col": 1
+      },
+      {
+        "number": 44,
+        "clue": "Filmdom's Woods who took the 11-Down",
+        "answer": "ELLE",
+        "row": 11,
+        "col": 2
+      },
+      {
+        "number": 45,
+        "clue": "___ league",
+        "answer": "REC",
+        "row": 11,
+        "col": 6
+      },
+      {
+        "number": 46,
+        "clue": "Scorch",
+        "answer": "SEAR",
+        "row": 11,
+        "col": 7
+      },
+      {
+        "number": 47,
+        "clue": "Swell",
+        "answer": "GROW",
+        "row": 11,
+        "col": 11
+      }
+    ]
+  }
+}
