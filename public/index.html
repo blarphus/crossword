@@ -649,7 +649,7 @@ function drawThumbnail(canvas, info) {
 // ─── View management ───────────────────────────────────────────
 function showCalendar() {
   puzzleView.style.display = 'none';
-  calendarView.style.display = '';
+  calendarView.style.display = 'block';
   document.title = 'NYT Crossword';
 
   if (currentDate) {
@@ -664,7 +664,7 @@ function showCalendar() {
 
 function showPuzzle(dateStr) {
   calendarView.style.display = 'none';
-  puzzleView.style.display = '';
+  puzzleView.style.display = 'block';
   loadPuzzle(dateStr);
 }
 
@@ -675,12 +675,20 @@ async function loadPuzzle(dateStr) {
   lastCursorKey = '';
 
   // Fetch puzzle data and shared state in parallel
-  const [puzzleRes, stateRes] = await Promise.all([
-    fetch(`/api/puzzles/${dateStr}`),
-    fetch(`/api/state/${dateStr}`),
-  ]);
-  const data = await puzzleRes.json();
-  const stateData = await stateRes.json();
+  let data, stateData;
+  try {
+    const [puzzleRes, stateRes] = await Promise.all([
+      fetch(`/api/puzzles/${dateStr}`),
+      fetch(`/api/state/${dateStr}`),
+    ]);
+    if (!puzzleRes.ok) { alert('Puzzle not found'); showCalendar(); return; }
+    data = await puzzleRes.json();
+    stateData = await stateRes.json();
+  } catch (e) {
+    alert('Failed to load puzzle');
+    showCalendar();
+    return;
+  }
 
   ROWS = data.dimensions.rows;
   COLS = data.dimensions.cols;
