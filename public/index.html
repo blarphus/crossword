@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>NYT Crossword</title>
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -85,6 +85,7 @@ header .meta { font-size: 0.85rem; color: #666; margin-top: 4px; }
   border: 2px solid var(--black);
   user-select: none;
   cursor: pointer;
+  touch-action: manipulation;
 }
 
 .cell {
@@ -192,10 +193,34 @@ header .meta { font-size: 0.85rem; color: #666; margin-top: 4px; }
   cursor: pointer;
 }
 
+/* Hidden input for mobile keyboard */
+.mobile-input {
+  position: absolute;
+  opacity: 0;
+  width: 1px;
+  height: 1px;
+  top: -9999px;
+  left: -9999px;
+}
+
 /* Mobile */
 @media (max-width: 780px) {
-  .app { flex-direction: column; align-items: center; padding: 8px; gap: 12px; }
-  .clue-panel { max-width: 100%; max-height: 300px; width: 100%; }
+  header { padding: 10px; }
+  header h1 { font-size: 1.1rem; }
+  header .meta { font-size: 0.75rem; }
+
+  .toolbar { gap: 6px; padding: 8px; }
+  .toolbar button, .toolbar select {
+    padding: 5px 10px;
+    font-size: 0.78rem;
+  }
+  .toolbar select { min-width: 140px; max-width: 45vw; }
+
+  .current-clue-bar { font-size: 0.85rem; padding: 6px 10px; }
+
+  .app { flex-direction: column; align-items: center; padding: 4px; gap: 8px; }
+  .grid-container { width: 100%; display: flex; justify-content: center; }
+  .clue-panel { max-width: 100%; max-height: 250px; width: 100%; }
 }
 </style>
 </head>
@@ -218,6 +243,7 @@ header .meta { font-size: 0.85rem; color: #666; margin-top: 4px; }
 <div class="app">
   <div class="grid-container">
     <div class="grid" id="grid" tabindex="0"></div>
+    <input type="text" id="mobile-input" class="mobile-input" autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false">
   </div>
   <div class="clue-panel" id="clue-panel"></div>
 </div>
@@ -329,8 +355,11 @@ async function loadPuzzle(dateStr) {
   document.title = `Crossword — ${prettyDate}`;
 
   // Compute cell size based on grid dimensions
-  const maxGridPx = Math.min(window.innerWidth - 420, 650);
-  const cellSize = Math.max(24, Math.min(40, Math.floor(maxGridPx / Math.max(ROWS, COLS))));
+  const isMobile = window.innerWidth <= 780;
+  const maxGridPx = isMobile
+    ? window.innerWidth - 12  // full width minus small padding
+    : Math.min(window.innerWidth - 420, 650);
+  const cellSize = Math.max(16, Math.min(40, Math.floor(maxGridPx / Math.max(ROWS, COLS))));
   document.documentElement.style.setProperty('--cell-size', cellSize + 'px');
 
   buildGrid();
@@ -476,8 +505,12 @@ function buildGrid() {
     }
   }
 
-  const gridH = ROWS * parseInt(getComputedStyle(document.documentElement).getPropertyValue('--cell-size')) + 4;
-  cluePanelEl.style.maxHeight = gridH + 'px';
+  if (window.innerWidth > 780) {
+    const gridH = ROWS * parseInt(getComputedStyle(document.documentElement).getPropertyValue('--cell-size')) + 4;
+    cluePanelEl.style.maxHeight = gridH + 'px';
+  } else {
+    cluePanelEl.style.maxHeight = '250px';
+  }
 }
 
 // ─── Build Clue Panel ──────────────────────────────────────────────
@@ -675,7 +708,59 @@ function checkCompletion() {
   congratsEl.classList.add('show');
 }
 
-function focusGrid() { gridEl.focus(); }
+const mobileInput = document.getElementById('mobile-input');
+const isTouchDevice = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
+
+function focusGrid() {
+  if (isTouchDevice) {
+    mobileInput.focus();
+  } else {
+    gridEl.focus();
+  }
+}
+
+// ─── Mobile input handler ──────────────────────────────────────────
+mobileInput.addEventListener('input', (e) => {
+  if (!PUZZLE || solved) return;
+  const val = mobileInput.value;
+  mobileInput.value = '';
+  if (!val) return;
+  const char = val.slice(-1);
+  if (/^[a-zA-Z]$/.test(char)) {
+    if (!checkedCells[selectedRow][selectedCol]) {
+      const letter = char.toUpperCase();
+      userGrid[selectedRow][selectedCol] = letter;
+      sendCellUpdate(selectedRow, selectedCol, letter);
+      if (autoCheck && letter === PUZZLE.grid[selectedRow][selectedCol]) {
+        checkedCells[selectedRow][selectedCol] = true;
+      }
+    }
+    render();
+    advanceCursor();
+    render();
+    checkCompletion();
+  }
+});
+
+mobileInput.addEventListener('keydown', (e) => {
+  if (!PUZZLE || solved) return;
+  if (e.key === 'Backspace') {
+    e.preventDefault();
+    if (checkedCells[selectedRow][selectedCol]) {
+      retreatCursor();
+    } else if (userGrid[selectedRow][selectedCol]) {
+      userGrid[selectedRow][selectedCol] = '';
+      sendCellUpdate(selectedRow, selectedCol, '');
+    } else {
+      retreatCursor();
+      if (!checkedCells[selectedRow][selectedCol]) {
+        userGrid[selectedRow][selectedCol] = '';
+        sendCellUpdate(selectedRow, selectedCol, '');
+      }
+    }
+    render();
+  }
+});
 
 // ─── Keyboard ──────────────────────────────────────────────────────
 gridEl.addEventListener('keydown', (e) => {
