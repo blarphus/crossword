@@ -1480,10 +1480,9 @@ function sendCellUpdate(row, col, letter) {
       const wasOnFire = myFireActive;
 
       if (isCorrect && myFireActive) {
-        // Correct + on fire: doubled points, extend fire
+        // Correct + on fire: doubled points (extension happens on word completion only)
         persistedPoints.set(myName, (persistedPoints.get(myName) || 0) + 2);
         showPointFloat(row, col, 2, null, true);
-        extendMyFire({ row, col }, myFireExpiresAt + 10000);
       } else if (isCorrect && !myFireActive) {
         // Correct + not on fire: normal point
         persistedPoints.set(myName, (persistedPoints.get(myName) || 0) + 1);
@@ -1510,6 +1509,11 @@ function sendCellUpdate(row, col, letter) {
           persistedPoints.set(myName, (persistedPoints.get(myName) || 0) + wb);
           setTimeout(() => showPointFloat(row, col, wb, wb >= (wasOnFire ? 30 : 15) ? 'combo' : 'word', wasOnFire), 200);
           triggerWordWave(row, col);
+
+          // Extend fire on word completion while on fire
+          if (myFireActive && wasOnFire) {
+            extendMyFire(wordCellKeys, myFireExpiresAt + 10000);
+          }
 
           // Track word completions toward fire trigger (only when not on fire)
           if (!myFireActive) {
@@ -1552,9 +1556,9 @@ function startMyFire(fireCellKeys, expiresAt) {
   applyFireCellEffects();
 }
 
-function extendMyFire(cell, newExpiresAt) {
+function extendMyFire(cellKeys, newExpiresAt) {
   myFireExpiresAt = newExpiresAt;
-  myFireCells.add(`${cell.row},${cell.col}`);
+  for (const key of cellKeys) myFireCells.add(key);
   applyFireCellEffects();
   // Fire bar is already running, it'll pick up the new expiry
 }

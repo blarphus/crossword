@@ -440,14 +440,8 @@ io.on('connection', async (socket) => {
           const wasOnFire = fs.onFire;
 
           if (isCorrect && fs.onFire) {
-            // Correct + on fire: extend fire, double points
-            fs.fireExpiresAt += 10000;
-            fs.fireCells.push({ row, col });
-            if (fs.fireTimer) clearTimeout(fs.fireTimer);
-            const remainingMs = fs.fireExpiresAt - now;
-            fs.fireTimer = setTimeout(() => expireFire(socket.id), remainingMs);
-            fireEvent = { type: 'extended', userName, color: userColor, fireCells: fs.fireCells.slice(), remainingMs };
-            pointDelta = 2; // doubled
+            // Correct + on fire: double points (extension happens on word completion only)
+            pointDelta = 2;
           } else if (isCorrect && !fs.onFire) {
             pointDelta = 1;
           } else if (!isCorrect && fs.onFire) {
@@ -476,6 +470,21 @@ io.on('connection', async (socket) => {
             // Double word bonus only if was already on fire (not if fire just started this turn)
             if (wordBonus && wasOnFire) wordBonus *= 2;
             if (wordBonus) await db.addPoints(puzzleDate, userName, wordBonus);
+
+            // Extend fire on word completion while on fire
+            if (completed > 0 && fs.onFire && wasOnFire) {
+              fs.fireExpiresAt += 10000;
+              // Add completed word cells to fire
+              const seen = new Set(fs.fireCells.map(c => `${c.row},${c.col}`));
+              for (const c of completedWordCells) {
+                const k = `${c.row},${c.col}`;
+                if (!seen.has(k)) { seen.add(k); fs.fireCells.push(c); }
+              }
+              if (fs.fireTimer) clearTimeout(fs.fireTimer);
+              const remainingMs = fs.fireExpiresAt - now;
+              fs.fireTimer = setTimeout(() => expireFire(socket.id), remainingMs);
+              fireEvent = { type: 'extended', userName, color: userColor, fireCells: fs.fireCells.slice(), remainingMs };
+            }
 
             // Track word completions toward fire trigger (only when not already on fire)
             if (completed > 0 && !fs.onFire) {
