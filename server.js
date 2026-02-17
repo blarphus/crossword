@@ -116,9 +116,20 @@ app.post('/api/me', async (req, res) => {
 app.get('/api/state/:date', async (req, res) => {
   try {
     const state = await db.getState(req.params.date);
-    res.json(state
-      ? { userGrid: state.user_grid, cellFillers: state.cell_fillers || {}, points: state.points || {}, updatedAt: state.updated_at }
-      : { userGrid: {}, cellFillers: {}, points: {} });
+    if (!state) {
+      return res.json({ userGrid: {}, cellFillers: {}, points: {}, userColors: {} });
+    }
+    // Look up colors for all filler names
+    const fillers = state.cell_fillers || {};
+    const uniqueNames = [...new Set(Object.values(fillers).filter(Boolean))];
+    const userColors = await db.getUserColors(uniqueNames);
+    res.json({
+      userGrid: state.user_grid,
+      cellFillers: fillers,
+      points: state.points || {},
+      userColors,
+      updatedAt: state.updated_at,
+    });
   } catch (err) {
     console.error('GET /api/state error:', err);
     res.status(500).json({ error: 'Database error' });

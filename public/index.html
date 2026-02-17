@@ -1106,7 +1106,7 @@ async function loadPuzzle(dateStr) {
   congratsEl.classList.remove('show');
 
   // Apply shared state
-  applySharedState(stateData.userGrid || {}, stateData.cellFillers || {}, stateData.points || {});
+  applySharedState(stateData.userGrid || {}, stateData.cellFillers || {}, stateData.points || {}, stateData.userColors || {});
 
   // Update header
   const d = new Date(dateStr + 'T12:00:00');
@@ -1150,18 +1150,20 @@ async function loadPuzzle(dateStr) {
 }
 
 // ─── Collaboration helpers ────────────────────────────────────
-function applySharedState(gridMap, fillersMap, pointsMap) {
+function applySharedState(gridMap, fillersMap, pointsMap, userColorsMap) {
   for (const [key, letter] of Object.entries(gridMap)) {
     const [r, c] = key.split(',').map(Number);
     if (r >= 0 && r < ROWS && c >= 0 && c < COLS) {
       userGrid[r][c] = letter;
     }
   }
-  // Apply persisted cell fillers
+  // Apply persisted cell fillers with real colors
   if (fillersMap) {
     for (const [key, name] of Object.entries(fillersMap)) {
       if (name) {
-        cellFillers.set(key, { userName: name, color: '#ccc' });
+        const color = (userColorsMap && userColorsMap[name]) || (name === myName ? myColor : '#ccc');
+        cellFillers.set(key, { userName: name, color });
+        cellColors.set(key, color);
       }
     }
   }

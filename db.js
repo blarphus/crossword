@@ -293,6 +293,17 @@ async function getCellFillers(puzzleDate) {
   return rows[0]?.cell_fillers || {};
 }
 
+async function getUserColors(names) {
+  if (!names.length) return {};
+  const { rows } = await pool.query(
+    'SELECT name, color FROM users WHERE name = ANY($1)',
+    [names]
+  );
+  const map = {};
+  for (const row of rows) map[row.name] = row.color;
+  return map;
+}
+
 async function addPoints(puzzleDate, userName, delta) {
   if (delta === 0) return;
   const existing = await getState(puzzleDate);
@@ -313,4 +324,4 @@ async function addPoints(puzzleDate, userName, delta) {
   }
 }
 
-module.exports = { initDb, getState, upsertCell, clearState, savePuzzle, getPuzzle, getAllPuzzleMeta, hasPuzzle, getCalendarData, getProgressSummary, getTimer, saveTimer, getMetadata, setMetadata, getUser, createUser, getUserCount, upsertCellFiller, getCellFillers, addPoints };
+module.exports = { initDb, getState, upsertCell, clearState, savePuzzle, getPuzzle, getAllPuzzleMeta, hasPuzzle, getCalendarData, getProgressSummary, getTimer, saveTimer, getMetadata, setMetadata, getUser, createUser, getUserCount, upsertCellFiller, getCellFillers, getUserColors, addPoints };
