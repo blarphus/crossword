@@ -120,6 +120,34 @@ function getNextColor(room) {
   return COLOR_POOL[room.size % COLOR_POOL.length];
 }
 
+// ─── Puzzle solve timers (only tick when someone is in the room) ──
+const puzzleTimerState = new Map(); // puzzleDate → { accumulated, startedAt }
+
+function getElapsedSeconds(puzzleDate) {
+  const state = puzzleTimerState.get(puzzleDate);
+  if (!state) return 0;
+  const running = state.startedAt ? (Date.now() - state.startedAt) / 1000 : 0;
+  return Math.floor(state.accumulated + running);
+}
+
+async function startTimer(puzzleDate) {
+  if (puzzleTimerState.has(puzzleDate)) return; // already running
+  const accumulated = await db.getTimer(puzzleDate);
+  puzzleTimerState.set(puzzleDate, { accumulated, startedAt: Date.now() });
+}
+
+async function stopTimer(puzzleDate) {
+  const state = puzzleTimerState.get(puzzleDate);
+  if (!state) return;
+  const elapsed = state.accumulated + (state.startedAt ? (Date.now() - state.startedAt) / 1000 : 0);
+  puzzleTimerState.delete(puzzleDate);
+  try {
+    await db.saveTimer(puzzleDate, elapsed);
+  } catch (err) {
+    console.error('[timer] Failed to save timer:', err);
+  }
+}
+
 // Debounce timers for progress broadcasts
 const progressTimers = new Map();
 
@@ -158,6 +186,7 @@ function leaveCurrentPuzzle(socket) {
     room.delete(socket.id);
     if (room.size === 0) {
       puzzleRooms.delete(puzzleDate);
+      stopTimer(puzzleDate);
     }
     socket.to(`puzzle:${puzzleDate}`).emit('user-left', {
       userId: socket.handshake.query.userId,
@@ -173,7 +202,7 @@ io.on('connection', (socket) => {
   const userId = socket.handshake.query.userId || 'anon';
   socket.join('calendar');
 
-  socket.on('join-puzzle', (puzzleDate) => {
+  socket.on('join-puzzle', async (puzzleDate) => {
     // Leave previous puzzle room if any
     leaveCurrentPuzzle(socket);
 
@@ -188,6 +217,9 @@ io.on('connection', (socket) => {
     const color = getNextColor(room);
     room.set(socket.id, { userId, color, row: 0, col: 0, direction: 'across' });
 
+    // Start timer when first user joins
+    await startTimer(puzzleDate);
+
     // Send room state to joiner (all other users)
     const others = [];
     for (const [sid, info] of room) {
@@ -196,6 +228,9 @@ io.on('connection', (socket) => {
       }
     }
     socket.emit('room-state', { users: others, yourColor: color });
+
+    // Send current timer value
+    socket.emit('timer-sync', { seconds: getElapsedSeconds(puzzleDate) });
 
     // Broadcast to others
     socket.to(`puzzle:${puzzleDate}`).emit('user-joined', {
@@ -244,6 +279,10 @@ io.on('connection', (socket) => {
   socket.on('clear-puzzle', async ({ puzzleDate }) => {
     try {
       await db.clearState(puzzleDate);
+      // Reset timer
+      puzzleTimerState.delete(puzzleDate);
+      await startTimer(puzzleDate); // restart from 0 (clearState deleted the row)
+      io.to(`puzzle:${puzzleDate}`).emit('timer-sync', { seconds: 0 });
       socket.to(`puzzle:${puzzleDate}`).emit('puzzle-cleared', { userId });
       debounceProgressBroadcast(puzzleDate);
     } catch (err) {

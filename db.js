@@ -28,6 +28,10 @@ async function initDb() {
       value TEXT
     )
   `);
+  // Add timer column to puzzle_state if missing
+  await pool.query(`
+    ALTER TABLE puzzle_state ADD COLUMN IF NOT EXISTS timer_seconds INTEGER DEFAULT 0
+  `);
 }
 
 async function savePuzzle(date, data) {
@@ -188,6 +192,24 @@ function buildProgressInfo(row) {
   };
 }
 
+async function getTimer(puzzleDate) {
+  const { rows } = await pool.query(
+    'SELECT timer_seconds FROM puzzle_state WHERE puzzle_date = $1',
+    [puzzleDate]
+  );
+  return rows[0]?.timer_seconds || 0;
+}
+
+async function saveTimer(puzzleDate, seconds) {
+  // Upsert: create row if it doesn't exist yet
+  await pool.query(
+    `INSERT INTO puzzle_state (puzzle_date, user_grid, timer_seconds)
+     VALUES ($1, '{}', $2)
+     ON CONFLICT (puzzle_date) DO UPDATE SET timer_seconds = $2`,
+    [puzzleDate, Math.floor(seconds)]
+  );
+}
+
 async function getMetadata(key) {
   const { rows } = await pool.query('SELECT value FROM metadata WHERE key = $1', [key]);
   return rows[0]?.value || null;
@@ -200,4 +222,4 @@ async function setMetadata(key, value) {
   );
 }
 
-module.exports = { initDb, getState, upsertCell, clearState, savePuzzle, getPuzzle, getAllPuzzleMeta, hasPuzzle, getCalendarData, getProgressSummary, getMetadata, setMetadata };
+module.exports = { initDb, getState, upsertCell, clearState, savePuzzle, getPuzzle, getAllPuzzleMeta, hasPuzzle, getCalendarData, getProgressSummary, getTimer, saveTimer, getMetadata, setMetadata };

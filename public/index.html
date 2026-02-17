@@ -220,6 +220,13 @@ body {
   border-radius: 50%;
   display: inline-block;
 }
+.solve-timer {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  color: #555;
+  margin-left: auto;
+  font-size: 0.82rem;
+}
 
 .current-clue-bar {
   display: flex;
@@ -503,6 +510,7 @@ body {
     <button id="btn-check"><span class="check-text">Auto-Check</span><span class="check-icon">&#x1F6DF;</span></button>
     <button id="btn-clear">Clear Puzzle</button>
     <button id="btn-reveal">Reveal Puzzle</button>
+    <span class="solve-timer" id="solve-timer">0:00</span>
   </div>
 
   <div class="presence-bar" id="presence-bar"></div>
@@ -561,6 +569,38 @@ let currentDate = null;
 
 // Grid zoom state (mobile pinch-to-zoom)
 let gridScale = 1, gridTx = 0, gridTy = 0;
+
+// Solve timer state
+let timerSeconds = 0;
+let timerInterval = null;
+const timerEl = document.getElementById('solve-timer');
+
+function formatTimer(s) {
+  const hrs = Math.floor(s / 3600);
+  const mins = Math.floor((s % 3600) / 60);
+  const secs = s % 60;
+  if (hrs > 0) return `${hrs}:${String(mins).padStart(2,'0')}:${String(secs).padStart(2,'0')}`;
+  return `${mins}:${String(secs).padStart(2,'0')}`;
+}
+
+function updateTimerDisplay() {
+  timerEl.textContent = formatTimer(timerSeconds);
+}
+
+function startTimerTick() {
+  if (timerInterval) return;
+  timerInterval = setInterval(() => {
+    timerSeconds++;
+    updateTimerDisplay();
+  }, 1000);
+}
+
+function stopTimerTick() {
+  if (timerInterval) {
+    clearInterval(timerInterval);
+    timerInterval = null;
+  }
+}
 
 // ─── Remote user presence ──────────────────────────────────────
 let myColor = '#90EE90';
@@ -778,6 +818,9 @@ function showCalendar() {
     socket.emit('leave-puzzle');
     currentDate = null;
   }
+  stopTimerTick();
+  timerSeconds = 0;
+  updateTimerDisplay();
   localStorage.removeItem('crossword-current-puzzle');
   PUZZLE = null;
   remoteUsers.clear();
@@ -1002,6 +1045,12 @@ socket.on('auto-check-toggled', ({ enabled }) => {
           checkedCells[r][c] = true;
   }
   render();
+});
+
+socket.on('timer-sync', ({ seconds }) => {
+  timerSeconds = seconds;
+  updateTimerDisplay();
+  startTimerTick();
 });
 
 socket.on('puzzle-cleared', () => {
