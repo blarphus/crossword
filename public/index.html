@@ -313,10 +313,19 @@ body {
   line-height: 1;
   overflow: hidden;
 }
+.cell.rebus-cell {
+  border: 2px solid #333;
+}
 .cell.rebus-active {
   outline: 2.5px solid #2196F3;
   outline-offset: -2.5px;
   z-index: 2;
+}
+.rebus-indicator {
+  font-size: 0.8rem;
+  color: #555;
+  margin-top: 4px;
+  font-style: italic;
 }
 .toolbar button.active { background: #d0e0ff; }
 
@@ -589,6 +598,7 @@ body {
     <button class="back-btn" id="btn-back">&larr; Calendar</button>
     <h1 id="puzzle-title">The New York Times Crossword</h1>
     <div class="meta" id="puzzle-meta"></div>
+    <div class="rebus-indicator" id="rebus-indicator" style="display:none">This puzzle contains rebus squares</div>
   </div>
 
   <div class="toolbar">
@@ -1146,6 +1156,7 @@ async function loadPuzzle(dateStr) {
   const prettyDate = `${dayName}, ${MONTH_NAMES[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`;
   titleEl.textContent = data.title || 'The New York Times Crossword';
   metaEl.textContent = `${prettyDate} \u00B7 By ${data.author} \u00B7 Edited by ${data.editor}`;
+  document.getElementById('rebus-indicator').style.display = hasRebus() ? '' : 'none';
   document.title = `Crossword \u2014 ${prettyDate}`;
 
   // Compute cell size based on grid dimensions
@@ -1542,6 +1553,11 @@ function buildGrid() {
         if (shadeColor) {
           cell.classList.add('shaded');
           cell.style.setProperty('--shade-color', shadeColor);
+        }
+
+        // Rebus cell thick outline
+        if (PUZZLE.rebus[key]) {
+          cell.classList.add('rebus-cell');
         }
       }
 
