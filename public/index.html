@@ -196,7 +196,6 @@ body {
   transition: background 0.15s;
 }
 .toolbar button:hover { background: #eee; }
-.toolbar button.active { background: #2a6dd4; color: var(--white); border-color: #2a6dd4; }
 
 .presence-bar {
   display: flex;
@@ -437,9 +436,6 @@ body {
 .kb-key:active { background: #7a7a7c; }
 .kb-more, .kb-backspace { flex: 1.4; max-width: 54px; font-size: 0.8rem; }
 
-/* Auto-check icon */
-.check-icon { display: none; }
-
 /* User badge in calendar nav */
 .user-badge {
   display: inline-flex;
@@ -550,8 +546,6 @@ body {
   /* Keyboard at bottom of flex column */
   .mobile-keyboard { display: block; position: static; flex-shrink: 0; padding-bottom: env(safe-area-inset-bottom, 0px); }
 
-  .check-text { display: none; }
-  .check-icon { display: inline; font-size: 1.2rem; }
 }
 </style>
 </head>
@@ -583,7 +577,6 @@ body {
   </div>
 
   <div class="toolbar">
-    <button id="btn-check"><span class="check-text">Auto-Check</span><span class="check-icon">&#x1F6DF;</span></button>
     <button id="btn-clear">Clear Puzzle</button>
     <button id="btn-reveal">Reveal Puzzle</button>
     <span class="solve-timer" id="solve-timer">0:00</span>
@@ -760,7 +753,7 @@ let userGrid = [];
 let checkedCells = [];
 let selectedRow = 0, selectedCol = 0;
 let direction = 'across';
-let autoCheck = false;
+const autoCheck = true;
 let solved = false;
 let currentDate = null;
 
@@ -818,7 +811,6 @@ const congratsEl = document.getElementById('congrats');
 const titleEl = document.getElementById('puzzle-title');
 const metaEl = document.getElementById('puzzle-meta');
 const presenceBarEl = document.getElementById('presence-bar');
-const btnCheck = document.getElementById('btn-check');
 const btnClear = document.getElementById('btn-clear');
 const btnReveal = document.getElementById('btn-reveal');
 const btnBack = document.getElementById('btn-back');
@@ -1099,10 +1091,8 @@ async function loadPuzzle(dateStr) {
   // Reset state
   userGrid = Array.from({length: ROWS}, () => Array(COLS).fill(''));
   checkedCells = Array.from({length: ROWS}, () => Array(COLS).fill(false));
-  autoCheck = false;
   solved = false;
   direction = 'across';
-  btnCheck.classList.remove('active');
   congratsEl.classList.remove('show');
 
   // Apply shared state
@@ -1264,19 +1254,6 @@ function setupSocketHandlers() {
       render();
       checkCompletion();
     }
-  });
-
-  socket.on('auto-check-toggled', ({ enabled }) => {
-    if (!PUZZLE) return;
-    autoCheck = enabled;
-    btnCheck.classList.toggle('active', autoCheck);
-    if (autoCheck) {
-      for (let r = 0; r < ROWS; r++)
-        for (let c = 0; c < COLS; c++)
-          if (userGrid[r][c] && userGrid[r][c] === PUZZLE.grid[r][c])
-            checkedCells[r][c] = true;
-    }
-    render();
   });
 
   socket.on('timer-sync', ({ seconds }) => {
@@ -1925,23 +1902,6 @@ gridEl.addEventListener('keydown', (e) => {
 
 // ─── Toolbar ───────────────────────────────────────────────────
 btnBack.addEventListener('click', () => showCalendar());
-
-btnCheck.addEventListener('click', () => {
-  if (!PUZZLE) return;
-  autoCheck = !autoCheck;
-  btnCheck.classList.toggle('active', autoCheck);
-  if (autoCheck) {
-    for (let r = 0; r < ROWS; r++)
-      for (let c = 0; c < COLS; c++)
-        if (userGrid[r][c] && userGrid[r][c] === PUZZLE.grid[r][c])
-          checkedCells[r][c] = true;
-  }
-  render();
-  // Broadcast auto-check state to all users
-  if (currentDate && socket) {
-    socket.emit('auto-check-toggle', { puzzleDate: currentDate, enabled: autoCheck });
-  }
-});
 
 btnClear.addEventListener('click', () => {
   if (!PUZZLE || !confirm('Clear all entered letters?')) return;

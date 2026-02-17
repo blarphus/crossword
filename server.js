@@ -365,10 +365,6 @@ io.on('connection', async (socket) => {
     });
   });
 
-  socket.on('auto-check-toggle', ({ puzzleDate, enabled }) => {
-    socket.to(`puzzle:${puzzleDate}`).emit('auto-check-toggled', { enabled, userId });
-  });
-
   socket.on('clear-puzzle', async ({ puzzleDate }) => {
     try {
       await db.clearState(puzzleDate);
