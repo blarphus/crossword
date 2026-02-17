@@ -355,6 +355,8 @@ body {
 }
 .clue-item:hover { background: var(--clue-hover); }
 .clue-item.active { background: var(--clue-active); }
+.clue-item.solved { opacity: 0.45; text-decoration: line-through; }
+.clue-item.solved.active { opacity: 0.6; }
 .clue-item .clue-num { font-weight: 700; min-width: 24px; }
 .clue-item .clue-text { flex: 1; }
 
@@ -564,6 +566,7 @@ let gridScale = 1, gridTx = 0, gridTy = 0;
 let myColor = '#90EE90';
 const remoteUsers = new Map(); // socketId → {userId, color, row, col, direction}
 const cellColors = new Map();  // "r,c" → color (who filled this cell)
+const cellFillers = new Map(); // "r,c" → {userId, color} (who filled this cell)
 const roomCounts = new Map();  // puzzleDate → player count
 let lastCursorKey = '';
 
@@ -794,6 +797,7 @@ async function loadPuzzle(dateStr) {
   localStorage.setItem('crossword-current-puzzle', dateStr);
   remoteUsers.clear();
   cellColors.clear();
+  cellFillers.clear();
   lastCursorKey = '';
 
   // Fetch puzzle data and shared state in parallel
@@ -910,8 +914,10 @@ function sendCellUpdate(row, col, letter) {
   const key = `${row},${col}`;
   if (letter) {
     cellColors.set(key, myColor);
+    cellFillers.set(key, { userId: USER_ID, color: myColor });
   } else {
     cellColors.delete(key);
+    cellFillers.delete(key);
   }
   socket.emit('cell-update', { puzzleDate: currentDate, row, col, letter });
 }
@@ -971,8 +977,14 @@ socket.on('cell-updated', ({ row, col, letter, userId: remoteUserId }) => {
         if (u.userId === remoteUserId) { color = u.color; break; }
       }
       cellColors.set(key, color);
+      cellFillers.set(key, { userId: remoteUserId, color });
+      // Auto-check remote letters too
+      if (autoCheck && letter === PUZZLE.grid[row][col]) {
+        checkedCells[row][col] = true;
+      }
     } else {
       cellColors.delete(key);
+      cellFillers.delete(key);
     }
     render();
     checkCompletion();
@@ -1000,6 +1012,7 @@ socket.on('puzzle-cleared', () => {
       checkedCells[r][c] = false;
     }
   cellColors.clear();
+  cellFillers.clear();
   solved = false;
   congratsEl.classList.remove('show');
   render();
@@ -1040,17 +1053,54 @@ socket.on('puzzle-progress', (summary) => {
   }
 });
 
+function computeUserStats() {
+  if (!PUZZLE) return new Map();
+  const stats = new Map(); // userId → { color, count }
+  for (const [key, filler] of cellFillers) {
+    const [r, c] = key.split(',').map(Number);
+    // Only count correctly filled cells
+    if (userGrid[r]?.[c] && userGrid[r][c] === PUZZLE.grid[r][c]) {
+      const existing = stats.get(filler.userId) || { color: filler.color, count: 0 };
+      existing.count++;
+      existing.color = filler.color;
+      stats.set(filler.userId, existing);
+    }
+  }
+  return stats;
+}
+
 function renderPresenceBar() {
   presenceBarEl.innerHTML = '';
-  if (remoteUsers.size === 0) {
+
+  // Count total white cells for percentage
+  let totalWhite = 0;
+  if (PUZZLE) {
+    for (let r = 0; r < ROWS; r++)
+      for (let c = 0; c < COLS; c++)
+        if (!isBlack(r, c)) totalWhite++;
+  }
+
+  const stats = computeUserStats();
+
+  // Always show current user + remote users
+  const allUsers = [{ userId: USER_ID, color: myColor, label: 'You' }];
+  for (const [, user] of remoteUsers) {
+    allUsers.push({ userId: user.userId, color: user.color, label: 'User' });
+  }
+
+  if (allUsers.length <= 1 && !stats.has(USER_ID)) {
     presenceBarEl.style.display = 'none';
     return;
   }
   presenceBarEl.style.display = '';
-  for (const [, user] of remoteUsers) {
+
+  for (const u of allUsers) {
+    const userStat = stats.get(u.userId);
+    const count = userStat ? userStat.count : 0;
+    const pct = totalWhite > 0 ? Math.round((count / totalWhite) * 100) : 0;
     const el = document.createElement('span');
     el.className = 'presence-user';
-    el.innerHTML = `<span class="presence-dot" style="background:${user.color}"></span>User`;
+    el.innerHTML = `<span class="presence-dot" style="background:${u.color}"></span>${u.label}${pct > 0 ? ` ${pct}%` : ''}`;
     presenceBarEl.appendChild(el);
   }
 }
@@ -1287,7 +1337,9 @@ function render() {
     clueBarTextEl.innerHTML = '&nbsp;';
   }
 
-  for (const k in clueItemEls) clueItemEls[k].classList.remove('active');
+  for (const k in clueItemEls) {
+    clueItemEls[k].classList.remove('active');
+  }
   if (currentClue) {
     const k = `${direction}-${currentClue.n}`;
     if (clueItemEls[k]) {
@@ -1295,6 +1347,23 @@ function render() {
       clueItemEls[k].scrollIntoView({block: 'nearest', behavior: 'smooth'});
     }
   }
+
+  // Mark solved clues
+  for (const dir of ['across', 'down']) {
+    for (const clue of PUZZLE.clues[dir]) {
+      const k = `${dir}-${clue.n}`;
+      const el = clueItemEls[k];
+      if (!el) continue;
+      const wCells = getWordCells(clue, dir);
+      const isSolved = wCells.length > 0 && wCells.every(([wr, wc]) =>
+        userGrid[wr][wc] && userGrid[wr][wc] === PUZZLE.grid[wr][wc]
+      );
+      el.classList.toggle('solved', isSolved);
+    }
+  }
+
+  // Update presence bar with live percentages
+  renderPresenceBar();
 
   broadcastCursor();
 }
@@ -1549,6 +1618,7 @@ btnClear.addEventListener('click', () => {
       checkedCells[r][c] = false;
     }
   cellColors.clear();
+  cellFillers.clear();
   solved = false;
   congratsEl.classList.remove('show');
   if (currentDate) {
