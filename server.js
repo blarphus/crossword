@@ -218,6 +218,31 @@ const puzzleRooms = new Map(); // puzzleDate → Map<socketId, {userId, userName
 const socketPuzzle = new Map(); // socketId → puzzleDate (which puzzle they're in)
 const COLOR_POOL = ['#4CAF50','#2196F3','#FF9800','#E91E63','#9C27B0','#00BCD4','#FF5722','#8BC34A'];
 
+// Fire streak state (ephemeral, in-memory only)
+// socketId → { puzzleDate, userName, color, recentCorrect: [{timestamp,row,col},...],
+//              onFire, fireExpiresAt, fireCells: [{row,col},...], fireTimer }
+const fireStreaks = new Map();
+
+function expireFire(socketId) {
+  const fs = fireStreaks.get(socketId);
+  if (!fs || !fs.onFire) return;
+  if (fs.fireTimer) clearTimeout(fs.fireTimer);
+  const fireCells = fs.fireCells.slice();
+  fs.onFire = false;
+  fs.fireExpiresAt = 0;
+  fs.fireCells = [];
+  fs.fireTimer = null;
+  fs.recentCorrect = [];
+  // Broadcast to room
+  const roomName = `puzzle:${fs.puzzleDate}`;
+  io.to(roomName).emit('fire-expired', {
+    socketId,
+    userName: fs.userName,
+    color: fs.color,
+    fireCells,
+  });
+}
+
 function getNextColor(room) {
   const usedColors = new Set();
   for (const user of room.values()) {
@@ -287,6 +312,19 @@ function leaveCurrentPuzzle(socket) {
   const puzzleDate = socketPuzzle.get(socket.id);
   if (!puzzleDate) return;
 
+  // Clean up fire state
+  const fs = fireStreaks.get(socket.id);
+  if (fs && fs.onFire) {
+    if (fs.fireTimer) clearTimeout(fs.fireTimer);
+    io.to(`puzzle:${puzzleDate}`).emit('fire-expired', {
+      socketId: socket.id,
+      userName: fs.userName,
+      color: fs.color,
+      fireCells: fs.fireCells,
+    });
+  }
+  fireStreaks.delete(socket.id);
+
   socket.leave(`puzzle:${puzzleDate}`);
   socketPuzzle.delete(socket.id);
 
@@ -336,6 +374,13 @@ io.on('connection', async (socket) => {
     const color = userColor || getNextColor(room);
     room.set(socket.id, { userId, userName, color, row: 0, col: 0, direction: 'across' });
 
+    // Initialize fire streak tracking
+    fireStreaks.set(socket.id, {
+      puzzleDate, userName, color,
+      recentCorrect: [],
+      onFire: false, fireExpiresAt: 0, fireCells: [], fireTimer: null,
+    });
+
     // Start timer when first user joins
     await startTimer(puzzleDate);
 
@@ -373,24 +418,82 @@ io.on('connection', async (socket) => {
       // Score points on letter placement (not on delete)
       let pointDelta = 0;
       let wordBonus = 0;
+      let fireEvent = null;
+      const now = Date.now();
+
+      // Get or create fire streak state
+      let fs = fireStreaks.get(socket.id);
+      if (!fs) {
+        fs = { puzzleDate, userName, color: userColor, recentCorrect: [], onFire: false, fireExpiresAt: 0, fireCells: [], fireTimer: null };
+        fireStreaks.set(socket.id, fs);
+      }
+
       if (letter) {
         const pData = await getPuzzleData(puzzleDate);
         const correctAnswer = getCorrectAnswer(pData, row, col);
         if (correctAnswer) {
-          pointDelta = (letter === correctAnswer) ? 1 : -1;
+          const isCorrect = (letter === correctAnswer);
+
+          if (isCorrect && fs.onFire) {
+            // Correct + on fire: extend fire, double points
+            fs.fireExpiresAt += 10000;
+            fs.fireCells.push({ row, col });
+            if (fs.fireTimer) clearTimeout(fs.fireTimer);
+            const remainingMs = fs.fireExpiresAt - now;
+            fs.fireTimer = setTimeout(() => expireFire(socket.id), remainingMs);
+            fireEvent = { type: 'extended', userName, color: userColor, fireCells: fs.fireCells.slice(), remainingMs };
+            pointDelta = 2; // doubled
+          } else if (isCorrect && !fs.onFire) {
+            // Correct + not on fire: track toward streak
+            fs.recentCorrect.push({ timestamp: now, row, col });
+            fs.recentCorrect = fs.recentCorrect.filter(e => now - e.timestamp < 30000);
+            if (fs.recentCorrect.length >= 3) {
+              // Start fire!
+              fs.onFire = true;
+              fs.fireExpiresAt = now + 30000;
+              fs.fireCells = fs.recentCorrect.slice(-3).map(e => ({ row: e.row, col: e.col }));
+              fs.fireTimer = setTimeout(() => expireFire(socket.id), 30000);
+              fireEvent = { type: 'started', userName, color: userColor, fireCells: fs.fireCells.slice(), remainingMs: 30000 };
+              fs.recentCorrect = []; // reset streak counter
+            }
+            pointDelta = 1;
+          } else if (!isCorrect && fs.onFire) {
+            // Incorrect + on fire: break fire
+            if (fs.fireTimer) clearTimeout(fs.fireTimer);
+            fireEvent = { type: 'broken', userName, color: userColor, fireCells: fs.fireCells.slice() };
+            fs.onFire = false;
+            fs.fireExpiresAt = 0;
+            fs.fireCells = [];
+            fs.fireTimer = null;
+            fs.recentCorrect = [];
+            pointDelta = -1;
+          } else {
+            // Incorrect + not on fire
+            fs.recentCorrect = [];
+            pointDelta = -1;
+          }
+
           await db.addPoints(puzzleDate, userName, pointDelta);
 
           // Check word completions for bonus
-          if (pointDelta === 1) {
+          if (isCorrect) {
             const completed = await checkWordCompletions(puzzleDate, row, col, pData);
-            if (completed >= 2) wordBonus = 15;      // combo!
+            if (completed >= 2) wordBonus = 15;
             else if (completed === 1) wordBonus = 5;
+            // Double word bonus if on fire
+            if (wordBonus && fs.onFire) wordBonus *= 2;
             if (wordBonus) await db.addPoints(puzzleDate, userName, wordBonus);
           }
         }
       }
 
-      socket.to(`puzzle:${puzzleDate}`).emit('cell-updated', { row, col, letter, userId, userName, color: userColor, pointDelta, wordBonus });
+      socket.to(`puzzle:${puzzleDate}`).emit('cell-updated', { row, col, letter, userId, userName, color: userColor, pointDelta, wordBonus, fireEvent });
+
+      // Send fire update back to originating socket
+      if (fireEvent) {
+        socket.emit('fire-update', fireEvent);
+      }
+
       debounceProgressBroadcast(puzzleDate);
     } catch (err) {
       console.error('[ws] cell-update error:', err);

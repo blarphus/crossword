@@ -256,7 +256,7 @@ body {
 }
 
 /* Grid */
-.grid-container { flex-shrink: 0; }
+.grid-container { flex-shrink: 0; position: relative; }
 
 .grid {
   display: grid;
@@ -623,6 +623,7 @@ body.mobile .toolbar { gap: 6px; padding: 4px 8px; flex-shrink: 0; }
 body.mobile .toolbar button { padding: 4px 10px; font-size: 0.78rem; }
 
 body.mobile .presence-bar { flex-shrink: 0; }
+body.mobile .fire-bar { flex-shrink: 0; }
 
 body.mobile .current-clue-bar { font-size: 0.85rem; padding: 6px 10px; background: #2b2d5e; color: #fff; flex-shrink: 0; }
 body.mobile .clue-nav-btn { color: #fff; }
@@ -639,6 +640,81 @@ body.mobile .clue-panel { display: none; }
 
 /* Keyboard at bottom of flex column */
 body.mobile .mobile-keyboard { display: block; position: static; flex-shrink: 0; padding-bottom: env(safe-area-inset-bottom, 0px); }
+
+/* ─── Fire streak effects ─────────────────────────────────────── */
+@keyframes fire-flicker {
+  0%, 100% { opacity: 0.8; transform: scaleY(1); }
+  50% { opacity: 1; transform: scaleY(1.3); }
+}
+.cell.on-fire::before {
+  content: '';
+  position: absolute;
+  top: -3px;
+  left: 15%;
+  right: 15%;
+  height: 6px;
+  background: linear-gradient(to top, #ff6a00, #ff9500, transparent);
+  border-radius: 2px 2px 0 0;
+  pointer-events: none;
+  z-index: 5;
+  animation: fire-flicker 0.4s ease-in-out infinite alternate;
+}
+
+/* Fire bar */
+.fire-bar {
+  display: none;
+  position: relative;
+  height: 22px;
+  background: #1a1a2e;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.fire-bar.active { display: block; }
+.fire-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #ff6a00, #ffa500, #ffd700);
+  transition: width 0.05s linear;
+}
+.fire-bar-label {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #fff;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+  pointer-events: none;
+}
+
+/* Combo broken overlay */
+@keyframes combo-broken-anim {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(0.5); }
+  30% { opacity: 1; transform: translate(-50%, -50%) scale(1.2); }
+  70% { opacity: 1; transform: translate(-50%, -50%) scale(1.2); }
+  100% { opacity: 0; transform: translate(-50%, -50%) scale(1); }
+}
+.combo-broken {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0.5);
+  font-size: 1.8rem;
+  font-weight: 900;
+  color: #c62828;
+  text-shadow: 0 2px 8px rgba(0,0,0,0.3);
+  pointer-events: none;
+  z-index: 20;
+  white-space: nowrap;
+  animation: combo-broken-anim 1.5s ease-out forwards;
+}
+
+/* Fire-doubled point floats */
+.point-float.fire-points {
+  color: #ff6a00;
+  text-shadow: 0 0 6px rgba(255,106,0,0.5);
+}
 </style>
 </head>
 <body>
@@ -677,6 +753,11 @@ body.mobile .mobile-keyboard { display: block; position: static; flex-shrink: 0;
   </div>
 
   <div class="presence-bar" id="presence-bar"></div>
+
+  <div class="fire-bar" id="fire-bar">
+    <div class="fire-bar-fill" id="fire-bar-fill"></div>
+    <div class="fire-bar-label" id="fire-bar-label">ON FIRE</div>
+  </div>
 
   <div class="current-clue-bar" id="current-clue-bar">
     <button class="clue-nav-btn" id="clue-prev">&lsaquo;</button>
@@ -912,6 +993,14 @@ const persistedPoints = new Map(); // userName → number (base points from DB, 
 const roomCounts = new Map();  // puzzleDate → player count
 let lastCursorKey = '';
 
+// Fire streak state
+let myFireActive = false;
+let myFireExpiresAt = 0;
+let myFireCells = new Set();    // "r,c" strings
+let myFireBarInterval = null;
+let myRecentCorrect = [];       // [{timestamp,row,col},...] for local optimistic tracking
+const remoteFireStates = new Map(); // socketId → {userName, color, fireCells: Set, expiresAt}
+
 // ─── DOM refs ──────────────────────────────────────────────────
 const calendarView = document.getElementById('calendar-view');
 const puzzleView = document.getElementById('puzzle-view');
@@ -1132,6 +1221,7 @@ function showCalendar() {
   stopTimerTick();
   timerSeconds = 0;
   updateTimerDisplay();
+  resetFireState();
   localStorage.removeItem('crossword-current-puzzle');
   PUZZLE = null;
   remoteUsers.clear();
@@ -1154,6 +1244,7 @@ async function loadPuzzle(dateStr) {
   cellFillers.clear();
   persistedPoints.clear();
   lastCursorKey = '';
+  resetFireState();
 
   // Fetch puzzle data and shared state in parallel
   let data, stateData;
@@ -1291,20 +1382,21 @@ function applySharedState(gridMap, fillersMap, pointsMap, userColorsMap) {
   }
 }
 
-function showPointFloat(row, col, delta, type) {
+function showPointFloat(row, col, delta, type, isFireDoubled) {
   if (!delta || !cellEls[row]?.[col]) return;
   const el = cellEls[row][col];
   const float = document.createElement('span');
   if (type === 'combo') {
     float.className = 'point-float combo';
-    float.textContent = '+15 COMBO';
+    float.textContent = isFireDoubled ? `+${delta} COMBO` : '+15 COMBO';
   } else if (type === 'word') {
     float.className = 'point-float word';
-    float.textContent = 'word complete +5';
+    float.textContent = isFireDoubled ? `word complete +${delta}` : 'word complete +5';
   } else {
     float.className = `point-float ${delta > 0 ? 'plus' : 'minus'}`;
-    float.textContent = delta > 0 ? '+1' : '-1';
+    float.textContent = delta > 0 ? `+${delta}` : `${delta}`;
   }
+  if (isFireDoubled && delta > 0) float.classList.add('fire-points');
   el.appendChild(float);
   float.addEventListener('animationend', () => float.remove());
 }
@@ -1351,19 +1443,48 @@ function sendCellUpdate(row, col, letter) {
   if (letter) {
     cellColors.set(key, myColor);
     cellFillers.set(key, { userName: myName, color: myColor });
-    // Immediate local point scoring
+    // Immediate local point scoring with fire mechanic
     if (PUZZLE) {
       const correct = getCorrectAnswer(row, col);
-      const delta = (letter === correct) ? 1 : -1;
-      persistedPoints.set(myName, (persistedPoints.get(myName) || 0) + delta);
-      showPointFloat(row, col, delta);
+      const isCorrect = (letter === correct);
+      const now = Date.now();
+
+      if (isCorrect && myFireActive) {
+        // Correct + on fire: doubled points, extend fire
+        persistedPoints.set(myName, (persistedPoints.get(myName) || 0) + 2);
+        showPointFloat(row, col, 2, null, true);
+        extendMyFire({ row, col }, myFireExpiresAt + 10000);
+      } else if (isCorrect && !myFireActive) {
+        // Correct + not on fire: track streak
+        persistedPoints.set(myName, (persistedPoints.get(myName) || 0) + 1);
+        showPointFloat(row, col, 1);
+        myRecentCorrect.push({ timestamp: now, row, col });
+        myRecentCorrect = myRecentCorrect.filter(e => now - e.timestamp < 30000);
+        if (myRecentCorrect.length >= 3) {
+          const triggerCells = myRecentCorrect.slice(-3).map(e => `${e.row},${e.col}`);
+          startMyFire(triggerCells, now + 30000);
+          myRecentCorrect = [];
+        }
+      } else if (!isCorrect && myFireActive) {
+        // Incorrect + on fire: break fire
+        persistedPoints.set(myName, (persistedPoints.get(myName) || 0) - 1);
+        showPointFloat(row, col, -1);
+        breakMyFire();
+      } else {
+        // Incorrect + not on fire
+        myRecentCorrect = [];
+        persistedPoints.set(myName, (persistedPoints.get(myName) || 0) - 1);
+        showPointFloat(row, col, -1);
+      }
 
       // Word completion bonus (check after grid is updated)
-      if (delta === 1) {
-        const wb = checkLocalWordBonus(row, col);
+      if (isCorrect) {
+        let wb = checkLocalWordBonus(row, col);
         if (wb > 0) {
+          const fireDoubled = myFireActive;
+          if (fireDoubled) wb *= 2;
           persistedPoints.set(myName, (persistedPoints.get(myName) || 0) + wb);
-          setTimeout(() => showPointFloat(row, col, wb, wb >= 15 ? 'combo' : 'word'), 200);
+          setTimeout(() => showPointFloat(row, col, wb, wb >= (fireDoubled ? 30 : 15) ? 'combo' : 'word', fireDoubled), 200);
           triggerWordWave(row, col);
         }
       }
@@ -1371,8 +1492,147 @@ function sendCellUpdate(row, col, letter) {
   } else {
     cellColors.delete(key);
     cellFillers.delete(key);
+    // Deleting a letter does NOT break fire or count toward streak
   }
   socket.emit('cell-update', { puzzleDate: currentDate, row, col, letter });
+}
+
+// ─── Fire streak helpers ─────────────────────────────────────────
+function resetFireState() {
+  myFireActive = false;
+  myFireExpiresAt = 0;
+  myFireCells.clear();
+  myRecentCorrect = [];
+  remoteFireStates.clear();
+  hideFireBar();
+}
+
+function startMyFire(fireCellKeys, expiresAt) {
+  myFireActive = true;
+  myFireExpiresAt = expiresAt;
+  myFireCells = new Set(fireCellKeys);
+  showFireBar();
+  applyFireCellEffects();
+}
+
+function extendMyFire(cell, newExpiresAt) {
+  myFireExpiresAt = newExpiresAt;
+  myFireCells.add(`${cell.row},${cell.col}`);
+  applyFireCellEffects();
+  // Fire bar is already running, it'll pick up the new expiry
+}
+
+function breakMyFire() {
+  showComboBroken();
+  hideFireBar();
+  removeFireCellEffects();
+  myFireActive = false;
+  myFireExpiresAt = 0;
+  myFireCells.clear();
+  myRecentCorrect = [];
+}
+
+function expireMyFire() {
+  hideFireBar();
+  removeFireCellEffects();
+  myFireActive = false;
+  myFireExpiresAt = 0;
+  myFireCells.clear();
+  myRecentCorrect = [];
+}
+
+function applyFireCellEffects() {
+  for (const key of myFireCells) {
+    const [r, c] = key.split(',').map(Number);
+    if (cellEls[r]?.[c]) cellEls[r][c].classList.add('on-fire');
+  }
+}
+
+function removeFireCellEffects() {
+  for (const key of myFireCells) {
+    const [r, c] = key.split(',').map(Number);
+    if (cellEls[r]?.[c]) cellEls[r][c].classList.remove('on-fire');
+  }
+}
+
+function showFireBar() {
+  const bar = document.getElementById('fire-bar');
+  bar.classList.add('active');
+  if (myFireBarInterval) clearInterval(myFireBarInterval);
+  myFireBarInterval = setInterval(() => {
+    const now = Date.now();
+    const remaining = myFireExpiresAt - now;
+    if (remaining <= 0) {
+      expireMyFire();
+      return;
+    }
+    const totalDuration = 30000; // base duration for percentage
+    const pct = Math.min(100, (remaining / totalDuration) * 100);
+    document.getElementById('fire-bar-fill').style.width = pct + '%';
+    document.getElementById('fire-bar-label').textContent = `ON FIRE ${(remaining / 1000).toFixed(1)}s`;
+  }, 50);
+}
+
+function hideFireBar() {
+  const bar = document.getElementById('fire-bar');
+  bar.classList.remove('active');
+  if (myFireBarInterval) {
+    clearInterval(myFireBarInterval);
+    myFireBarInterval = null;
+  }
+}
+
+function showComboBroken() {
+  const container = document.querySelector('.grid-container');
+  if (!container) return;
+  const el = document.createElement('div');
+  el.className = 'combo-broken';
+  el.textContent = 'COMBO BROKEN';
+  container.appendChild(el);
+  el.addEventListener('animationend', () => el.remove());
+}
+
+function handleRemoteFireEvent(fireEvent, remoteUserId) {
+  // Find socketId for this remote user
+  let remoteSocketId = null;
+  for (const [sid, u] of remoteUsers) {
+    if (u.userName === fireEvent.userName) { remoteSocketId = sid; break; }
+  }
+  if (!remoteSocketId) return;
+
+  if (fireEvent.type === 'started') {
+    const fireCellSet = new Set(fireEvent.fireCells.map(c => `${c.row},${c.col}`));
+    remoteFireStates.set(remoteSocketId, {
+      userName: fireEvent.userName, color: fireEvent.color,
+      fireCells: fireCellSet, expiresAt: Date.now() + fireEvent.remainingMs,
+    });
+    for (const key of fireCellSet) {
+      const [r, c] = key.split(',').map(Number);
+      if (cellEls[r]?.[c]) cellEls[r][c].classList.add('on-fire');
+    }
+  } else if (fireEvent.type === 'extended') {
+    const rs = remoteFireStates.get(remoteSocketId);
+    if (rs) {
+      for (const c of fireEvent.fireCells) {
+        rs.fireCells.add(`${c.row},${c.col}`);
+      }
+      rs.expiresAt = Date.now() + fireEvent.remainingMs;
+      for (const key of rs.fireCells) {
+        const [r2, c2] = key.split(',').map(Number);
+        if (cellEls[r2]?.[c2]) cellEls[r2][c2].classList.add('on-fire');
+      }
+    }
+  } else if (fireEvent.type === 'broken') {
+    const rs = remoteFireStates.get(remoteSocketId);
+    if (rs) {
+      for (const key of rs.fireCells) {
+        const [r, c] = key.split(',').map(Number);
+        if (cellEls[r]?.[c]) cellEls[r][c].classList.remove('on-fire');
+      }
+      remoteFireStates.delete(remoteSocketId);
+    }
+    showComboBroken();
+  }
 }
 
 function broadcastCursor() {
@@ -1422,7 +1682,7 @@ function setupSocketHandlers() {
     if (PUZZLE) render();
   });
 
-  socket.on('cell-updated', ({ row, col, letter, userId: remoteUserId, userName: remoteName, color: remoteColor, pointDelta, wordBonus }) => {
+  socket.on('cell-updated', ({ row, col, letter, userId: remoteUserId, userName: remoteName, color: remoteColor, pointDelta, wordBonus, fireEvent }) => {
     if (!PUZZLE) return;
     if (row >= 0 && row < ROWS && col >= 0 && col < COLS) {
       userGrid[row][col] = letter;
@@ -1438,16 +1698,22 @@ function setupSocketHandlers() {
         cellColors.delete(key);
         cellFillers.delete(key);
       }
-      // Apply remote point delta (letter +1/-1)
+      // Apply remote point delta (letter +1/-1, or +2 if fire-doubled)
+      const isFireDoubled = fireEvent && (fireEvent.type === 'started' || fireEvent.type === 'extended');
       if (pointDelta && remoteName) {
         persistedPoints.set(remoteName, (persistedPoints.get(remoteName) || 0) + pointDelta);
-        showPointFloat(row, col, pointDelta);
+        showPointFloat(row, col, pointDelta, null, isFireDoubled);
       }
-      // Apply remote word bonus (+5 or +15 combo)
+      // Apply remote word bonus (+5/+10/+15/+30)
       if (wordBonus && remoteName) {
         persistedPoints.set(remoteName, (persistedPoints.get(remoteName) || 0) + wordBonus);
-        setTimeout(() => showPointFloat(row, col, wordBonus, wordBonus >= 15 ? 'combo' : 'word'), 200);
+        const isCombo = wordBonus >= (isFireDoubled ? 30 : 15);
+        setTimeout(() => showPointFloat(row, col, wordBonus, isCombo ? 'combo' : 'word', isFireDoubled), 200);
         triggerWordWave(row, col);
+      }
+      // Handle remote fire events
+      if (fireEvent) {
+        handleRemoteFireEvent(fireEvent, remoteUserId);
       }
       render();
       checkCompletion();
@@ -1470,6 +1736,7 @@ function setupSocketHandlers() {
     cellColors.clear();
     cellFillers.clear();
     persistedPoints.clear();
+    resetFireState();
     solved = false;
     congratsEl.classList.remove('show');
     render();
@@ -1504,6 +1771,43 @@ function setupSocketHandlers() {
       dayEl.classList.toggle('complete', summary.isComplete);
       const canvas = dayEl.querySelector('canvas');
       if (canvas) drawThumbnail(canvas, summary);
+    }
+  });
+
+  // Fire streak: server confirmation for local user
+  socket.on('fire-update', (fireEvent) => {
+    if (!PUZZLE) return;
+    if (fireEvent.type === 'started') {
+      const cellKeys = fireEvent.fireCells.map(c => `${c.row},${c.col}`);
+      // Server is authoritative; sync up if needed
+      if (!myFireActive) {
+        startMyFire(cellKeys, Date.now() + fireEvent.remainingMs);
+      }
+    } else if (fireEvent.type === 'extended') {
+      myFireExpiresAt = Date.now() + fireEvent.remainingMs;
+      // Add any new fire cells from server
+      for (const c of fireEvent.fireCells) {
+        myFireCells.add(`${c.row},${c.col}`);
+      }
+      applyFireCellEffects();
+    } else if (fireEvent.type === 'broken') {
+      if (myFireActive) breakMyFire();
+    }
+  });
+
+  // Fire streak: remote user fire events (via cell-updated fireEvent field)
+  // Handled inside cell-updated handler above
+
+  // Fire streak: remote fire expired naturally
+  socket.on('fire-expired', ({ socketId: remoteSocketId, userName: remoteName, color: remoteColor, fireCells }) => {
+    if (!PUZZLE) return;
+    const rs = remoteFireStates.get(remoteSocketId);
+    if (rs) {
+      for (const key of rs.fireCells) {
+        const [r, c] = key.split(',').map(Number);
+        if (cellEls[r]?.[c]) cellEls[r][c].classList.remove('on-fire');
+      }
+      remoteFireStates.delete(remoteSocketId);
     }
   });
 }
@@ -1829,6 +2133,10 @@ function render() {
       } else {
         el.style.boxShadow = '';
       }
+
+      // Fire cell effect
+      const isOnFire = myFireCells.has(key) || [...remoteFireStates.values()].some(s => s.fireCells.has(key));
+      el.classList.toggle('on-fire', isOnFire);
     }
   }
 
