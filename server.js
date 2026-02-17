@@ -92,18 +92,23 @@ app.get('/api/me', async (req, res) => {
   }
 });
 
-// POST /api/me — register user name for this IP
+// POST /api/me — register or update user name/color for this IP
 app.post('/api/me', async (req, res) => {
   try {
     const ip = getIp(req);
-    const { name } = req.body;
+    const { name, color: requestedColor } = req.body;
     if (!name || !name.trim()) {
       return res.status(400).json({ error: 'Name is required' });
     }
     const trimmedName = name.trim().substring(0, 20);
-    // Assign color by rotating through pool
-    const count = await db.getUserCount();
-    const color = COLOR_POOL[count % COLOR_POOL.length];
+    // Use requested color if valid, otherwise assign one
+    let color;
+    if (requestedColor && COLOR_POOL.includes(requestedColor)) {
+      color = requestedColor;
+    } else {
+      const count = await db.getUserCount();
+      color = COLOR_POOL[count % COLOR_POOL.length];
+    }
     await db.createUser(ip, trimmedName, color);
     res.json({ name: trimmedName, color });
   } catch (err) {

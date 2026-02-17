@@ -600,6 +600,23 @@ body {
   width: 100%;
 }
 .name-modal button:disabled { opacity: 0.4; cursor: default; }
+.color-picker {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+.color-swatch {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 3px solid transparent;
+  cursor: pointer;
+  transition: border-color 0.15s, transform 0.15s;
+}
+.color-swatch:hover { transform: scale(1.15); }
+.color-swatch.selected { border-color: #222; transform: scale(1.15); }
 
 /* Mobile */
 body.mobile .calendar-nav { padding: 10px; gap: 6px; }
@@ -808,6 +825,7 @@ body.mobile .mobile-keyboard { display: block; position: static; flex-shrink: 0;
     <h2>Welcome!</h2>
     <p>Enter your name to start solving</p>
     <input type="text" id="name-input" placeholder="Your name" maxlength="20" autocomplete="off">
+    <div class="color-picker" id="color-picker"></div>
     <button id="name-submit" disabled>Start</button>
   </div>
 </div>
@@ -845,16 +863,35 @@ async function initIdentity() {
   showNameModal();
 }
 
+const CLIENT_COLOR_POOL = ['#4CAF50','#2196F3','#FF9800','#E91E63','#9C27B0','#00BCD4','#FF5722','#8BC34A'];
+
 function showNameModal(isChange) {
   const modal = document.getElementById('name-modal');
   const input = document.getElementById('name-input');
   const btn = document.getElementById('name-submit');
+  const picker = document.getElementById('color-picker');
   const heading = modal.querySelector('h2');
   const desc = modal.querySelector('p');
 
+  let selectedColor = isChange ? myColor : null;
+
+  // Populate color picker
+  picker.innerHTML = '';
+  for (const c of CLIENT_COLOR_POOL) {
+    const swatch = document.createElement('div');
+    swatch.className = 'color-swatch' + (c === selectedColor ? ' selected' : '');
+    swatch.style.background = c;
+    swatch.addEventListener('click', () => {
+      selectedColor = c;
+      picker.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('selected'));
+      swatch.classList.add('selected');
+    });
+    picker.appendChild(swatch);
+  }
+
   if (isChange) {
-    heading.textContent = 'Change Name';
-    desc.textContent = 'Enter a new display name';
+    heading.textContent = 'Change Name & Color';
+    desc.textContent = 'Update your display name or outline color';
     btn.textContent = 'Save';
     input.value = myName;
     btn.disabled = false;
@@ -885,10 +922,12 @@ function showNameModal(isChange) {
     if (!name) return;
     newBtn.disabled = true;
     try {
+      const body = { name };
+      if (selectedColor) body.color = selectedColor;
       const res = await fetch('/api/me', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name }),
+        body: JSON.stringify(body),
       });
       const data = await res.json();
       myName = data.name;
@@ -898,7 +937,7 @@ function showNameModal(isChange) {
       if (!isChange) {
         connectSocket();
       } else {
-        // Reconnect socket with new name
+        // Reconnect socket with new name/color
         if (socket) {
           socket.disconnect();
           socket = null;
@@ -907,7 +946,7 @@ function showNameModal(isChange) {
       }
     } catch (e) {
       newBtn.disabled = false;
-      alert('Failed to save name, please try again.');
+      alert('Failed to save, please try again.');
     }
   }
 
@@ -1937,6 +1976,10 @@ function renderPresenceBar() {
     el.className = 'presence-user';
     const ptsStr = pts !== 0 ? ` <span class="presence-pts">${pts > 0 ? '+' : ''}${pts}</span>` : '';
     el.innerHTML = `<span class="presence-dot" style="background:${u.color}"></span>${u.label}${ptsStr}`;
+    if (u.name === myName) {
+      el.style.cursor = 'pointer';
+      el.addEventListener('click', () => showNameModal(true));
+    }
     presenceBarEl.appendChild(el);
   }
 }
