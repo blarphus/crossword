@@ -305,6 +305,21 @@ body {
 .cell.error .letter { color: var(--error); }
 .cell.checked .letter { color: var(--checked); }
 
+/* Rebus cells (multi-letter content) */
+.cell .letter.rebus-text {
+  font-size: calc(var(--cell-size) * 0.22);
+  letter-spacing: -0.5px;
+  margin-top: 5px;
+  line-height: 1;
+  overflow: hidden;
+}
+.cell.rebus-active {
+  outline: 2.5px solid #2196F3;
+  outline-offset: -2.5px;
+  z-index: 2;
+}
+.toolbar button.active { background: #d0e0ff; }
+
 /* Shaded cells */
 .cell.shaded { background: var(--shade-color, #c0c0c0); }
 .cell.shaded.highlight-word { background: color-mix(in srgb, var(--shade-color, #c0c0c0) 50%, var(--highlight-word)); }
@@ -579,6 +594,7 @@ body {
   <div class="toolbar">
     <button id="btn-clear">Clear Puzzle</button>
     <button id="btn-reveal">Reveal Puzzle</button>
+    <button id="btn-rebus" style="display:none">Rebus</button>
     <span class="solve-timer" id="solve-timer">0:00</span>
   </div>
 
@@ -756,6 +772,18 @@ let direction = 'across';
 const autoCheck = true;
 let solved = false;
 let currentDate = null;
+let rebusMode = false;
+let rebusBuffer = '';
+
+function getCorrectAnswer(r, c) {
+  if (!PUZZLE) return '';
+  const key = `${r},${c}`;
+  return PUZZLE.rebus[key] || PUZZLE.grid[r]?.[c] || '';
+}
+
+function hasRebus() {
+  return PUZZLE && Object.keys(PUZZLE.rebus).length > 0;
+}
 
 // Grid zoom state (mobile pinch-to-zoom)
 let gridScale = 1, gridTx = 0, gridTy = 0;
@@ -813,6 +841,7 @@ const metaEl = document.getElementById('puzzle-meta');
 const presenceBarEl = document.getElementById('presence-bar');
 const btnClear = document.getElementById('btn-clear');
 const btnReveal = document.getElementById('btn-reveal');
+const btnRebus = document.getElementById('btn-rebus');
 const btnBack = document.getElementById('btn-back');
 
 // ─── Calendar state ────────────────────────────────────────────
@@ -1082,6 +1111,7 @@ async function loadPuzzle(dateStr) {
     cellNumbers: data.cellNumbers,
     circles: circleSet,
     shades: shadeMap,
+    rebus: data.rebus || {},
     clues: {
       across: mapClues(data.clues.across),
       down: mapClues(data.clues.down),
@@ -1093,7 +1123,13 @@ async function loadPuzzle(dateStr) {
   checkedCells = Array.from({length: ROWS}, () => Array(COLS).fill(false));
   solved = false;
   direction = 'across';
+  rebusMode = false;
+  rebusBuffer = '';
   congratsEl.classList.remove('show');
+
+  // Show rebus button only for puzzles that have rebus cells
+  btnRebus.style.display = hasRebus() ? '' : 'none';
+  btnRebus.classList.remove('active');
 
   // Apply shared state
   applySharedState(stateData.userGrid || {}, stateData.cellFillers || {}, stateData.points || {}, stateData.userColors || {});
@@ -1101,7 +1137,7 @@ async function loadPuzzle(dateStr) {
   // Mark all correct letters as checked (auto-check is always on)
   for (let r = 0; r < ROWS; r++)
     for (let c = 0; c < COLS; c++)
-      if (userGrid[r][c] && userGrid[r][c] === PUZZLE.grid[r][c])
+      if (userGrid[r][c] && userGrid[r][c] === getCorrectAnswer(r, c))
         checkedCells[r][c] = true;
 
   // Update header
@@ -1179,7 +1215,8 @@ function sendCellUpdate(row, col, letter) {
     cellFillers.set(key, { userName: myName, color: myColor });
     // Immediate local point scoring
     if (PUZZLE) {
-      const delta = (letter === PUZZLE.grid[row][col]) ? 1 : -1;
+      const correct = getCorrectAnswer(row, col);
+      const delta = (letter === correct) ? 1 : -1;
       persistedPoints.set(myName, (persistedPoints.get(myName) || 0) + delta);
     }
   } else {
@@ -1246,7 +1283,7 @@ function setupSocketHandlers() {
         const color = remoteColor || findColorForUser(remoteUserId);
         cellColors.set(key, color);
         cellFillers.set(key, { userName: remoteName || 'User', color });
-        if (autoCheck && letter === PUZZLE.grid[row][col]) {
+        if (autoCheck && letter === getCorrectAnswer(row, col)) {
           checkedCells[row][col] = true;
         }
       } else {
@@ -1365,7 +1402,7 @@ function computeUserPoints() {
     for (const clue of PUZZLE.clues[dir]) {
       const cells = getWordCells(clue, dir);
       const allCorrect = cells.every(([r, c]) =>
-        userGrid[r][c] && userGrid[r][c] === PUZZLE.grid[r][c]
+        userGrid[r][c] && userGrid[r][c] === getCorrectAnswer(r, c)
       );
       if (!allCorrect) continue;
       const wordFillers = new Set();
@@ -1604,11 +1641,20 @@ function render() {
       el.classList.toggle('highlight-cell', isMyCell);
 
       const letterEl = el.querySelector('.letter');
-      if (letterEl) letterEl.textContent = userGrid[r][c];
+      if (letterEl) {
+        // Show rebus buffer for the active cell in rebus mode
+        const displayText = (rebusMode && isMyCell && rebusBuffer) ? rebusBuffer : userGrid[r][c];
+        letterEl.textContent = displayText;
+        // Shrink font for multi-letter content
+        letterEl.classList.toggle('rebus-text', displayText.length > 1);
+      }
+
+      // Rebus mode indicator on active cell
+      el.classList.toggle('rebus-active', rebusMode && isMyCell);
 
       el.classList.toggle('checked', checkedCells[r][c]);
       if (autoCheck && userGrid[r][c] && !checkedCells[r][c]) {
-        el.classList.toggle('error', userGrid[r][c] !== PUZZLE.grid[r][c]);
+        el.classList.toggle('error', userGrid[r][c] !== getCorrectAnswer(r, c));
       } else {
         el.classList.remove('error');
       }
@@ -1670,7 +1716,7 @@ function render() {
       if (!el) continue;
       const wCells = getWordCells(clue, dir);
       const isSolved = wCells.length > 0 && wCells.every(([wr, wc]) =>
-        userGrid[wr][wc] && userGrid[wr][wc] === PUZZLE.grid[wr][wc]
+        userGrid[wr][wc] && userGrid[wr][wc] === getCorrectAnswer(wr, wc)
       );
       el.classList.toggle('solved', isSolved);
     }
@@ -1685,6 +1731,10 @@ function render() {
 // ─── Interaction ───────────────────────────────────────────────
 function onCellClick(r, c) {
   if (isBlack(r, c)) return;
+  // Commit rebus buffer when clicking a different cell
+  if (rebusMode && rebusBuffer && (r !== selectedRow || c !== selectedCol)) {
+    commitRebus();
+  }
   if (r === selectedRow && c === selectedCol) {
     direction = direction === 'across' ? 'down' : 'across';
     if (!getClueForCell(r, c, direction)) {
@@ -1781,7 +1831,7 @@ function moveArrow(dr, dc) {
 function checkCompletion() {
   for (let r = 0; r < ROWS; r++) {
     for (let c = 0; c < COLS; c++) {
-      if (!isBlack(r, c) && userGrid[r][c] !== PUZZLE.grid[r][c]) return;
+      if (!isBlack(r, c) && userGrid[r][c] !== getCorrectAnswer(r, c)) return;
     }
   }
   solved = true;
@@ -1807,11 +1857,16 @@ mobileInput.addEventListener('input', (e) => {
   if (!val) return;
   const char = val.slice(-1);
   if (/^[a-zA-Z]$/.test(char)) {
+    if (rebusMode) {
+      rebusBuffer += char.toUpperCase();
+      render();
+      return;
+    }
     if (!checkedCells[selectedRow][selectedCol]) {
       const letter = char.toUpperCase();
       userGrid[selectedRow][selectedCol] = letter;
       sendCellUpdate(selectedRow, selectedCol, letter);
-      if (autoCheck && letter === PUZZLE.grid[selectedRow][selectedCol]) {
+      if (autoCheck && letter === getCorrectAnswer(selectedRow, selectedCol)) {
         checkedCells[selectedRow][selectedCol] = true;
       }
     }
@@ -1826,6 +1881,7 @@ mobileInput.addEventListener('keydown', (e) => {
   if (!PUZZLE || solved) return;
   if (e.key === 'Backspace') {
     e.preventDefault();
+    if (rebusMode) { rebusBuffer = rebusBuffer.slice(0, -1); render(); return; }
     if (checkedCells[selectedRow][selectedCol]) {
       retreatCursor();
     } else if (userGrid[selectedRow][selectedCol]) {
@@ -1842,10 +1898,81 @@ mobileInput.addEventListener('keydown', (e) => {
   }
 });
 
+// ─── Rebus mode helpers ─────────────────────────────────────────
+function commitRebus() {
+  const hadContent = !!rebusBuffer;
+  if (rebusBuffer && !checkedCells[selectedRow][selectedCol]) {
+    userGrid[selectedRow][selectedCol] = rebusBuffer;
+    sendCellUpdate(selectedRow, selectedCol, rebusBuffer);
+    if (autoCheck && rebusBuffer === getCorrectAnswer(selectedRow, selectedCol)) {
+      checkedCells[selectedRow][selectedCol] = true;
+    }
+  }
+  rebusBuffer = '';
+  rebusMode = false;
+  btnRebus.classList.remove('active');
+  render();
+  if (hadContent) {
+    advanceCursor();
+    render();
+    checkCompletion();
+  }
+}
+
+function toggleRebus() {
+  if (rebusMode) {
+    if (rebusBuffer) {
+      commitRebus();
+    } else {
+      rebusMode = false;
+      rebusBuffer = '';
+      btnRebus.classList.remove('active');
+      render();
+    }
+  } else {
+    rebusMode = true;
+    rebusBuffer = '';
+    btnRebus.classList.add('active');
+    render();
+  }
+}
+
 // ─── Keyboard ──────────────────────────────────────────────────
 gridEl.addEventListener('keydown', (e) => {
   if (!PUZZLE || solved) return;
   const key = e.key;
+
+  // In rebus mode, handle special keys
+  if (rebusMode) {
+    if (key === 'Enter' || key === 'Escape') {
+      e.preventDefault();
+      if (key === 'Enter' && rebusBuffer) {
+        commitRebus();
+      } else {
+        rebusMode = false;
+        rebusBuffer = '';
+        btnRebus.classList.remove('active');
+        render();
+      }
+      return;
+    }
+    if (key === 'Backspace') {
+      e.preventDefault();
+      rebusBuffer = rebusBuffer.slice(0, -1);
+      render();
+      return;
+    }
+    if (/^[a-zA-Z]$/.test(key)) {
+      e.preventDefault();
+      rebusBuffer += key.toUpperCase();
+      render();
+      return;
+    }
+    // Any other key (arrows, tab, space) commits the rebus buffer
+    if (rebusBuffer) commitRebus();
+    else { rebusMode = false; rebusBuffer = ''; btnRebus.classList.remove('active'); render(); }
+    // Fall through to handle the key normally
+  }
 
   if (key === 'ArrowLeft')       { e.preventDefault(); moveArrow(0, -1); render(); }
   else if (key === 'ArrowRight') { e.preventDefault(); moveArrow(0, 1); render(); }
@@ -1862,6 +1989,10 @@ gridEl.addEventListener('keydown', (e) => {
       direction = direction === 'across' ? 'down' : 'across';
     }
     render();
+  }
+  else if (key === 'Insert') {
+    e.preventDefault();
+    toggleRebus();
   }
   else if (key === 'Backspace') {
     e.preventDefault();
@@ -1893,7 +2024,7 @@ gridEl.addEventListener('keydown', (e) => {
       const letter = key.toUpperCase();
       userGrid[selectedRow][selectedCol] = letter;
       sendCellUpdate(selectedRow, selectedCol, letter);
-      if (autoCheck && userGrid[selectedRow][selectedCol] === PUZZLE.grid[selectedRow][selectedCol]) {
+      if (autoCheck && letter === getCorrectAnswer(selectedRow, selectedCol)) {
         checkedCells[selectedRow][selectedCol] = true;
       }
     }
@@ -1930,11 +2061,18 @@ btnReveal.addEventListener('click', () => {
   for (let r = 0; r < ROWS; r++)
     for (let c = 0; c < COLS; c++)
       if (!isBlack(r, c)) {
-        userGrid[r][c] = PUZZLE.grid[r][c];
-        sendCellUpdate(r, c, PUZZLE.grid[r][c]);
+        const answer = getCorrectAnswer(r, c);
+        userGrid[r][c] = answer;
+        sendCellUpdate(r, c, answer);
       }
   render();
   checkCompletion();
+});
+
+btnRebus.addEventListener('click', () => {
+  if (!PUZZLE || solved) return;
+  toggleRebus();
+  focusGrid();
 });
 
 // ─── Mobile keyboard ────────────────────────────────────────────
@@ -1954,7 +2092,7 @@ function initMobileKeyboard() {
       btn.className = 'kb-key';
       if (l === 'MORE') {
         btn.classList.add('kb-more');
-        btn.textContent = 'More';
+        btn.textContent = 'Rebus';
       } else if (l === 'BACK') {
         btn.classList.add('kb-backspace');
         btn.textContent = '\u232B';
@@ -1964,8 +2102,9 @@ function initMobileKeyboard() {
       btn.addEventListener('click', (e) => {
         e.preventDefault();
         if (!PUZZLE || solved) return;
-        if (l === 'MORE') return;
+        if (l === 'MORE') { toggleRebus(); return; }
         if (l === 'BACK') {
+          if (rebusMode) { rebusBuffer = rebusBuffer.slice(0, -1); render(); return; }
           handleBackspace();
         } else {
           handleLetterInput(l);
@@ -1978,10 +2117,15 @@ function initMobileKeyboard() {
 }
 
 function handleLetterInput(letter) {
+  if (rebusMode) {
+    rebusBuffer += letter;
+    render();
+    return;
+  }
   if (!checkedCells[selectedRow][selectedCol]) {
     userGrid[selectedRow][selectedCol] = letter;
     sendCellUpdate(selectedRow, selectedCol, letter);
-    if (autoCheck && letter === PUZZLE.grid[selectedRow][selectedCol]) {
+    if (autoCheck && letter === getCorrectAnswer(selectedRow, selectedCol)) {
       checkedCells[selectedRow][selectedCol] = true;
     }
   }

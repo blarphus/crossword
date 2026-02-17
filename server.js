@@ -164,14 +164,23 @@ app.delete('/api/state/:date', async (req, res) => {
 
 // ─── In-memory user presence ─────────────────────────────────────
 
-const puzzleGridCache = new Map(); // puzzleDate → grid (2D array of correct answers)
+const puzzleDataCache = new Map(); // puzzleDate → { grid, rebus }
 
-async function getPuzzleGrid(puzzleDate) {
-  if (puzzleGridCache.has(puzzleDate)) return puzzleGridCache.get(puzzleDate);
+async function getPuzzleData(puzzleDate) {
+  if (puzzleDataCache.has(puzzleDate)) return puzzleDataCache.get(puzzleDate);
   const data = await db.getPuzzle(puzzleDate);
   if (!data) return null;
-  puzzleGridCache.set(puzzleDate, data.grid);
-  return data.grid;
+  const cached = { grid: data.grid, rebus: data.rebus || {} };
+  puzzleDataCache.set(puzzleDate, cached);
+  return cached;
+}
+
+function getCorrectAnswer(puzzleData, row, col) {
+  if (!puzzleData) return null;
+  const key = `${row},${col}`;
+  if (puzzleData.rebus[key]) return puzzleData.rebus[key];
+  if (puzzleData.grid[row] && puzzleData.grid[row][col] !== '.') return puzzleData.grid[row][col];
+  return null;
 }
 
 const puzzleRooms = new Map(); // puzzleDate → Map<socketId, {userId, userName, color, row, col, direction}>
@@ -333,9 +342,10 @@ io.on('connection', async (socket) => {
       // Score points on letter placement (not on delete)
       let pointDelta = 0;
       if (letter) {
-        const grid = await getPuzzleGrid(puzzleDate);
-        if (grid && grid[row] && grid[row][col] !== '.') {
-          pointDelta = (letter === grid[row][col]) ? 1 : -1;
+        const pData = await getPuzzleData(puzzleDate);
+        const correctAnswer = getCorrectAnswer(pData, row, col);
+        if (correctAnswer) {
+          pointDelta = (letter === correctAnswer) ? 1 : -1;
           await db.addPoints(puzzleDate, userName, pointDelta);
         }
       }
@@ -398,7 +408,7 @@ async function seedPuzzlesFromBundle() {
   }
 
   // Check if we've already seeded this bundle
-  const BUNDLE_VERSION = '2';  // bump to re-seed (v2: circles + shades)
+  const BUNDLE_VERSION = '3';  // bump to re-seed (v3: rebus support)
   const seeded = await db.getMetadata('bundle_seeded_v');
   if (seeded === BUNDLE_VERSION) {
     console.log('[seed] Bundle already seeded (v' + BUNDLE_VERSION + '), skipping');

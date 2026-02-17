@@ -136,6 +136,7 @@ async function getCalendarData(yearMonth) {
     `SELECT p.date,
             p.data->'dimensions' AS dimensions,
             p.data->'grid' AS grid,
+            p.data->'rebus' AS rebus,
             ps.user_grid
      FROM puzzles p
      LEFT JOIN puzzle_state ps ON ps.puzzle_date = p.date
@@ -152,6 +153,7 @@ async function getProgressSummary(puzzleDate) {
     `SELECT p.date,
             p.data->'dimensions' AS dimensions,
             p.data->'grid' AS grid,
+            p.data->'rebus' AS rebus,
             ps.user_grid
      FROM puzzles p
      LEFT JOIN puzzle_state ps ON ps.puzzle_date = p.date
@@ -165,6 +167,7 @@ async function getProgressSummary(puzzleDate) {
 function buildProgressInfo(row) {
   const dims = row.dimensions;
   const grid = row.grid;
+  const rebus = row.rebus || {};
   const userGrid = row.user_grid || {};
   const numRows = dims.rows;
   const numCols = dims.cols;
@@ -181,11 +184,12 @@ function buildProgressInfo(row) {
       } else {
         totalWhite++;
         const key = `${r},${c}`;
+        const correctAnswer = rebus[key] || grid[r][c];
         const userLetter = userGrid[key] || '';
         if (userLetter) {
           cells.push(2); // filled
           filledCount++;
-          if (userLetter !== grid[r][c]) {
+          if (userLetter !== correctAnswer) {
             isComplete = false;
           }
         } else {

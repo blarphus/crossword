@@ -57,6 +57,7 @@ def parse_file(filepath: str) -> dict | None:
     cell_numbers = []
     circles = []   # list of [row, col]
     shades = []    # list of [row, col, color]
+    rebus = {}     # "row,col" → full rebus string (e.g. "TEN")
 
     row_idx = 0
     for tr in table.find_all("tr"):
@@ -79,9 +80,19 @@ def parse_file(filepath: str) -> dict | None:
                 row_nums.append(0)
             else:
                 letter_div = td.find("div", class_="letter")
+                # Rebus cells use 'subst' or 'subst2' class instead of 'letter'
+                subst_div = td.find("div", class_="subst") or td.find("div", class_="subst2")
                 num_div = td.find("div", class_="num")
-                letter = letter_div.get_text(strip=True) if letter_div else ""
                 num_text = num_div.get_text(strip=True) if num_div else ""
+
+                if subst_div:
+                    # Rebus cell: store first letter in grid, full text in rebus map
+                    rebus_text = subst_div.get_text(strip=True).upper()
+                    letter = rebus_text[0] if rebus_text else ""
+                    rebus[f"{row_idx},{col_idx}"] = rebus_text
+                else:
+                    letter = letter_div.get_text(strip=True) if letter_div else ""
+
                 row_letters.append(letter if letter else ".")
                 row_nums.append(int(num_text) if num_text else 0)
 
@@ -192,11 +203,13 @@ def parse_file(filepath: str) -> dict | None:
         },
     }
 
-    # Only include circles/shades if present (keeps JSON compact)
+    # Only include circles/shades/rebus if present (keeps JSON compact)
     if circles:
         result["circles"] = circles
     if shades:
         result["shades"] = shades
+    if rebus:
+        result["rebus"] = rebus
 
     return result
 
