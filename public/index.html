@@ -2345,38 +2345,57 @@ function retreatCursor() {
   }
 }
 
+function isWordSolved(clue, dir) {
+  const cells = getWordCells(clue, dir);
+  return cells.every(([r, c]) => userGrid[r][c] && userGrid[r][c] === getCorrectAnswer(r, c));
+}
+
+function firstUnsolvedCell(clue, dir) {
+  const cells = getWordCells(clue, dir);
+  for (const [r, c] of cells) {
+    if (!userGrid[r][c] || userGrid[r][c] !== getCorrectAnswer(r, c)) return [r, c];
+  }
+  return [clue.row, clue.col]; // fallback to start
+}
+
 function moveToNextWord(forward) {
-  const clues = direction === 'across' ? PUZZLE.clues.across : PUZZLE.clues.down;
+  const dirs = [direction, direction === 'across' ? 'down' : 'across'];
   const currentClue = getClueForCell(selectedRow, selectedCol, direction);
   if (!currentClue) return;
 
-  const idx = clues.findIndex(c => c.n === currentClue.n);
-  let nextIdx;
+  // Build ordered list: remaining clues in current direction, then all in other direction
+  const curClues = dirs[0] === 'across' ? PUZZLE.clues.across : PUZZLE.clues.down;
+  const otherClues = dirs[1] === 'across' ? PUZZLE.clues.across : PUZZLE.clues.down;
+  const curIdx = curClues.findIndex(c => c.n === currentClue.n);
 
+  // Candidates: rest of current list, then full other list, then start of current list (wrap)
+  const candidates = [];
   if (forward) {
-    nextIdx = idx + 1;
-    if (nextIdx >= clues.length) {
-      direction = direction === 'across' ? 'down' : 'across';
-      const other = direction === 'across' ? PUZZLE.clues.across : PUZZLE.clues.down;
-      selectedRow = other[0].row;
-      selectedCol = other[0].col;
-      render();
-      return;
-    }
+    for (let i = curIdx + 1; i < curClues.length; i++) candidates.push({ clue: curClues[i], dir: dirs[0] });
+    for (let i = 0; i < otherClues.length; i++) candidates.push({ clue: otherClues[i], dir: dirs[1] });
+    for (let i = 0; i <= curIdx; i++) candidates.push({ clue: curClues[i], dir: dirs[0] });
   } else {
-    nextIdx = idx - 1;
-    if (nextIdx < 0) {
-      direction = direction === 'across' ? 'down' : 'across';
-      const other = direction === 'across' ? PUZZLE.clues.across : PUZZLE.clues.down;
-      selectedRow = other[other.length - 1].row;
-      selectedCol = other[other.length - 1].col;
+    for (let i = curIdx - 1; i >= 0; i--) candidates.push({ clue: curClues[i], dir: dirs[0] });
+    for (let i = otherClues.length - 1; i >= 0; i--) candidates.push({ clue: otherClues[i], dir: dirs[1] });
+    for (let i = curClues.length - 1; i >= curIdx; i--) candidates.push({ clue: curClues[i], dir: dirs[0] });
+  }
+
+  // Find first unsolved word
+  for (const cand of candidates) {
+    if (!isWordSolved(cand.clue, cand.dir)) {
+      direction = cand.dir;
+      const [r, c] = firstUnsolvedCell(cand.clue, cand.dir);
+      selectedRow = r;
+      selectedCol = c;
       render();
       return;
     }
   }
 
-  selectedRow = clues[nextIdx].row;
-  selectedCol = clues[nextIdx].col;
+  // All solved — just move to next word normally
+  const nextIdx = forward ? (curIdx + 1) % curClues.length : (curIdx - 1 + curClues.length) % curClues.length;
+  selectedRow = curClues[nextIdx].row;
+  selectedCol = curClues[nextIdx].col;
   render();
 }
 
