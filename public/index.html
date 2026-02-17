@@ -429,6 +429,11 @@ body {
   0% { opacity: 1; transform: translateY(0); }
   100% { opacity: 0; transform: translateY(-28px); }
 }
+@keyframes float-up-slow {
+  0% { opacity: 1; transform: translateY(0) scale(1); }
+  20% { opacity: 1; transform: translateY(-4px) scale(1.1); }
+  100% { opacity: 0; transform: translateY(-34px) scale(1); }
+}
 .point-float {
   position: absolute;
   top: -2px;
@@ -442,6 +447,23 @@ body {
 }
 .point-float.plus { color: #2e7d32; }
 .point-float.minus { color: #c62828; }
+.point-float.word {
+  font-size: 13px;
+  color: #1565c0;
+  left: -2px;
+  right: auto;
+  animation: float-up-slow 1.6s ease-out forwards;
+}
+.point-float.combo {
+  font-size: 15px;
+  font-weight: 900;
+  color: #e65100;
+  left: 50%;
+  right: auto;
+  transform: translateX(-50%);
+  animation: float-up-slow 1.6s ease-out forwards;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+}
 
 /* Leaderboard in congrats */
 .leaderboard { text-align: left; margin: 16px 0; }
@@ -1257,14 +1279,38 @@ function applySharedState(gridMap, fillersMap, pointsMap, userColorsMap) {
   }
 }
 
-function showPointFloat(row, col, delta) {
+function showPointFloat(row, col, delta, type) {
   if (!delta || !cellEls[row]?.[col]) return;
   const el = cellEls[row][col];
   const float = document.createElement('span');
-  float.className = `point-float ${delta > 0 ? 'plus' : 'minus'}`;
-  float.textContent = delta > 0 ? '+1' : '-1';
+  if (type === 'combo') {
+    float.className = 'point-float combo';
+    float.textContent = '+15 COMBO';
+  } else if (type === 'word') {
+    float.className = 'point-float word';
+    float.textContent = '+5';
+  } else {
+    float.className = `point-float ${delta > 0 ? 'plus' : 'minus'}`;
+    float.textContent = delta > 0 ? '+1' : '-1';
+  }
   el.appendChild(float);
   float.addEventListener('animationend', () => float.remove());
+}
+
+function checkLocalWordBonus(row, col) {
+  if (!PUZZLE) return 0;
+  let completed = 0;
+  for (const dir of ['across', 'down']) {
+    const clue = getClueForCell(row, col, dir);
+    if (!clue) continue;
+    const cells = getWordCells(clue, dir);
+    if (cells.every(([r, c]) => userGrid[r][c] && userGrid[r][c] === getCorrectAnswer(r, c))) {
+      completed++;
+    }
+  }
+  if (completed >= 2) return 15;
+  if (completed === 1) return 5;
+  return 0;
 }
 
 function sendCellUpdate(row, col, letter) {
@@ -1279,11 +1325,19 @@ function sendCellUpdate(row, col, letter) {
       const delta = (letter === correct) ? 1 : -1;
       persistedPoints.set(myName, (persistedPoints.get(myName) || 0) + delta);
       showPointFloat(row, col, delta);
+
+      // Word completion bonus (check after grid is updated)
+      if (delta === 1) {
+        const wb = checkLocalWordBonus(row, col);
+        if (wb > 0) {
+          persistedPoints.set(myName, (persistedPoints.get(myName) || 0) + wb);
+          setTimeout(() => showPointFloat(row, col, wb, wb >= 15 ? 'combo' : 'word'), 200);
+        }
+      }
     }
   } else {
     cellColors.delete(key);
     cellFillers.delete(key);
-    // No point change on delete — penalties/rewards persist
   }
   socket.emit('cell-update', { puzzleDate: currentDate, row, col, letter });
 }
@@ -1335,7 +1389,7 @@ function setupSocketHandlers() {
     if (PUZZLE) render();
   });
 
-  socket.on('cell-updated', ({ row, col, letter, userId: remoteUserId, userName: remoteName, color: remoteColor, pointDelta }) => {
+  socket.on('cell-updated', ({ row, col, letter, userId: remoteUserId, userName: remoteName, color: remoteColor, pointDelta, wordBonus }) => {
     if (!PUZZLE) return;
     if (row >= 0 && row < ROWS && col >= 0 && col < COLS) {
       userGrid[row][col] = letter;
@@ -1351,10 +1405,15 @@ function setupSocketHandlers() {
         cellColors.delete(key);
         cellFillers.delete(key);
       }
-      // Apply remote point delta
+      // Apply remote point delta (letter +1/-1)
       if (pointDelta && remoteName) {
         persistedPoints.set(remoteName, (persistedPoints.get(remoteName) || 0) + pointDelta);
         showPointFloat(row, col, pointDelta);
+      }
+      // Apply remote word bonus (+5 or +15 combo)
+      if (wordBonus && remoteName) {
+        persistedPoints.set(remoteName, (persistedPoints.get(remoteName) || 0) + wordBonus);
+        setTimeout(() => showPointFloat(row, col, wordBonus, wordBonus >= 15 ? 'combo' : 'word'), 200);
       }
       render();
       checkCompletion();
@@ -1459,24 +1518,7 @@ function computeUserPoints() {
     ensure(filler.userName, filler.color);
   }
 
-  // +5 for each fully correct word to every user who filled a cell in it
-  for (const dir of ['across', 'down']) {
-    for (const clue of PUZZLE.clues[dir]) {
-      const cells = getWordCells(clue, dir);
-      const allCorrect = cells.every(([r, c]) =>
-        userGrid[r][c] && userGrid[r][c] === getCorrectAnswer(r, c)
-      );
-      if (!allCorrect) continue;
-      const wordFillers = new Set();
-      for (const [r, c] of cells) {
-        const filler = cellFillers.get(`${r},${c}`);
-        if (filler) wordFillers.add(filler.userName);
-      }
-      for (const name of wordFillers) {
-        ensure(name, null).pts += 5;
-      }
-    }
-  }
+  // Word bonuses (+5/+15) are now persisted server-side in the points total
 
   return points;
 }

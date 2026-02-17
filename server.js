@@ -164,13 +164,13 @@ app.delete('/api/state/:date', async (req, res) => {
 
 // ─── In-memory user presence ─────────────────────────────────────
 
-const puzzleDataCache = new Map(); // puzzleDate → { grid, rebus }
+const puzzleDataCache = new Map(); // puzzleDate → { grid, rebus, clues, dimensions }
 
 async function getPuzzleData(puzzleDate) {
   if (puzzleDataCache.has(puzzleDate)) return puzzleDataCache.get(puzzleDate);
   const data = await db.getPuzzle(puzzleDate);
   if (!data) return null;
-  const cached = { grid: data.grid, rebus: data.rebus || {} };
+  const cached = { grid: data.grid, rebus: data.rebus || {}, clues: data.clues, dimensions: data.dimensions };
   puzzleDataCache.set(puzzleDate, cached);
   return cached;
 }
@@ -181,6 +181,37 @@ function getCorrectAnswer(puzzleData, row, col) {
   if (puzzleData.rebus[key]) return puzzleData.rebus[key];
   if (puzzleData.grid[row] && puzzleData.grid[row][col] !== '.') return puzzleData.grid[row][col];
   return null;
+}
+
+function getServerWordCells(pData, clue, dir) {
+  const cells = [];
+  let r = clue.row, c = clue.col;
+  const maxR = pData.dimensions.rows, maxC = pData.dimensions.cols;
+  while (r < maxR && c < maxC && pData.grid[r][c] !== '.') {
+    cells.push([r, c]);
+    if (dir === 'across') c++; else r++;
+  }
+  return cells;
+}
+
+async function checkWordCompletions(puzzleDate, row, col, pData) {
+  const state = await db.getState(puzzleDate);
+  const userGrid = state?.user_grid || {};
+  let completed = 0;
+
+  for (const dir of ['across', 'down']) {
+    for (const clue of pData.clues[dir]) {
+      const cells = getServerWordCells(pData, clue, dir);
+      if (!cells.some(([r, c]) => r === row && c === col)) continue;
+      const allCorrect = cells.every(([r, c]) => {
+        const key = `${r},${c}`;
+        const correct = getCorrectAnswer(pData, r, c);
+        return userGrid[key] === correct;
+      });
+      if (allCorrect) completed++;
+    }
+  }
+  return completed;
 }
 
 const puzzleRooms = new Map(); // puzzleDate → Map<socketId, {userId, userName, color, row, col, direction}>
@@ -341,16 +372,25 @@ io.on('connection', async (socket) => {
 
       // Score points on letter placement (not on delete)
       let pointDelta = 0;
+      let wordBonus = 0;
       if (letter) {
         const pData = await getPuzzleData(puzzleDate);
         const correctAnswer = getCorrectAnswer(pData, row, col);
         if (correctAnswer) {
           pointDelta = (letter === correctAnswer) ? 1 : -1;
           await db.addPoints(puzzleDate, userName, pointDelta);
+
+          // Check word completions for bonus
+          if (pointDelta === 1) {
+            const completed = await checkWordCompletions(puzzleDate, row, col, pData);
+            if (completed >= 2) wordBonus = 15;      // combo!
+            else if (completed === 1) wordBonus = 5;
+            if (wordBonus) await db.addPoints(puzzleDate, userName, wordBonus);
+          }
         }
       }
 
-      socket.to(`puzzle:${puzzleDate}`).emit('cell-updated', { row, col, letter, userId, userName, color: userColor, pointDelta });
+      socket.to(`puzzle:${puzzleDate}`).emit('cell-updated', { row, col, letter, userId, userName, color: userColor, pointDelta, wordBonus });
       debounceProgressBroadcast(puzzleDate);
     } catch (err) {
       console.error('[ws] cell-update error:', err);
