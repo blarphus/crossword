@@ -436,6 +436,52 @@ body {
 /* Auto-check icon */
 .check-icon { display: none; }
 
+/* Name prompt modal */
+.name-modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: 200;
+  align-items: center;
+  justify-content: center;
+}
+.name-modal-overlay.show { display: flex; }
+.name-modal {
+  background: var(--white);
+  padding: 36px 40px;
+  border-radius: 12px;
+  text-align: center;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+  max-width: 340px;
+  width: 90%;
+}
+.name-modal h2 { font-size: 1.4rem; margin-bottom: 6px; }
+.name-modal p { color: #666; font-size: 0.9rem; margin-bottom: 18px; }
+.name-modal input {
+  width: 100%;
+  padding: 10px 14px;
+  border: 2px solid #ccc;
+  border-radius: 6px;
+  font-size: 1rem;
+  margin-bottom: 14px;
+  text-align: center;
+  outline: none;
+  transition: border-color 0.15s;
+}
+.name-modal input:focus { border-color: #2a6dd4; }
+.name-modal button {
+  padding: 10px 28px;
+  background: #2a6dd4;
+  color: var(--white);
+  border: none;
+  border-radius: 6px;
+  font-size: 1rem;
+  cursor: pointer;
+  width: 100%;
+}
+.name-modal button:disabled { opacity: 0.4; cursor: default; }
+
 /* Mobile */
 @media (max-width: 780px) {
   .calendar-nav { padding: 10px; gap: 6px; }
@@ -532,6 +578,16 @@ body {
   <div class="mobile-keyboard" id="mobile-keyboard"></div>
 </div>
 
+<!-- ─── Name Prompt Modal ────────────────────────────────────── -->
+<div class="name-modal-overlay" id="name-modal">
+  <div class="name-modal">
+    <h2>Welcome!</h2>
+    <p>Enter your name to start solving</p>
+    <input type="text" id="name-input" placeholder="Your name" maxlength="20" autocomplete="off">
+    <button id="name-submit" disabled>Start</button>
+  </div>
+</div>
+
 <div class="congrats-overlay" id="congrats">
   <div class="congrats-box">
     <h2>Congratulations!</h2>
@@ -542,19 +598,76 @@ body {
 
 <script src="/socket.io/socket.io.js"></script>
 <script>
-// ─── User identity ──────────────────────────────────────────────
-const USER_ID = localStorage.getItem('crossword-user-id') || (() => {
-  const id = crypto.randomUUID();
-  localStorage.setItem('crossword-user-id', id);
-  return id;
-})();
+// ─── User identity (IP-based, server-managed) ──────────────────
+let myName = '';
+let myColor = '#90EE90';
+let socket = null;
 
-// ─── Socket.IO client ──────────────────────────────────────────
-const socket = io({ query: { userId: USER_ID } });
+async function initIdentity() {
+  try {
+    const res = await fetch('/api/me');
+    const data = await res.json();
+    if (data.name) {
+      myName = data.name;
+      myColor = data.color;
+      connectSocket();
+      return;
+    }
+  } catch (e) {
+    // Fallback: show modal anyway
+  }
+  // No name yet — show prompt
+  showNameModal();
+}
 
-socket.on('connect', () => {
-  if (currentDate) socket.emit('join-puzzle', currentDate);
-});
+function showNameModal() {
+  const modal = document.getElementById('name-modal');
+  const input = document.getElementById('name-input');
+  const btn = document.getElementById('name-submit');
+  modal.classList.add('show');
+  input.focus();
+
+  input.addEventListener('input', () => {
+    btn.disabled = !input.value.trim();
+  });
+
+  async function submit() {
+    const name = input.value.trim();
+    if (!name) return;
+    btn.disabled = true;
+    try {
+      const res = await fetch('/api/me', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name }),
+      });
+      const data = await res.json();
+      myName = data.name;
+      myColor = data.color;
+      modal.classList.remove('show');
+      connectSocket();
+    } catch (e) {
+      btn.disabled = false;
+      alert('Failed to save name, please try again.');
+    }
+  }
+
+  btn.addEventListener('click', submit);
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') submit();
+  });
+}
+
+function connectSocket() {
+  socket = io({ query: { userId: myName } });
+
+  socket.on('connect', () => {
+    if (currentDate) socket.emit('join-puzzle', currentDate);
+  });
+
+  setupSocketHandlers();
+  startApp();
+}
 
 // ─── Puzzle state ──────────────────────────────────────────────
 let PUZZLE = null;
@@ -603,10 +716,9 @@ function stopTimerTick() {
 }
 
 // ─── Remote user presence ──────────────────────────────────────
-let myColor = '#90EE90';
-const remoteUsers = new Map(); // socketId → {userId, color, row, col, direction}
+const remoteUsers = new Map(); // socketId → {userId, userName, color, row, col, direction}
 const cellColors = new Map();  // "r,c" → color (who filled this cell)
-const cellFillers = new Map(); // "r,c" → {userId, color} (who filled this cell)
+const cellFillers = new Map(); // "r,c" → {userName, color} (who filled this cell)
 const roomCounts = new Map();  // puzzleDate → player count
 let lastCursorKey = '';
 
@@ -815,7 +927,7 @@ function showCalendar() {
   document.title = 'NYT Crossword';
 
   if (currentDate) {
-    socket.emit('leave-puzzle');
+    if (socket) socket.emit('leave-puzzle');
     currentDate = null;
   }
   stopTimerTick();
@@ -899,7 +1011,7 @@ async function loadPuzzle(dateStr) {
   congratsEl.classList.remove('show');
 
   // Apply shared state
-  applySharedState(stateData.userGrid || {});
+  applySharedState(stateData.userGrid || {}, stateData.cellFillers || {});
 
   // Update header
   const d = new Date(dateStr + 'T12:00:00');
@@ -939,25 +1051,33 @@ async function loadPuzzle(dateStr) {
   focusGrid();
 
   // Join puzzle room via Socket.IO
-  socket.emit('join-puzzle', dateStr);
+  if (socket) socket.emit('join-puzzle', dateStr);
 }
 
 // ─── Collaboration helpers ────────────────────────────────────
-function applySharedState(gridMap) {
+function applySharedState(gridMap, fillersMap) {
   for (const [key, letter] of Object.entries(gridMap)) {
     const [r, c] = key.split(',').map(Number);
     if (r >= 0 && r < ROWS && c >= 0 && c < COLS) {
       userGrid[r][c] = letter;
     }
   }
+  // Apply persisted cell fillers
+  if (fillersMap) {
+    for (const [key, name] of Object.entries(fillersMap)) {
+      if (name) {
+        cellFillers.set(key, { userName: name, color: '#ccc' });
+      }
+    }
+  }
 }
 
 function sendCellUpdate(row, col, letter) {
-  if (!currentDate) return;
+  if (!currentDate || !socket) return;
   const key = `${row},${col}`;
   if (letter) {
     cellColors.set(key, myColor);
-    cellFillers.set(key, { userId: USER_ID, color: myColor });
+    cellFillers.set(key, { userName: myName, color: myColor });
   } else {
     cellColors.delete(key);
     cellFillers.delete(key);
@@ -966,7 +1086,7 @@ function sendCellUpdate(row, col, letter) {
 }
 
 function broadcastCursor() {
-  if (!currentDate) return;
+  if (!currentDate || !socket) return;
   const key = `${selectedRow},${selectedCol},${direction}`;
   if (key === lastCursorKey) return;
   lastCursorKey = key;
@@ -974,145 +1094,164 @@ function broadcastCursor() {
 }
 
 // ─── Socket.IO event handlers for puzzle ──────────────────────
-socket.on('room-state', ({ users, yourColor }) => {
-  myColor = yourColor;
-  remoteUsers.clear();
-  for (const u of users) {
-    remoteUsers.set(u.socketId, { userId: u.userId, color: u.color, row: u.row, col: u.col, direction: u.direction });
-  }
-  renderPresenceBar();
-  if (PUZZLE) render();
-});
+function setupSocketHandlers() {
+  socket.on('room-state', ({ users, yourColor, yourName }) => {
+    myColor = yourColor;
+    if (yourName) myName = yourName;
+    remoteUsers.clear();
+    for (const u of users) {
+      remoteUsers.set(u.socketId, { userId: u.userId, userName: u.userName || 'User', color: u.color, row: u.row, col: u.col, direction: u.direction });
+    }
+    // Update filler colors from room users
+    updateFillerColorsFromRoom();
+    renderPresenceBar();
+    if (PUZZLE) render();
+  });
 
-socket.on('user-joined', ({ socketId, userId, color, row, col, direction: dir }) => {
-  remoteUsers.set(socketId, { userId, color, row, col, direction: dir });
-  renderPresenceBar();
-  if (PUZZLE) render();
-});
+  socket.on('user-joined', ({ socketId, userId, userName: uName, color, row, col, direction: dir }) => {
+    remoteUsers.set(socketId, { userId, userName: uName || 'User', color, row, col, direction: dir });
+    renderPresenceBar();
+    if (PUZZLE) render();
+  });
 
-socket.on('user-left', ({ socketId }) => {
-  remoteUsers.delete(socketId);
-  renderPresenceBar();
-  if (PUZZLE) render();
-});
+  socket.on('user-left', ({ socketId }) => {
+    remoteUsers.delete(socketId);
+    renderPresenceBar();
+    if (PUZZLE) render();
+  });
 
-socket.on('cursor-moved', ({ socketId, userId, row, col, direction: dir }) => {
-  const user = remoteUsers.get(socketId);
-  if (user) {
-    user.row = row;
-    user.col = col;
-    user.direction = dir;
-  } else {
-    remoteUsers.set(socketId, { userId, color: '#ccc', row, col, direction: dir });
-  }
-  if (PUZZLE) render();
-});
-
-socket.on('cell-updated', ({ row, col, letter, userId: remoteUserId }) => {
-  if (!PUZZLE) return;
-  if (row >= 0 && row < ROWS && col >= 0 && col < COLS) {
-    userGrid[row][col] = letter;
-    const key = `${row},${col}`;
-    if (letter) {
-      // Find color for this remote user
-      let color = '#ccc';
-      for (const [, u] of remoteUsers) {
-        if (u.userId === remoteUserId) { color = u.color; break; }
-      }
-      cellColors.set(key, color);
-      cellFillers.set(key, { userId: remoteUserId, color });
-      // Auto-check remote letters too
-      if (autoCheck && letter === PUZZLE.grid[row][col]) {
-        checkedCells[row][col] = true;
-      }
+  socket.on('cursor-moved', ({ socketId, userId, userName: uName, row, col, direction: dir }) => {
+    const user = remoteUsers.get(socketId);
+    if (user) {
+      user.row = row;
+      user.col = col;
+      user.direction = dir;
     } else {
-      cellColors.delete(key);
-      cellFillers.delete(key);
+      remoteUsers.set(socketId, { userId, userName: uName || 'User', color: '#ccc', row, col, direction: dir });
+    }
+    if (PUZZLE) render();
+  });
+
+  socket.on('cell-updated', ({ row, col, letter, userId: remoteUserId, userName: remoteName, color: remoteColor }) => {
+    if (!PUZZLE) return;
+    if (row >= 0 && row < ROWS && col >= 0 && col < COLS) {
+      userGrid[row][col] = letter;
+      const key = `${row},${col}`;
+      if (letter) {
+        const color = remoteColor || findColorForUser(remoteUserId);
+        cellColors.set(key, color);
+        cellFillers.set(key, { userName: remoteName || 'User', color });
+        if (autoCheck && letter === PUZZLE.grid[row][col]) {
+          checkedCells[row][col] = true;
+        }
+      } else {
+        cellColors.delete(key);
+        cellFillers.delete(key);
+      }
+      render();
+      checkCompletion();
+    }
+  });
+
+  socket.on('auto-check-toggled', ({ enabled }) => {
+    if (!PUZZLE) return;
+    autoCheck = enabled;
+    btnCheck.classList.toggle('active', autoCheck);
+    if (autoCheck) {
+      for (let r = 0; r < ROWS; r++)
+        for (let c = 0; c < COLS; c++)
+          if (userGrid[r][c] && userGrid[r][c] === PUZZLE.grid[r][c])
+            checkedCells[r][c] = true;
     }
     render();
-    checkCompletion();
-  }
-});
+  });
 
-socket.on('auto-check-toggled', ({ enabled }) => {
-  if (!PUZZLE) return;
-  autoCheck = enabled;
-  btnCheck.classList.toggle('active', autoCheck);
-  if (autoCheck) {
+  socket.on('timer-sync', ({ seconds }) => {
+    timerSeconds = seconds;
+    updateTimerDisplay();
+    startTimerTick();
+  });
+
+  socket.on('puzzle-cleared', () => {
+    if (!PUZZLE) return;
     for (let r = 0; r < ROWS; r++)
-      for (let c = 0; c < COLS; c++)
-        if (userGrid[r][c] && userGrid[r][c] === PUZZLE.grid[r][c])
-          checkedCells[r][c] = true;
-  }
-  render();
-});
-
-socket.on('timer-sync', ({ seconds }) => {
-  timerSeconds = seconds;
-  updateTimerDisplay();
-  startTimerTick();
-});
-
-socket.on('puzzle-cleared', () => {
-  if (!PUZZLE) return;
-  for (let r = 0; r < ROWS; r++)
-    for (let c = 0; c < COLS; c++) {
-      userGrid[r][c] = '';
-      checkedCells[r][c] = false;
-    }
-  cellColors.clear();
-  cellFillers.clear();
-  solved = false;
-  congratsEl.classList.remove('show');
-  render();
-});
-
-socket.on('room-count', ({ puzzleDate, count }) => {
-  if (count > 0) {
-    roomCounts.set(puzzleDate, count);
-  } else {
-    roomCounts.delete(puzzleDate);
-  }
-  // Update badge on calendar if visible
-  const dayEl = document.querySelector(`.cal-day[data-date="${puzzleDate}"]`);
-  if (dayEl) {
-    let badge = dayEl.querySelector('.player-count-badge');
-    if (count > 0) {
-      if (!badge) {
-        badge = document.createElement('div');
-        badge.className = 'player-count-badge';
-        dayEl.appendChild(badge);
+      for (let c = 0; c < COLS; c++) {
+        userGrid[r][c] = '';
+        checkedCells[r][c] = false;
       }
-      badge.textContent = count;
-    } else if (badge) {
-      badge.remove();
+    cellColors.clear();
+    cellFillers.clear();
+    solved = false;
+    congratsEl.classList.remove('show');
+    render();
+  });
+
+  socket.on('room-count', ({ puzzleDate, count }) => {
+    if (count > 0) {
+      roomCounts.set(puzzleDate, count);
+    } else {
+      roomCounts.delete(puzzleDate);
+    }
+    const dayEl = document.querySelector(`.cal-day[data-date="${puzzleDate}"]`);
+    if (dayEl) {
+      let badge = dayEl.querySelector('.player-count-badge');
+      if (count > 0) {
+        if (!badge) {
+          badge = document.createElement('div');
+          badge.className = 'player-count-badge';
+          dayEl.appendChild(badge);
+        }
+        badge.textContent = count;
+      } else if (badge) {
+        badge.remove();
+      }
+    }
+  });
+
+  socket.on('puzzle-progress', (summary) => {
+    calendarData.set(summary.date, summary);
+    const dayEl = document.querySelector(`.cal-day[data-date="${summary.date}"]`);
+    if (dayEl && !dayEl.classList.contains('no-puzzle')) {
+      dayEl.classList.toggle('complete', summary.isComplete);
+      const canvas = dayEl.querySelector('canvas');
+      if (canvas) drawThumbnail(canvas, summary);
+    }
+  });
+}
+
+function findColorForUser(userId) {
+  for (const [, u] of remoteUsers) {
+    if (u.userId === userId) return u.color;
+  }
+  return '#ccc';
+}
+
+function updateFillerColorsFromRoom() {
+  // After getting room state, update filler colors for users we now know about
+  const nameColorMap = new Map();
+  nameColorMap.set(myName, myColor);
+  for (const [, u] of remoteUsers) {
+    nameColorMap.set(u.userName, u.color);
+  }
+  for (const [key, filler] of cellFillers) {
+    const knownColor = nameColorMap.get(filler.userName);
+    if (knownColor) {
+      filler.color = knownColor;
+      cellColors.set(key, knownColor);
     }
   }
-});
-
-socket.on('puzzle-progress', (summary) => {
-  calendarData.set(summary.date, summary);
-  const dayEl = document.querySelector(`.cal-day[data-date="${summary.date}"]`);
-  if (dayEl && !dayEl.classList.contains('no-puzzle')) {
-    // Update complete class + star
-    dayEl.classList.toggle('complete', summary.isComplete);
-    // Redraw canvas
-    const canvas = dayEl.querySelector('canvas');
-    if (canvas) drawThumbnail(canvas, summary);
-  }
-});
+}
 
 function computeUserStats() {
   if (!PUZZLE) return new Map();
-  const stats = new Map(); // userId → { color, count }
+  const stats = new Map(); // userName → { color, count }
   for (const [key, filler] of cellFillers) {
     const [r, c] = key.split(',').map(Number);
-    // Only count correctly filled cells
     if (userGrid[r]?.[c] && userGrid[r][c] === PUZZLE.grid[r][c]) {
-      const existing = stats.get(filler.userId) || { color: filler.color, count: 0 };
+      const existing = stats.get(filler.userName) || { color: filler.color, count: 0 };
       existing.count++;
       existing.color = filler.color;
-      stats.set(filler.userId, existing);
+      stats.set(filler.userName, existing);
     }
   }
   return stats;
@@ -1121,7 +1260,6 @@ function computeUserStats() {
 function renderPresenceBar() {
   presenceBarEl.innerHTML = '';
 
-  // Count total white cells for percentage
   let totalWhite = 0;
   if (PUZZLE) {
     for (let r = 0; r < ROWS; r++)
@@ -1131,20 +1269,32 @@ function renderPresenceBar() {
 
   const stats = computeUserStats();
 
-  // Always show current user + remote users
-  const allUsers = [{ userId: USER_ID, color: myColor, label: 'You' }];
+  // Build list: current user + online remote users
+  const allUsers = [{ name: myName, color: myColor, label: myName || 'You' }];
+  // Deduplicate remote users by name
+  const seenNames = new Set([myName]);
   for (const [, user] of remoteUsers) {
-    allUsers.push({ userId: user.userId, color: user.color, label: 'User' });
+    if (!seenNames.has(user.userName)) {
+      allUsers.push({ name: user.userName, color: user.color, label: user.userName });
+      seenNames.add(user.userName);
+    }
+  }
+  // Also include offline users who have stats (from persisted fillers)
+  for (const [name, stat] of stats) {
+    if (!seenNames.has(name)) {
+      allUsers.push({ name, color: stat.color, label: name });
+      seenNames.add(name);
+    }
   }
 
-  if (allUsers.length <= 1 && !stats.has(USER_ID)) {
+  if (allUsers.length <= 1 && !stats.has(myName)) {
     presenceBarEl.style.display = 'none';
     return;
   }
   presenceBarEl.style.display = '';
 
   for (const u of allUsers) {
-    const userStat = stats.get(u.userId);
+    const userStat = stats.get(u.name);
     const count = userStat ? userStat.count : 0;
     const pct = totalWhite > 0 ? Math.round((count / totalWhite) * 100) : 0;
     const el = document.createElement('span');
@@ -1654,7 +1804,7 @@ btnCheck.addEventListener('click', () => {
   }
   render();
   // Broadcast auto-check state to all users
-  if (currentDate) {
+  if (currentDate && socket) {
     socket.emit('auto-check-toggle', { puzzleDate: currentDate, enabled: autoCheck });
   }
 });
@@ -1670,7 +1820,7 @@ btnClear.addEventListener('click', () => {
   cellFillers.clear();
   solved = false;
   congratsEl.classList.remove('show');
-  if (currentDate) {
+  if (currentDate && socket) {
     socket.emit('clear-puzzle', { puzzleDate: currentDate });
   }
   render();
@@ -1905,13 +2055,18 @@ document.getElementById('clue-next').addEventListener('click', () => {
 });
 
 // ─── Init ──────────────────────────────────────────────────────
-const savedPuzzle = localStorage.getItem('crossword-current-puzzle');
-initCalendarNav();
-if (savedPuzzle) {
-  showPuzzle(savedPuzzle);
-} else {
-  fetchAndRenderCalendar();
+function startApp() {
+  const savedPuzzle = localStorage.getItem('crossword-current-puzzle');
+  initCalendarNav();
+  if (savedPuzzle) {
+    showPuzzle(savedPuzzle);
+  } else {
+    fetchAndRenderCalendar();
+  }
 }
+
+// Begin: check identity first, then connect socket, then start app
+initIdentity();
 </script>
 </body>
 </html>

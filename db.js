@@ -32,6 +32,19 @@ async function initDb() {
   await pool.query(`
     ALTER TABLE puzzle_state ADD COLUMN IF NOT EXISTS timer_seconds INTEGER DEFAULT 0
   `);
+  // Users table (IP-based identity)
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS users (
+      ip         TEXT PRIMARY KEY,
+      name       TEXT NOT NULL,
+      color      TEXT NOT NULL,
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    )
+  `);
+  // Cell filler attribution column
+  await pool.query(`
+    ALTER TABLE puzzle_state ADD COLUMN IF NOT EXISTS cell_fillers JSONB DEFAULT '{}'
+  `);
 }
 
 async function savePuzzle(date, data) {
@@ -68,7 +81,7 @@ async function hasPuzzle(date) {
 
 async function getState(puzzleDate) {
   const { rows } = await pool.query(
-    'SELECT user_grid, updated_at FROM puzzle_state WHERE puzzle_date = $1',
+    'SELECT user_grid, updated_at, cell_fillers FROM puzzle_state WHERE puzzle_date = $1',
     [puzzleDate]
   );
   return rows[0] || null;
@@ -222,4 +235,58 @@ async function setMetadata(key, value) {
   );
 }
 
-module.exports = { initDb, getState, upsertCell, clearState, savePuzzle, getPuzzle, getAllPuzzleMeta, hasPuzzle, getCalendarData, getProgressSummary, getTimer, saveTimer, getMetadata, setMetadata };
+// ─── User identity (IP-based) ──────────────────────────────────
+
+async function getUser(ip) {
+  const { rows } = await pool.query('SELECT ip, name, color FROM users WHERE ip = $1', [ip]);
+  return rows[0] || null;
+}
+
+async function createUser(ip, name, color) {
+  await pool.query(
+    'INSERT INTO users (ip, name, color) VALUES ($1, $2, $3) ON CONFLICT (ip) DO UPDATE SET name = $2, color = $3',
+    [ip, name, color]
+  );
+}
+
+async function getUserCount() {
+  const { rows } = await pool.query('SELECT COUNT(*) AS count FROM users');
+  return parseInt(rows[0].count, 10);
+}
+
+// ─── Cell filler attribution ───────────────────────────────────
+
+async function upsertCellFiller(puzzleDate, row, col, name) {
+  const key = `${row},${col}`;
+  const existing = await getState(puzzleDate);
+  if (!existing) {
+    // No state row yet — create one with just the filler
+    const fillers = name ? { [key]: name } : {};
+    await pool.query(
+      `INSERT INTO puzzle_state (puzzle_date, user_grid, cell_fillers, updated_at)
+       VALUES ($1, '{}', $2, NOW())`,
+      [puzzleDate, JSON.stringify(fillers)]
+    );
+  } else {
+    const fillers = existing.cell_fillers || {};
+    if (name) {
+      fillers[key] = name;
+    } else {
+      delete fillers[key];
+    }
+    await pool.query(
+      'UPDATE puzzle_state SET cell_fillers = $1 WHERE puzzle_date = $2',
+      [JSON.stringify(fillers), puzzleDate]
+    );
+  }
+}
+
+async function getCellFillers(puzzleDate) {
+  const { rows } = await pool.query(
+    'SELECT cell_fillers FROM puzzle_state WHERE puzzle_date = $1',
+    [puzzleDate]
+  );
+  return rows[0]?.cell_fillers || {};
+}
+
+module.exports = { initDb, getState, upsertCell, clearState, savePuzzle, getPuzzle, getAllPuzzleMeta, hasPuzzle, getCalendarData, getProgressSummary, getTimer, saveTimer, getMetadata, setMetadata, getUser, createUser, getUserCount, upsertCellFiller, getCellFillers };

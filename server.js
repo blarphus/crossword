@@ -9,11 +9,21 @@ const db = require('./db');
 const { scrapeDate } = require('./scrape');
 
 const app = express();
+app.set('trust proxy', true);
 const server = http.createServer(app);
 const io = new Server(server);
 
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
+
+// ─── IP helpers ─────────────────────────────────────────────────
+function getIp(req) {
+  return req.ip || req.headers['x-forwarded-for']?.split(',')[0]?.trim() || 'unknown';
+}
+function getSocketIp(socket) {
+  return socket.handshake.headers['x-forwarded-for']?.split(',')[0]?.trim()
+    || socket.handshake.address || 'unknown';
+}
 
 function todayET() {
   return new Date().toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
@@ -66,11 +76,49 @@ app.get('/api/calendar/:yearMonth', async (req, res) => {
   }
 });
 
+// GET /api/me — look up current user by IP
+app.get('/api/me', async (req, res) => {
+  try {
+    const ip = getIp(req);
+    const user = await db.getUser(ip);
+    if (user) {
+      res.json({ name: user.name, color: user.color });
+    } else {
+      res.json({ name: null });
+    }
+  } catch (err) {
+    console.error('GET /api/me error:', err);
+    res.status(500).json({ error: 'Database error' });
+  }
+});
+
+// POST /api/me — register user name for this IP
+app.post('/api/me', async (req, res) => {
+  try {
+    const ip = getIp(req);
+    const { name } = req.body;
+    if (!name || !name.trim()) {
+      return res.status(400).json({ error: 'Name is required' });
+    }
+    const trimmedName = name.trim().substring(0, 20);
+    // Assign color by rotating through pool
+    const count = await db.getUserCount();
+    const color = COLOR_POOL[count % COLOR_POOL.length];
+    await db.createUser(ip, trimmedName, color);
+    res.json({ name: trimmedName, color });
+  } catch (err) {
+    console.error('POST /api/me error:', err);
+    res.status(500).json({ error: 'Database error' });
+  }
+});
+
 // GET /api/state/:date — shared collaborative grid state
 app.get('/api/state/:date', async (req, res) => {
   try {
     const state = await db.getState(req.params.date);
-    res.json(state ? { userGrid: state.user_grid, updatedAt: state.updated_at } : { userGrid: {} });
+    res.json(state
+      ? { userGrid: state.user_grid, cellFillers: state.cell_fillers || {}, updatedAt: state.updated_at }
+      : { userGrid: {}, cellFillers: {} });
   } catch (err) {
     console.error('GET /api/state error:', err);
     res.status(500).json({ error: 'Database error' });
@@ -105,7 +153,7 @@ app.delete('/api/state/:date', async (req, res) => {
 
 // ─── In-memory user presence ─────────────────────────────────────
 
-const puzzleRooms = new Map(); // puzzleDate → Map<socketId, {userId, color, row, col, direction}>
+const puzzleRooms = new Map(); // puzzleDate → Map<socketId, {userId, userName, color, row, col, direction}>
 const socketPuzzle = new Map(); // socketId → puzzleDate (which puzzle they're in)
 const COLOR_POOL = ['#90EE90','#FFB6C1','#DDA0DD','#FFA500','#ADD8E6','#98FB98','#F0E68C','#FFD700'];
 
@@ -190,6 +238,7 @@ function leaveCurrentPuzzle(socket) {
     }
     socket.to(`puzzle:${puzzleDate}`).emit('user-left', {
       userId: socket.handshake.query.userId,
+      userName: socket.userName || 'Anonymous',
       socketId: socket.id,
     });
     broadcastRoomCount(puzzleDate);
@@ -198,8 +247,17 @@ function leaveCurrentPuzzle(socket) {
 
 // ─── Socket.IO event handlers ────────────────────────────────────
 
-io.on('connection', (socket) => {
+io.on('connection', async (socket) => {
   const userId = socket.handshake.query.userId || 'anon';
+
+  // Look up user by IP
+  const ip = getSocketIp(socket);
+  const dbUser = await db.getUser(ip);
+  const userName = dbUser?.name || 'Anonymous';
+  const userColor = dbUser?.color || null;
+  socket.userName = userName;
+  socket.userColor = userColor;
+
   socket.join('calendar');
 
   socket.on('join-puzzle', async (puzzleDate) => {
@@ -214,8 +272,8 @@ io.on('connection', (socket) => {
       puzzleRooms.set(puzzleDate, new Map());
     }
     const room = puzzleRooms.get(puzzleDate);
-    const color = getNextColor(room);
-    room.set(socket.id, { userId, color, row: 0, col: 0, direction: 'across' });
+    const color = userColor || getNextColor(room);
+    room.set(socket.id, { userId, userName, color, row: 0, col: 0, direction: 'across' });
 
     // Start timer when first user joins
     await startTimer(puzzleDate);
@@ -227,7 +285,7 @@ io.on('connection', (socket) => {
         others.push({ socketId: sid, ...info });
       }
     }
-    socket.emit('room-state', { users: others, yourColor: color });
+    socket.emit('room-state', { users: others, yourColor: color, yourName: userName });
 
     // Send current timer value
     socket.emit('timer-sync', { seconds: getElapsedSeconds(puzzleDate) });
@@ -236,6 +294,7 @@ io.on('connection', (socket) => {
     socket.to(`puzzle:${puzzleDate}`).emit('user-joined', {
       socketId: socket.id,
       userId,
+      userName,
       color,
       row: 0,
       col: 0,
@@ -248,7 +307,8 @@ io.on('connection', (socket) => {
   socket.on('cell-update', async ({ puzzleDate, row, col, letter }) => {
     try {
       await db.upsertCell(puzzleDate, row, col, letter);
-      socket.to(`puzzle:${puzzleDate}`).emit('cell-updated', { row, col, letter, userId });
+      await db.upsertCellFiller(puzzleDate, row, col, letter ? userName : '');
+      socket.to(`puzzle:${puzzleDate}`).emit('cell-updated', { row, col, letter, userId, userName, color: userColor });
       debounceProgressBroadcast(puzzleDate);
     } catch (err) {
       console.error('[ws] cell-update error:', err);
@@ -266,6 +326,7 @@ io.on('connection', (socket) => {
     socket.to(`puzzle:${puzzleDate}`).emit('cursor-moved', {
       socketId: socket.id,
       userId,
+      userName,
       row,
       col,
       direction,
