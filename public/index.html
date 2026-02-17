@@ -424,6 +424,15 @@ body {
   cursor: pointer;
 }
 
+/* Word completion wave */
+@keyframes cell-wave {
+  0%   { transform: translateY(0); }
+  40%  { transform: translateY(-4px); }
+  70%  { transform: translateY(1px); }
+  100% { transform: translateY(0); }
+}
+.cell.wave { animation: cell-wave 0.35s ease-in-out; }
+
 /* Floating point indicators */
 @keyframes float-up {
   0% { opacity: 1; transform: translateY(0); }
@@ -1316,6 +1325,26 @@ function checkLocalWordBonus(row, col) {
   return 0;
 }
 
+function triggerWordWave(row, col) {
+  if (!PUZZLE) return;
+  for (const dir of ['across', 'down']) {
+    const clue = getClueForCell(row, col, dir);
+    if (!clue) continue;
+    const cells = getWordCells(clue, dir);
+    if (!cells.every(([r, c]) => userGrid[r][c] && userGrid[r][c] === getCorrectAnswer(r, c))) continue;
+    cells.forEach(([r, c], i) => {
+      const el = cellEls[r]?.[c];
+      if (!el) return;
+      setTimeout(() => {
+        el.classList.remove('wave');
+        void el.offsetWidth; // reflow to restart animation
+        el.classList.add('wave');
+        el.addEventListener('animationend', () => el.classList.remove('wave'), { once: true });
+      }, i * 50);
+    });
+  }
+}
+
 function sendCellUpdate(row, col, letter) {
   if (!currentDate || !socket) return;
   const key = `${row},${col}`;
@@ -1335,6 +1364,7 @@ function sendCellUpdate(row, col, letter) {
         if (wb > 0) {
           persistedPoints.set(myName, (persistedPoints.get(myName) || 0) + wb);
           setTimeout(() => showPointFloat(row, col, wb, wb >= 15 ? 'combo' : 'word'), 200);
+          triggerWordWave(row, col);
         }
       }
     }
@@ -1417,6 +1447,7 @@ function setupSocketHandlers() {
       if (wordBonus && remoteName) {
         persistedPoints.set(remoteName, (persistedPoints.get(remoteName) || 0) + wordBonus);
         setTimeout(() => showPointFloat(row, col, wordBonus, wordBonus >= 15 ? 'combo' : 'word'), 200);
+        triggerWordWave(row, col);
       }
       render();
       checkCompletion();
