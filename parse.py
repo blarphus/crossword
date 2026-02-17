@@ -55,14 +55,23 @@ def parse_file(filepath: str) -> dict | None:
 
     grid = []
     cell_numbers = []
+    circles = []   # list of [row, col]
+    shades = []    # list of [row, col, color]
 
+    row_idx = 0
     for tr in table.find_all("tr"):
         row_letters = []
         row_nums = []
+        col_idx = 0
         for td in tr.find_all("td"):
-            # Black cell: has class "black" or has inline background color
-            is_black = "black" in (td.get("class") or [])
-            if not is_black and td.get("style") and "background" in td.get("style", ""):
+            classes = td.get("class") or []
+            is_black = "black" in classes
+            is_shade = "shade" in classes
+            is_circle = "bigcircle" in classes
+
+            # Only treat as black if it has "black" class, or has a background
+            # style that isn't from shade styling
+            if not is_black and not is_shade and td.get("style") and "background" in td.get("style", ""):
                 is_black = True
 
             if is_black:
@@ -76,9 +85,24 @@ def parse_file(filepath: str) -> dict | None:
                 row_letters.append(letter if letter else ".")
                 row_nums.append(int(num_text) if num_text else 0)
 
+                if is_circle:
+                    circles.append([row_idx, col_idx])
+
+                if is_shade:
+                    # Extract shade color from inline style if present
+                    shade_color = "#c0c0c0"  # default grey
+                    style = td.get("style", "")
+                    color_match = re.search(r"background-color:\s*(#[0-9a-fA-F]{3,6})", style)
+                    if color_match:
+                        shade_color = color_match.group(1)
+                    shades.append([row_idx, col_idx, shade_color])
+
+            col_idx += 1
+
         if row_letters:
             grid.append(row_letters)
             cell_numbers.append(row_nums)
+            row_idx += 1
 
     if not grid:
         return None
@@ -154,7 +178,7 @@ def parse_file(filepath: str) -> dict | None:
     title_el = soup.find("h1", id="PuzTitle")
     title = title_el.get_text(strip=True) if title_el else ""
 
-    return {
+    result = {
         "date": date_str,
         "title": title,
         "author": author,
@@ -167,6 +191,14 @@ def parse_file(filepath: str) -> dict | None:
             "down": down_clues,
         },
     }
+
+    # Only include circles/shades if present (keeps JSON compact)
+    if circles:
+        result["circles"] = circles
+    if shades:
+        result["shades"] = shades
+
+    return result
 
 
 def main():

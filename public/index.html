@@ -295,6 +295,21 @@ body {
 .cell.error .letter { color: var(--error); }
 .cell.checked .letter { color: var(--checked); }
 
+/* Shaded cells */
+.cell.shaded { background: var(--shade-color, #c0c0c0); }
+.cell.shaded.highlight-word { background: color-mix(in srgb, var(--shade-color, #c0c0c0) 50%, var(--highlight-word)); }
+.cell.shaded.highlight-cell { background: color-mix(in srgb, var(--shade-color, #c0c0c0) 40%, var(--highlight-cell)); }
+
+/* Circled cells */
+.cell.circled::after {
+  content: '';
+  position: absolute;
+  inset: 1px;
+  border: 1.5px solid #333;
+  border-radius: 50%;
+  pointer-events: none;
+}
+
 /* Clue Panel */
 .clue-panel {
   display: flex;
@@ -803,11 +818,23 @@ async function loadPuzzle(dateStr) {
     n: c.number, clue: c.clue, answer: c.answer, row: c.row, col: c.col
   }));
 
+  // Build circle and shade lookup sets
+  const circleSet = new Set();
+  if (data.circles) {
+    for (const [r, c] of data.circles) circleSet.add(`${r},${c}`);
+  }
+  const shadeMap = new Map();
+  if (data.shades) {
+    for (const [r, c, color] of data.shades) shadeMap.set(`${r},${c}`, color);
+  }
+
   PUZZLE = {
     rows: ROWS,
     cols: COLS,
     grid: data.grid,
     cellNumbers: data.cellNumbers,
+    circles: circleSet,
+    shades: shadeMap,
     clues: {
       across: mapClues(data.clues.across),
       down: mapClues(data.clues.down),
@@ -951,6 +978,19 @@ socket.on('cell-updated', ({ row, col, letter, userId: remoteUserId }) => {
   }
 });
 
+socket.on('auto-check-toggled', ({ enabled }) => {
+  if (!PUZZLE) return;
+  autoCheck = enabled;
+  btnCheck.classList.toggle('active', autoCheck);
+  if (autoCheck) {
+    for (let r = 0; r < ROWS; r++)
+      for (let c = 0; c < COLS; c++)
+        if (userGrid[r][c] && userGrid[r][c] === PUZZLE.grid[r][c])
+          checkedCells[r][c] = true;
+  }
+  render();
+});
+
 socket.on('puzzle-cleared', () => {
   if (!PUZZLE) return;
   for (let r = 0; r < ROWS; r++)
@@ -1086,6 +1126,19 @@ function buildGrid() {
         const letterSpan = document.createElement('span');
         letterSpan.className = 'letter';
         cell.appendChild(letterSpan);
+
+        // Circle overlay
+        const key = `${r},${c}`;
+        if (PUZZLE.circles.has(key)) {
+          cell.classList.add('circled');
+        }
+
+        // Shade background
+        const shadeColor = PUZZLE.shades.get(key);
+        if (shadeColor) {
+          cell.classList.add('shaded');
+          cell.style.setProperty('--shade-color', shadeColor);
+        }
       }
 
       cell.addEventListener('click', () => onCellClick(r, c));
@@ -1481,6 +1534,10 @@ btnCheck.addEventListener('click', () => {
           checkedCells[r][c] = true;
   }
   render();
+  // Broadcast auto-check state to all users
+  if (currentDate) {
+    socket.emit('auto-check-toggle', { puzzleDate: currentDate, enabled: autoCheck });
+  }
 });
 
 btnClear.addEventListener('click', () => {

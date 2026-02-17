@@ -32,7 +32,7 @@ async function initDb() {
 
 async function savePuzzle(date, data) {
   await pool.query(
-    'INSERT INTO puzzles (date, data) VALUES ($1, $2) ON CONFLICT (date) DO NOTHING',
+    'INSERT INTO puzzles (date, data) VALUES ($1, $2) ON CONFLICT (date) DO UPDATE SET data = $2',
     [date, JSON.stringify(data)]
   );
 }

@@ -237,6 +237,10 @@ io.on('connection', (socket) => {
     });
   });
 
+  socket.on('auto-check-toggle', ({ puzzleDate, enabled }) => {
+    socket.to(`puzzle:${puzzleDate}`).emit('auto-check-toggled', { enabled, userId });
+  });
+
   socket.on('clear-puzzle', async ({ puzzleDate }) => {
     try {
       await db.clearState(puzzleDate);
@@ -266,9 +270,10 @@ async function seedPuzzlesFromBundle() {
   }
 
   // Check if we've already seeded this bundle
-  const seeded = await db.getMetadata('bundle_seeded');
-  if (seeded) {
-    console.log('[seed] Bundle already seeded, skipping');
+  const BUNDLE_VERSION = '2';  // bump to re-seed (v2: circles + shades)
+  const seeded = await db.getMetadata('bundle_seeded_v');
+  if (seeded === BUNDLE_VERSION) {
+    console.log('[seed] Bundle already seeded (v' + BUNDLE_VERSION + '), skipping');
     return;
   }
 
@@ -285,7 +290,7 @@ async function seedPuzzlesFromBundle() {
     if (count % 200 === 0) console.log(`[seed] ${count}/${dates.length} puzzles seeded...`);
   }
 
-  await db.setMetadata('bundle_seeded', new Date().toISOString());
+  await db.setMetadata('bundle_seeded_v', BUNDLE_VERSION);
   console.log(`[seed] Seeded ${count} puzzles from bundle`);
 }
 
