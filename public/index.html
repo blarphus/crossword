@@ -1860,14 +1860,14 @@ function onCellClick(r, c) {
   focusGrid();
 }
 
-function advanceCursor() {
+function advanceCursor(skipFilled = false) {
   if (direction === 'across') {
     let nc = selectedCol + 1;
-    while (nc < COLS && isBlack(selectedRow, nc)) nc++;
+    while (nc < COLS && (isBlack(selectedRow, nc) || (skipFilled && userGrid[selectedRow][nc]))) nc++;
     if (nc < COLS) selectedCol = nc;
   } else {
     let nr = selectedRow + 1;
-    while (nr < ROWS && isBlack(nr, selectedCol)) nr++;
+    while (nr < ROWS && (isBlack(nr, selectedCol) || (skipFilled && userGrid[nr][selectedCol]))) nr++;
     if (nr < ROWS) selectedRow = nr;
   }
 }
@@ -2035,7 +2035,7 @@ mobileInput.addEventListener('input', (e) => {
       }
     }
     render();
-    advanceCursor();
+    advanceCursor(true);
     render();
     checkCompletion();
   }
@@ -2077,7 +2077,7 @@ function commitRebus() {
   btnRebus.classList.remove('active');
   render();
   if (hadContent) {
-    advanceCursor();
+    advanceCursor(true);
     render();
     checkCompletion();
   }
@@ -2193,7 +2193,7 @@ gridEl.addEventListener('keydown', (e) => {
       }
     }
     render();
-    advanceCursor();
+    advanceCursor(true);
     render();
     checkCompletion();
   }
@@ -2294,7 +2294,7 @@ function handleLetterInput(letter) {
     }
   }
   render();
-  advanceCursor();
+  advanceCursor(true);
   render();
   checkCompletion();
 }
