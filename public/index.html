@@ -1569,13 +1569,39 @@ function buildCluePanel() {
 }
 
 // ─── Color helpers ──────────────────────────────────────────────
-function darkenColor(hex, amount) {
-  // amount 0–1: 0 = no change, 1 = black
+function deepenColor(hex) {
+  // Boost saturation and slightly lower lightness to get a vivid version of a pastel
   hex = hex.replace('#', '');
-  const r = Math.round(parseInt(hex.substring(0, 2), 16) * (1 - amount));
-  const g = Math.round(parseInt(hex.substring(2, 4), 16) * (1 - amount));
-  const b = Math.round(parseInt(hex.substring(4, 6), 16) * (1 - amount));
-  return `rgb(${r},${g},${b})`;
+  let r = parseInt(hex.substring(0, 2), 16) / 255;
+  let g = parseInt(hex.substring(2, 4), 16) / 255;
+  let b = parseInt(hex.substring(4, 6), 16) / 255;
+  const max = Math.max(r, g, b), min = Math.min(r, g, b);
+  let h, s, l = (max + min) / 2;
+  if (max === min) { h = s = 0; }
+  else {
+    const d = max - min;
+    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+    if (max === r) h = ((g - b) / d + (g < b ? 6 : 0)) / 6;
+    else if (max === g) h = ((b - r) / d + 2) / 6;
+    else h = ((r - g) / d + 4) / 6;
+  }
+  // Crank saturation up, pull lightness down a bit
+  s = Math.min(1, s + 0.45);
+  l = Math.max(0.3, l - 0.15);
+  // HSL → RGB
+  function hue2rgb(p, q, t) {
+    if (t < 0) t += 1; if (t > 1) t -= 1;
+    if (t < 1/6) return p + (q - p) * 6 * t;
+    if (t < 1/2) return q;
+    if (t < 2/3) return p + (q - p) * (2/3 - t) * 6;
+    return p;
+  }
+  const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+  const p = 2 * l - q;
+  const ro = Math.round(hue2rgb(p, q, h + 1/3) * 255);
+  const go = Math.round(hue2rgb(p, q, h) * 255);
+  const bo = Math.round(hue2rgb(p, q, h - 1/3) * 255);
+  return `rgb(${ro},${go},${bo})`;
 }
 
 // ─── Rendering ─────────────────────────────────────────────────
@@ -1626,7 +1652,7 @@ function render() {
       // Remote cursor: fill with a darker shade of the user's color
       const remoteCursorColor = remoteCursorCells.get(key);
       if (remoteCursorColor && !isMyCell) {
-        el.style.backgroundColor = darkenColor(remoteCursorColor, 0.55);
+        el.style.backgroundColor = deepenColor(remoteCursorColor);
         el.style.outline = '';
         el.style.outlineOffset = '';
       } else if (!remoteCursorCells.has(key)) {
