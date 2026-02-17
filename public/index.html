@@ -436,6 +436,30 @@ body {
 /* Auto-check icon */
 .check-icon { display: none; }
 
+/* User badge in calendar nav */
+.user-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 12px;
+  border-radius: 20px;
+  background: #eef3f8;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #333;
+  cursor: pointer;
+  transition: background 0.15s;
+  margin-right: 4px;
+}
+.user-badge:hover { background: #dce8f0; }
+.user-badge:empty { display: none; }
+.user-badge-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
 /* Name prompt modal */
 .name-modal-overlay {
   display: none;
@@ -487,6 +511,7 @@ body {
   .calendar-nav { padding: 10px; gap: 6px; }
   .calendar-nav h1 { font-size: 1rem; margin-right: 6px; }
   .calendar-nav button, .calendar-nav select { padding: 5px 8px; font-size: 0.78rem; }
+  .user-badge { font-size: 0.72rem; padding: 3px 8px; }
 
   .calendar-day-headers, .calendar-grid { max-width: 100%; padding: 0 6px; gap: 4px; }
   .cal-day .day-number { font-size: 0.55rem; }
@@ -532,6 +557,7 @@ body {
 <div id="calendar-view">
   <div class="calendar-nav">
     <h1>NYT Crossword</h1>
+    <span class="user-badge" id="user-badge" title="Click to change name"></span>
     <button id="cal-prev">&lt;</button>
     <select id="cal-month"></select>
     <select id="cal-year"></select>
@@ -620,21 +646,45 @@ async function initIdentity() {
   showNameModal();
 }
 
-function showNameModal() {
+function showNameModal(isChange) {
   const modal = document.getElementById('name-modal');
   const input = document.getElementById('name-input');
   const btn = document.getElementById('name-submit');
+  const heading = modal.querySelector('h2');
+  const desc = modal.querySelector('p');
+
+  if (isChange) {
+    heading.textContent = 'Change Name';
+    desc.textContent = 'Enter a new display name';
+    btn.textContent = 'Save';
+    input.value = myName;
+    btn.disabled = false;
+  } else {
+    heading.textContent = 'Welcome!';
+    desc.textContent = 'Enter your name to start solving';
+    btn.textContent = 'Start';
+    input.value = '';
+    btn.disabled = true;
+  }
+
   modal.classList.add('show');
   input.focus();
+  input.select();
 
-  input.addEventListener('input', () => {
-    btn.disabled = !input.value.trim();
+  // Clone and replace to remove old event listeners
+  const newInput = input.cloneNode(true);
+  input.parentNode.replaceChild(newInput, input);
+  const newBtn = btn.cloneNode(true);
+  btn.parentNode.replaceChild(newBtn, btn);
+
+  newInput.addEventListener('input', () => {
+    newBtn.disabled = !newInput.value.trim();
   });
 
   async function submit() {
-    const name = input.value.trim();
+    const name = newInput.value.trim();
     if (!name) return;
-    btn.disabled = true;
+    newBtn.disabled = true;
     try {
       const res = await fetch('/api/me', {
         method: 'POST',
@@ -645,18 +695,44 @@ function showNameModal() {
       myName = data.name;
       myColor = data.color;
       modal.classList.remove('show');
-      connectSocket();
+      updateUserBadge();
+      if (!isChange) {
+        connectSocket();
+      } else {
+        // Reconnect socket with new name
+        if (socket) {
+          socket.disconnect();
+          socket = null;
+        }
+        connectSocket();
+      }
     } catch (e) {
-      btn.disabled = false;
+      newBtn.disabled = false;
       alert('Failed to save name, please try again.');
     }
   }
 
-  btn.addEventListener('click', submit);
-  input.addEventListener('keydown', (e) => {
+  newBtn.addEventListener('click', submit);
+  newInput.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') submit();
   });
 }
+
+function updateUserBadge() {
+  const badge = document.getElementById('user-badge');
+  if (myName) {
+    badge.innerHTML = `<span class="user-badge-dot" style="background:${myColor}"></span>${myName}`;
+  } else {
+    badge.innerHTML = '';
+  }
+}
+
+// Click badge to change name
+document.getElementById('user-badge').addEventListener('click', () => {
+  showNameModal(true);
+});
+
+let appStarted = false;
 
 function connectSocket() {
   socket = io({ query: { userId: myName } });
@@ -665,8 +741,12 @@ function connectSocket() {
     if (currentDate) socket.emit('join-puzzle', currentDate);
   });
 
+  updateUserBadge();
   setupSocketHandlers();
-  startApp();
+  if (!appStarted) {
+    appStarted = true;
+    startApp();
+  }
 }
 
 // ─── Puzzle state ──────────────────────────────────────────────
@@ -768,10 +848,17 @@ function initCalendarNav() {
     yearSel.appendChild(opt);
   }
 
-  // Default to current month
+  // Restore saved month or default to current
+  const savedYM = localStorage.getItem('crossword-calendar-month');
   const now = new Date();
-  calendarYear = now.getFullYear();
-  calendarMonth = now.getMonth();
+  if (savedYM) {
+    const [sy, sm] = savedYM.split('-').map(Number);
+    calendarYear = sy;
+    calendarMonth = sm;
+  } else {
+    calendarYear = now.getFullYear();
+    calendarMonth = now.getMonth();
+  }
   monthSel.value = calendarMonth;
   yearSel.value = calendarYear;
 
@@ -815,6 +902,8 @@ function syncCalendarSelects() {
 }
 
 async function fetchAndRenderCalendar() {
+  // Persist selected month
+  localStorage.setItem('crossword-calendar-month', `${calendarYear}-${calendarMonth}`);
   const ym = `${calendarYear}-${String(calendarMonth + 1).padStart(2, '0')}`;
   try {
     const res = await fetch(`/api/calendar/${ym}`);
