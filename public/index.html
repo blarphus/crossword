@@ -593,46 +593,43 @@ body {
 .name-modal button:disabled { opacity: 0.4; cursor: default; }
 
 /* Mobile */
-@media (max-width: 780px) {
-  .calendar-nav { padding: 10px; gap: 6px; }
-  .calendar-nav h1 { font-size: 1rem; margin-right: 6px; }
-  .calendar-nav button, .calendar-nav select { padding: 5px 8px; font-size: 0.78rem; }
-  .user-badge { font-size: 0.72rem; padding: 3px 8px; }
+body.mobile .calendar-nav { padding: 10px; gap: 6px; }
+body.mobile .calendar-nav h1 { font-size: 1rem; margin-right: 6px; }
+body.mobile .calendar-nav button, body.mobile .calendar-nav select { padding: 5px 8px; font-size: 0.78rem; }
+body.mobile .user-badge { font-size: 0.72rem; padding: 3px 8px; }
 
-  .calendar-day-headers, .calendar-grid { max-width: 100%; padding: 0 6px; gap: 4px; }
-  .cal-day .day-number { font-size: 0.55rem; }
-  .star-overlay { font-size: 1.1rem; }
+body.mobile .calendar-day-headers, body.mobile .calendar-grid { max-width: 100%; padding: 0 6px; gap: 4px; }
+body.mobile .cal-day .day-number { font-size: 0.55rem; }
+body.mobile .star-overlay { font-size: 1.1rem; }
 
-  /* Puzzle view fills screen as flex column */
-  #puzzle-view { position: fixed; inset: 0; overflow: hidden; }
+/* Puzzle view fills screen as flex column */
+body.mobile #puzzle-view { position: fixed; inset: 0; overflow: hidden; }
 
-  .puzzle-header { padding: 6px 10px; flex-shrink: 0; }
-  .puzzle-header h1 { font-size: 0.95rem; }
-  .puzzle-header .meta { display: none; }
-  .puzzle-header .back-btn { left: 6px; padding: 5px 8px; font-size: 0.78rem; }
+body.mobile .puzzle-header { padding: 6px 10px; flex-shrink: 0; }
+body.mobile .puzzle-header h1 { font-size: 0.95rem; }
+body.mobile .puzzle-header .meta { display: none; }
+body.mobile .puzzle-header .back-btn { left: 6px; padding: 5px 8px; font-size: 0.78rem; }
 
-  .toolbar { gap: 6px; padding: 4px 8px; flex-shrink: 0; }
-  .toolbar button { padding: 4px 10px; font-size: 0.78rem; }
+body.mobile .toolbar { gap: 6px; padding: 4px 8px; flex-shrink: 0; }
+body.mobile .toolbar button { padding: 4px 10px; font-size: 0.78rem; }
 
-  .presence-bar { flex-shrink: 0; }
+body.mobile .presence-bar { flex-shrink: 0; }
 
-  .current-clue-bar { font-size: 0.85rem; padding: 6px 10px; background: #2b2d5e; color: #fff; flex-shrink: 0; }
-  .clue-nav-btn { color: #fff; }
+body.mobile .current-clue-bar { font-size: 0.85rem; padding: 6px 10px; background: #2b2d5e; color: #fff; flex-shrink: 0; }
+body.mobile .clue-nav-btn { color: #fff; }
 
-  /* Grid area fills remaining space */
-  .app { flex: 1; min-height: 0; overflow: hidden; padding: 0; gap: 0; }
-  .grid-container {
-    width: 100%; height: 100%;
-    display: flex; align-items: center; justify-content: center;
-    overflow: hidden;
-  }
-  .grid { touch-action: none; }
-  .clue-panel { display: none; }
-
-  /* Keyboard at bottom of flex column */
-  .mobile-keyboard { display: block; position: static; flex-shrink: 0; padding-bottom: env(safe-area-inset-bottom, 0px); }
-
+/* Grid area fills remaining space */
+body.mobile .app { flex: 1; min-height: 0; overflow: hidden; padding: 0; gap: 0; }
+body.mobile .grid-container {
+  width: 100%; height: 100%;
+  display: flex; align-items: center; justify-content: center;
+  overflow: hidden;
 }
+body.mobile .grid { touch-action: none; }
+body.mobile .clue-panel { display: none; }
+
+/* Keyboard at bottom of flex column */
+body.mobile .mobile-keyboard { display: block; position: static; flex-shrink: 0; padding-bottom: env(safe-area-inset-bottom, 0px); }
 </style>
 </head>
 <body>
@@ -834,6 +831,11 @@ function connectSocket() {
     startApp();
   }
 }
+
+// ─── Device detection ─────────────────────────────────────────
+const IS_MOBILE = /Android|iPhone|iPad|iPod|webOS|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+  || (navigator.maxTouchPoints > 1 && /Macintosh/.test(navigator.userAgent)); // iPad with desktop UA
+if (IS_MOBILE) document.body.classList.add('mobile');
 
 // ─── Puzzle state ──────────────────────────────────────────────
 let PUZZLE = null;
@@ -1223,9 +1225,8 @@ async function loadPuzzle(dateStr) {
   document.title = `Crossword \u2014 ${prettyDate}`;
 
   // Compute cell size based on grid dimensions
-  const isMobile = window.innerWidth <= 780;
   let cellSize;
-  if (isMobile) {
+  if (IS_MOBILE) {
     const availW = window.innerWidth - 8;
     const availH = window.innerHeight - 260; // header + toolbar + clue bar + keyboard
     cellSize = Math.max(16, Math.min(40, Math.floor(Math.min(availW / COLS, availH / ROWS))));
@@ -1662,7 +1663,7 @@ function buildGrid() {
     }
   }
 
-  if (window.innerWidth > 780) {
+  if (!IS_MOBILE) {
     const gridH = ROWS * parseInt(getComputedStyle(document.documentElement).getPropertyValue('--cell-size')) + 4;
     cluePanelEl.style.maxHeight = gridH + 'px';
     for (const sec of cluePanelEl.querySelectorAll('.clue-section')) {
@@ -2005,10 +2006,8 @@ function checkCompletion() {
 }
 
 const mobileInput = document.getElementById('mobile-input');
-const isTouchDevice = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
-
 function focusGrid() {
-  if (isTouchDevice) {
+  if (IS_MOBILE) {
     mobileInput.focus();
   } else {
     gridEl.focus();
@@ -2317,12 +2316,10 @@ function handleBackspace() {
   render();
 }
 
-const isMobileDevice = window.innerWidth <= 780;
-
 // Override focusGrid to skip hidden input on mobile
 const origFocusGrid = focusGrid;
 focusGrid = function() {
-  if (isMobileDevice) {
+  if (IS_MOBILE) {
     // Don't focus the hidden input — custom keyboard handles input
     gridEl.focus();
   } else {
@@ -2331,7 +2328,7 @@ focusGrid = function() {
 };
 
 // On mobile, prevent the hidden input from showing the system keyboard
-if (isMobileDevice) {
+if (IS_MOBILE) {
   mobileInput.setAttribute('inputmode', 'none');
   mobileInput.setAttribute('readonly', 'true');
 }
@@ -2339,7 +2336,7 @@ if (isMobileDevice) {
 initMobileKeyboard();
 
 // ─── Mobile grid pinch-to-zoom + pan ────────────────────────────
-if (isMobileDevice) {
+if (IS_MOBILE) {
   const gc = document.querySelector('.grid-container');
   let pinchInitDist = 0, pinchInitScale = 1;
   let pinchInitCenter = {x: 0, y: 0};
