@@ -662,41 +662,41 @@ body.mobile .mobile-keyboard { display: block; position: static; flex-shrink: 0;
 @keyframes fire-dance {
   0%, 100% {
     background-size: 30% 70%, 35% 100%, 28% 60%, 32% 80%, 26% 55%;
-    background-position: 8% 0%, 28% 0%, 50% 0%, 72% 0%, 92% 0%;
+    background-position: 8% 100%, 28% 100%, 50% 100%, 72% 100%, 92% 100%;
     opacity: 0.8;
   }
   25% {
     background-size: 34% 90%, 30% 75%, 32% 85%, 28% 65%, 30% 80%;
-    background-position: 10% 0%, 30% 0%, 48% 0%, 70% 0%, 90% 0%;
+    background-position: 10% 100%, 30% 100%, 48% 100%, 70% 100%, 90% 100%;
     opacity: 1;
   }
   50% {
     background-size: 28% 65%, 34% 95%, 26% 70%, 34% 90%, 28% 60%;
-    background-position: 6% 0%, 26% 0%, 52% 0%, 74% 0%, 94% 0%;
+    background-position: 6% 100%, 26% 100%, 52% 100%, 74% 100%, 94% 100%;
     opacity: 0.85;
   }
   75% {
     background-size: 32% 80%, 28% 70%, 34% 95%, 26% 60%, 32% 75%;
-    background-position: 12% 0%, 32% 0%, 50% 0%, 68% 0%, 88% 0%;
+    background-position: 12% 100%, 32% 100%, 50% 100%, 68% 100%, 88% 100%;
     opacity: 0.95;
   }
 }
 .cell.on-fire::before {
   content: '';
   position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
+  top: -10px;
+  left: -2px;
+  right: -2px;
   height: 12px;
   background:
-    radial-gradient(ellipse at 50% 0%, rgba(255,60,0,0.85) 0%, rgba(255,120,0,0.3) 50%, transparent 70%),
-    radial-gradient(ellipse at 50% 0%, rgba(255,140,20,0.9) 0%, rgba(255,180,50,0.3) 45%, transparent 65%),
-    radial-gradient(ellipse at 50% 0%, rgba(255,90,0,0.8) 0%, rgba(255,160,30,0.25) 50%, transparent 70%),
-    radial-gradient(ellipse at 50% 0%, rgba(255,120,10,0.85) 0%, rgba(255,170,40,0.3) 45%, transparent 65%),
-    radial-gradient(ellipse at 50% 0%, rgba(255,70,0,0.75) 0%, rgba(255,130,20,0.25) 50%, transparent 70%);
+    radial-gradient(ellipse at 50% 100%, rgba(255,60,0,0.85) 0%, rgba(255,120,0,0.3) 50%, transparent 70%),
+    radial-gradient(ellipse at 50% 100%, rgba(255,140,20,0.9) 0%, rgba(255,180,50,0.3) 45%, transparent 65%),
+    radial-gradient(ellipse at 50% 100%, rgba(255,90,0,0.8) 0%, rgba(255,160,30,0.25) 50%, transparent 70%),
+    radial-gradient(ellipse at 50% 100%, rgba(255,120,10,0.85) 0%, rgba(255,170,40,0.3) 45%, transparent 65%),
+    radial-gradient(ellipse at 50% 100%, rgba(255,70,0,0.75) 0%, rgba(255,130,20,0.25) 50%, transparent 70%);
   background-repeat: no-repeat;
   background-size: 30% 70%, 35% 100%, 28% 60%, 32% 80%, 26% 55%;
-  background-position: 8% 0%, 28% 0%, 50% 0%, 72% 0%, 92% 0%;
+  background-position: 8% 100%, 28% 100%, 50% 100%, 72% 100%, 92% 100%;
   filter: blur(1.5px);
   pointer-events: none;
   z-index: 5;
