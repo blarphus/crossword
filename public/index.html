@@ -424,6 +424,44 @@ body {
   cursor: pointer;
 }
 
+/* Floating point indicators */
+@keyframes float-up {
+  0% { opacity: 1; transform: translateY(0); }
+  100% { opacity: 0; transform: translateY(-28px); }
+}
+.point-float {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  font-size: 11px;
+  font-weight: 700;
+  pointer-events: none;
+  z-index: 10;
+  animation: float-up 0.8s ease-out forwards;
+  line-height: 1;
+}
+.point-float.plus { color: #2e7d32; }
+.point-float.minus { color: #c62828; }
+
+/* Leaderboard in congrats */
+.leaderboard { text-align: left; margin: 16px 0; }
+.leaderboard-row {
+  display: flex;
+  align-items: center;
+  padding: 6px 0;
+  border-bottom: 1px solid #eee;
+  font-size: 0.95rem;
+}
+.leaderboard-row:last-child { border-bottom: none; }
+.leaderboard-rank { width: 24px; font-weight: 700; color: #888; }
+.leaderboard-dot {
+  width: 10px; height: 10px; border-radius: 50%;
+  margin-right: 8px; flex-shrink: 0;
+}
+.leaderboard-name { flex: 1; font-weight: 600; }
+.leaderboard-stats { text-align: right; color: #666; font-size: 0.85rem; }
+.leaderboard-pts { font-weight: 700; margin-left: 8px; }
+
 /* Hidden input for mobile keyboard */
 .mobile-input {
   position: absolute;
@@ -639,8 +677,9 @@ body {
 
 <div class="congrats-overlay" id="congrats">
   <div class="congrats-box">
-    <h2>Congratulations!</h2>
+    <h2 id="congrats-title">Congratulations!</h2>
     <p id="congrats-msg">You solved the crossword!</p>
+    <div class="leaderboard" id="leaderboard"></div>
     <button onclick="document.getElementById('congrats').classList.remove('show')">Close</button>
   </div>
 </div>
@@ -1218,6 +1257,16 @@ function applySharedState(gridMap, fillersMap, pointsMap, userColorsMap) {
   }
 }
 
+function showPointFloat(row, col, delta) {
+  if (!delta || !cellEls[row]?.[col]) return;
+  const el = cellEls[row][col];
+  const float = document.createElement('span');
+  float.className = `point-float ${delta > 0 ? 'plus' : 'minus'}`;
+  float.textContent = delta > 0 ? '+1' : '-1';
+  el.appendChild(float);
+  float.addEventListener('animationend', () => float.remove());
+}
+
 function sendCellUpdate(row, col, letter) {
   if (!currentDate || !socket) return;
   const key = `${row},${col}`;
@@ -1229,6 +1278,7 @@ function sendCellUpdate(row, col, letter) {
       const correct = getCorrectAnswer(row, col);
       const delta = (letter === correct) ? 1 : -1;
       persistedPoints.set(myName, (persistedPoints.get(myName) || 0) + delta);
+      showPointFloat(row, col, delta);
     }
   } else {
     cellColors.delete(key);
@@ -1304,6 +1354,7 @@ function setupSocketHandlers() {
       // Apply remote point delta
       if (pointDelta && remoteName) {
         persistedPoints.set(remoteName, (persistedPoints.get(remoteName) || 0) + pointDelta);
+        showPointFloat(row, col, pointDelta);
       }
       render();
       checkCompletion();
@@ -1844,6 +1895,60 @@ function moveArrow(dr, dc) {
   }
 }
 
+function computeAccuracy() {
+  // For each user, count how many of their currently-filled cells are correct
+  const stats = new Map(); // userName → { correct, total }
+  for (const [key, filler] of cellFillers) {
+    const [r, c] = key.split(',').map(Number);
+    const userVal = userGrid[r]?.[c];
+    if (!userVal) continue;
+    if (!stats.has(filler.userName)) stats.set(filler.userName, { correct: 0, total: 0 });
+    const s = stats.get(filler.userName);
+    s.total++;
+    if (userVal === getCorrectAnswer(r, c)) s.correct++;
+  }
+  return stats;
+}
+
+function showLeaderboard() {
+  const points = computeUserPoints();
+  const accuracy = computeAccuracy();
+  const titleEl = document.getElementById('congrats-title');
+  const msgEl = document.getElementById('congrats-msg');
+  const lbEl = document.getElementById('leaderboard');
+
+  // Build sorted list
+  const players = [];
+  for (const [name, data] of points) {
+    const acc = accuracy.get(name) || { correct: 0, total: 0 };
+    const pct = acc.total > 0 ? Math.round((acc.correct / acc.total) * 100) : 0;
+    players.push({ name, color: data.color, pts: data.pts, pct, cells: acc.total });
+  }
+  players.sort((a, b) => b.pts - a.pts);
+
+  if (players.length > 0) {
+    titleEl.textContent = `${players[0].name} wins!`;
+    msgEl.textContent = 'Puzzle complete! Final standings:';
+  } else {
+    titleEl.textContent = 'Congratulations!';
+    msgEl.textContent = 'You solved the crossword!';
+  }
+
+  lbEl.innerHTML = '';
+  players.forEach((p, i) => {
+    const row = document.createElement('div');
+    row.className = 'leaderboard-row';
+    row.innerHTML = `
+      <span class="leaderboard-rank">${i + 1}.</span>
+      <span class="leaderboard-dot" style="background:${p.color}"></span>
+      <span class="leaderboard-name">${p.name}</span>
+      <span class="leaderboard-stats">${p.pct}% acc</span>
+      <span class="leaderboard-pts">${p.pts > 0 ? '+' : ''}${p.pts} pts</span>
+    `;
+    lbEl.appendChild(row);
+  });
+}
+
 function checkCompletion() {
   for (let r = 0; r < ROWS; r++) {
     for (let c = 0; c < COLS; c++) {
@@ -1851,6 +1956,7 @@ function checkCompletion() {
     }
   }
   solved = true;
+  showLeaderboard();
   congratsEl.classList.add('show');
 }
 
