@@ -1568,6 +1568,16 @@ function buildCluePanel() {
   }
 }
 
+// ─── Color helpers ──────────────────────────────────────────────
+function darkenColor(hex, amount) {
+  // amount 0–1: 0 = no change, 1 = black
+  hex = hex.replace('#', '');
+  const r = Math.round(parseInt(hex.substring(0, 2), 16) * (1 - amount));
+  const g = Math.round(parseInt(hex.substring(2, 4), 16) * (1 - amount));
+  const b = Math.round(parseInt(hex.substring(4, 6), 16) * (1 - amount));
+  return `rgb(${r},${g},${b})`;
+}
+
 // ─── Rendering ─────────────────────────────────────────────────
 function render() {
   if (!PUZZLE) return;
@@ -1613,12 +1623,13 @@ function render() {
         el.classList.remove('error');
       }
 
-      // Remote cursor outline (takes priority)
+      // Remote cursor: fill with a darker shade of the user's color
       const remoteCursorColor = remoteCursorCells.get(key);
       if (remoteCursorColor && !isMyCell) {
-        el.style.outline = `2.5px solid ${remoteCursorColor}`;
-        el.style.outlineOffset = '-2.5px';
-      } else {
+        el.style.backgroundColor = darkenColor(remoteCursorColor, 0.55);
+        el.style.outline = '';
+        el.style.outlineOffset = '';
+      } else if (!remoteCursorCells.has(key)) {
         el.style.outline = '';
         el.style.outlineOffset = '';
       }
@@ -1631,7 +1642,7 @@ function render() {
         el.style.boxShadow = '';
       }
 
-      // Remote word tint (only if not overlapping with current user's highlights)
+      // Remote word tint (only if not overlapping with current user's highlights or cursor)
       const remoteWordColor = remoteWordCells.get(key);
       if (remoteWordColor && !isMyWord && !isMyCell && !remoteCursorCells.has(key)) {
         const hex = remoteWordColor.replace('#', '');
@@ -1639,7 +1650,7 @@ function render() {
         const gg = parseInt(hex.substring(2, 4), 16);
         const bb = parseInt(hex.substring(4, 6), 16);
         el.style.backgroundColor = `rgba(${rr},${gg},${bb},0.25)`;
-      } else if (!isMyWord && !isMyCell) {
+      } else if (!isMyWord && !isMyCell && !remoteCursorCells.has(key)) {
         el.style.backgroundColor = '';
       }
     }
