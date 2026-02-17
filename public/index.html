@@ -220,6 +220,10 @@ body {
   border-radius: 50%;
   display: inline-block;
 }
+.presence-pts {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
 .solve-timer {
   font-variant-numeric: tabular-nums;
   font-weight: 600;
@@ -1331,36 +1335,60 @@ function updateFillerColorsFromRoom() {
   }
 }
 
-function computeUserStats() {
+function computeUserPoints() {
   if (!PUZZLE) return new Map();
-  const stats = new Map(); // userName → { color, count }
+  const points = new Map(); // userName → { color, pts }
+
+  function ensure(name, color) {
+    if (!points.has(name)) points.set(name, { color, pts: 0 });
+    const p = points.get(name);
+    if (color && color !== '#ccc') p.color = color;
+    return p;
+  }
+
+  // +1 correct letter, -1 wrong letter
   for (const [key, filler] of cellFillers) {
     const [r, c] = key.split(',').map(Number);
-    if (userGrid[r]?.[c] && userGrid[r][c] === PUZZLE.grid[r][c]) {
-      const existing = stats.get(filler.userName) || { color: filler.color, count: 0 };
-      existing.count++;
-      existing.color = filler.color;
-      stats.set(filler.userName, existing);
+    const letter = userGrid[r]?.[c];
+    if (!letter) continue;
+    const p = ensure(filler.userName, filler.color);
+    if (letter === PUZZLE.grid[r][c]) {
+      p.pts += 1;
+    } else {
+      p.pts -= 1;
     }
   }
-  return stats;
+
+  // +5 for each fully correct word to every user who filled a cell in it
+  for (const dir of ['across', 'down']) {
+    for (const clue of PUZZLE.clues[dir]) {
+      const cells = getWordCells(clue, dir);
+      const allCorrect = cells.every(([r, c]) =>
+        userGrid[r][c] && userGrid[r][c] === PUZZLE.grid[r][c]
+      );
+      if (!allCorrect) continue;
+      // Find unique fillers in this word
+      const wordFillers = new Set();
+      for (const [r, c] of cells) {
+        const filler = cellFillers.get(`${r},${c}`);
+        if (filler) wordFillers.add(filler.userName);
+      }
+      for (const name of wordFillers) {
+        ensure(name, null).pts += 5;
+      }
+    }
+  }
+
+  return points;
 }
 
 function renderPresenceBar() {
   presenceBarEl.innerHTML = '';
 
-  let totalWhite = 0;
-  if (PUZZLE) {
-    for (let r = 0; r < ROWS; r++)
-      for (let c = 0; c < COLS; c++)
-        if (!isBlack(r, c)) totalWhite++;
-  }
-
-  const stats = computeUserStats();
+  const points = computeUserPoints();
 
   // Build list: current user + online remote users
   const allUsers = [{ name: myName, color: myColor, label: myName || 'You' }];
-  // Deduplicate remote users by name
   const seenNames = new Set([myName]);
   for (const [, user] of remoteUsers) {
     if (!seenNames.has(user.userName)) {
@@ -1368,27 +1396,27 @@ function renderPresenceBar() {
       seenNames.add(user.userName);
     }
   }
-  // Also include offline users who have stats (from persisted fillers)
-  for (const [name, stat] of stats) {
+  // Include offline users who have points (from persisted fillers)
+  for (const [name, data] of points) {
     if (!seenNames.has(name)) {
-      allUsers.push({ name, color: stat.color, label: name });
+      allUsers.push({ name, color: data.color, label: name });
       seenNames.add(name);
     }
   }
 
-  if (allUsers.length <= 1 && !stats.has(myName)) {
+  if (allUsers.length <= 1 && !points.has(myName)) {
     presenceBarEl.style.display = 'none';
     return;
   }
   presenceBarEl.style.display = '';
 
   for (const u of allUsers) {
-    const userStat = stats.get(u.name);
-    const count = userStat ? userStat.count : 0;
-    const pct = totalWhite > 0 ? Math.round((count / totalWhite) * 100) : 0;
+    const data = points.get(u.name);
+    const pts = data ? data.pts : 0;
     const el = document.createElement('span');
     el.className = 'presence-user';
-    el.innerHTML = `<span class="presence-dot" style="background:${u.color}"></span>${u.label}${pct > 0 ? ` ${pct}%` : ''}`;
+    const ptsStr = pts !== 0 ? ` <span class="presence-pts">${pts > 0 ? '+' : ''}${pts}</span>` : '';
+    el.innerHTML = `<span class="presence-dot" style="background:${u.color}"></span>${u.label}${ptsStr}`;
     presenceBarEl.appendChild(el);
   }
 }
