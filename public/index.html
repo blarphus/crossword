@@ -1054,6 +1054,7 @@ function stopTimerTick() {
 const remoteUsers = new Map(); // socketId → {userId, userName, color, row, col, direction}
 const cellColors = new Map();  // "r,c" → color (who filled this cell)
 const cellFillers = new Map(); // "r,c" → {userName, color} (who filled this cell)
+const guessStats = new Map(); // userName → { total, incorrect }
 const persistedPoints = new Map(); // userName → number (base points from DB, excludes word bonuses)
 const roomCounts = new Map();  // puzzleDate → player count
 let lastCursorKey = '';
@@ -1308,6 +1309,7 @@ async function loadPuzzle(dateStr) {
   cellColors.clear();
   cellFillers.clear();
   persistedPoints.clear();
+  guessStats.clear();
   lastCursorKey = '';
   resetFireState();
 
@@ -1372,7 +1374,7 @@ async function loadPuzzle(dateStr) {
   btnRebus.classList.remove('active');
 
   // Apply shared state
-  applySharedState(stateData.userGrid || {}, stateData.cellFillers || {}, stateData.points || {}, stateData.userColors || {});
+  applySharedState(stateData.userGrid || {}, stateData.cellFillers || {}, stateData.points || {}, stateData.userColors || {}, stateData.guesses || {});
 
   // Mark all correct letters as checked (auto-check is always on)
   for (let r = 0; r < ROWS; r++)
@@ -1422,7 +1424,7 @@ async function loadPuzzle(dateStr) {
 }
 
 // ─── Collaboration helpers ────────────────────────────────────
-function applySharedState(gridMap, fillersMap, pointsMap, userColorsMap) {
+function applySharedState(gridMap, fillersMap, pointsMap, userColorsMap, guessesMap) {
   for (const [key, letter] of Object.entries(gridMap)) {
     const [r, c] = key.split(',').map(Number);
     if (r >= 0 && r < ROWS && c >= 0 && c < COLS) {
@@ -1443,6 +1445,12 @@ function applySharedState(gridMap, fillersMap, pointsMap, userColorsMap) {
   if (pointsMap) {
     for (const [name, pts] of Object.entries(pointsMap)) {
       persistedPoints.set(name, pts);
+    }
+  }
+  // Apply persisted guess stats
+  if (guessesMap) {
+    for (const [name, stats] of Object.entries(guessesMap)) {
+      guessStats.set(name, { total: stats.total || 0, incorrect: stats.incorrect || 0 });
     }
   }
 }
@@ -1517,6 +1525,12 @@ function sendCellUpdate(row, col, letter) {
       const isCorrect = (letter === correct);
       const now = Date.now();
       const wasOnFire = myFireActive;
+
+      // Track guess stats
+      const gs = guessStats.get(myName) || { total: 0, incorrect: 0 };
+      gs.total++;
+      if (!isCorrect) gs.incorrect++;
+      guessStats.set(myName, gs);
 
       if (isCorrect && myFireActive) {
         // Correct + on fire: doubled points (extension happens on word completion only)
@@ -1762,7 +1776,7 @@ function setupSocketHandlers() {
     if (PUZZLE) render();
   });
 
-  socket.on('cell-updated', ({ row, col, letter, userId: remoteUserId, userName: remoteName, color: remoteColor, pointDelta, wordBonus, fireEvent }) => {
+  socket.on('cell-updated', ({ row, col, letter, userId: remoteUserId, userName: remoteName, color: remoteColor, pointDelta, wordBonus, fireEvent, guessCorrect }) => {
     if (!PUZZLE) return;
     if (row >= 0 && row < ROWS && col >= 0 && col < COLS) {
       userGrid[row][col] = letter;
@@ -1773,6 +1787,13 @@ function setupSocketHandlers() {
         cellFillers.set(key, { userName: remoteName || 'User', color });
         if (autoCheck && letter === getCorrectAnswer(row, col)) {
           checkedCells[row][col] = true;
+        }
+        // Track remote guess stats
+        if (guessCorrect !== null && guessCorrect !== undefined && remoteName) {
+          const gs = guessStats.get(remoteName) || { total: 0, incorrect: 0 };
+          gs.total++;
+          if (!guessCorrect) gs.incorrect++;
+          guessStats.set(remoteName, gs);
         }
       } else {
         cellColors.delete(key);
@@ -1816,6 +1837,7 @@ function setupSocketHandlers() {
     cellColors.clear();
     cellFillers.clear();
     persistedPoints.clear();
+    guessStats.clear();
     resetFireState();
     solved = false;
     congratsEl.classList.remove('show');
@@ -2364,16 +2386,10 @@ function moveArrow(dr, dc) {
 }
 
 function computeAccuracy() {
-  // For each user, count how many of their currently-filled cells are correct
+  // Return guess-based accuracy: total guesses and incorrect guesses per user
   const stats = new Map(); // userName → { correct, total }
-  for (const [key, filler] of cellFillers) {
-    const [r, c] = key.split(',').map(Number);
-    const userVal = userGrid[r]?.[c];
-    if (!userVal) continue;
-    if (!stats.has(filler.userName)) stats.set(filler.userName, { correct: 0, total: 0 });
-    const s = stats.get(filler.userName);
-    s.total++;
-    if (userVal === getCorrectAnswer(r, c)) s.correct++;
+  for (const [name, gs] of guessStats) {
+    stats.set(name, { correct: gs.total - gs.incorrect, total: gs.total });
   }
   return stats;
 }
@@ -2636,6 +2652,7 @@ btnClear.addEventListener('click', () => {
   cellColors.clear();
   cellFillers.clear();
   persistedPoints.clear();
+  guessStats.clear();
   solved = false;
   congratsEl.classList.remove('show');
   if (currentDate && socket) {

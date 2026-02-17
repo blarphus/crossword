@@ -49,6 +49,10 @@ async function initDb() {
   await pool.query(`
     ALTER TABLE puzzle_state ADD COLUMN IF NOT EXISTS points JSONB DEFAULT '{}'
   `);
+  // Guess tracking column (userName → { total, incorrect })
+  await pool.query(`
+    ALTER TABLE puzzle_state ADD COLUMN IF NOT EXISTS guesses JSONB DEFAULT '{}'
+  `);
 }
 
 async function savePuzzle(date, data) {
@@ -85,7 +89,7 @@ async function hasPuzzle(date) {
 
 async function getState(puzzleDate) {
   const { rows } = await pool.query(
-    'SELECT user_grid, updated_at, cell_fillers, points FROM puzzle_state WHERE puzzle_date = $1',
+    'SELECT user_grid, updated_at, cell_fillers, points, guesses FROM puzzle_state WHERE puzzle_date = $1',
     [puzzleDate]
   );
   return rows[0] || null;
@@ -328,4 +332,25 @@ async function addPoints(puzzleDate, userName, delta) {
   }
 }
 
-module.exports = { initDb, getState, upsertCell, clearState, savePuzzle, getPuzzle, getAllPuzzleMeta, hasPuzzle, getCalendarData, getProgressSummary, getTimer, saveTimer, getMetadata, setMetadata, getUser, createUser, getUserCount, upsertCellFiller, getCellFillers, getUserColors, addPoints };
+async function addGuess(puzzleDate, userName, isCorrect) {
+  const existing = await getState(puzzleDate);
+  if (!existing) {
+    const guesses = { [userName]: { total: 1, incorrect: isCorrect ? 0 : 1 } };
+    await pool.query(
+      `INSERT INTO puzzle_state (puzzle_date, user_grid, guesses, updated_at)
+       VALUES ($1, '{}', $2, NOW())`,
+      [puzzleDate, JSON.stringify(guesses)]
+    );
+  } else {
+    const guesses = existing.guesses || {};
+    if (!guesses[userName]) guesses[userName] = { total: 0, incorrect: 0 };
+    guesses[userName].total++;
+    if (!isCorrect) guesses[userName].incorrect++;
+    await pool.query(
+      'UPDATE puzzle_state SET guesses = $1 WHERE puzzle_date = $2',
+      [JSON.stringify(guesses), puzzleDate]
+    );
+  }
+}
+
+module.exports = { initDb, getState, upsertCell, clearState, savePuzzle, getPuzzle, getAllPuzzleMeta, hasPuzzle, getCalendarData, getProgressSummary, getTimer, saveTimer, getMetadata, setMetadata, getUser, createUser, getUserCount, upsertCellFiller, getCellFillers, getUserColors, addPoints, addGuess };

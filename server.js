@@ -132,6 +132,7 @@ app.get('/api/state/:date', async (req, res) => {
       userGrid: state.user_grid,
       cellFillers: fillers,
       points: state.points || {},
+      guesses: state.guesses || {},
       userColors,
       updatedAt: state.updated_at,
     });
@@ -428,6 +429,7 @@ io.on('connection', async (socket) => {
       let pointDelta = 0;
       let wordBonus = 0;
       let fireEvent = null;
+      let guessCorrect = null; // null = no guess (delete), true/false = correct/incorrect
       const now = Date.now();
 
       // Get or create fire streak state
@@ -442,6 +444,7 @@ io.on('connection', async (socket) => {
         const correctAnswer = getCorrectAnswer(pData, row, col);
         if (correctAnswer) {
           const isCorrect = (letter === correctAnswer);
+          guessCorrect = isCorrect;
           const wasOnFire = fs.onFire;
 
           if (isCorrect && fs.onFire) {
@@ -466,6 +469,7 @@ io.on('connection', async (socket) => {
           }
 
           await db.addPoints(puzzleDate, userName, pointDelta);
+          await db.addGuess(puzzleDate, userName, isCorrect);
 
           // Check word completions for bonus — all fire logic is gated on wordBonus > 0
           if (isCorrect) {
@@ -517,7 +521,7 @@ io.on('connection', async (socket) => {
         }
       }
 
-      socket.to(`puzzle:${puzzleDate}`).emit('cell-updated', { row, col, letter, userId, userName, color: userColor, pointDelta, wordBonus, fireEvent });
+      socket.to(`puzzle:${puzzleDate}`).emit('cell-updated', { row, col, letter, userId, userName, color: userColor, pointDelta, wordBonus, fireEvent, guessCorrect });
 
       // Send fire update back to originating socket
       if (fireEvent) {
