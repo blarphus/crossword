@@ -645,41 +645,41 @@ body.mobile .mobile-keyboard { display: block; position: static; flex-shrink: 0;
 @keyframes fire-dance {
   0%, 100% {
     background-size: 30% 70%, 35% 100%, 28% 60%, 32% 80%, 26% 55%;
-    background-position: 8% 100%, 28% 100%, 50% 100%, 72% 100%, 92% 100%;
+    background-position: 8% 0%, 28% 0%, 50% 0%, 72% 0%, 92% 0%;
     opacity: 0.8;
   }
   25% {
     background-size: 34% 90%, 30% 75%, 32% 85%, 28% 65%, 30% 80%;
-    background-position: 10% 100%, 30% 100%, 48% 100%, 70% 100%, 90% 100%;
+    background-position: 10% 0%, 30% 0%, 48% 0%, 70% 0%, 90% 0%;
     opacity: 1;
   }
   50% {
     background-size: 28% 65%, 34% 95%, 26% 70%, 34% 90%, 28% 60%;
-    background-position: 6% 100%, 26% 100%, 52% 100%, 74% 100%, 94% 100%;
+    background-position: 6% 0%, 26% 0%, 52% 0%, 74% 0%, 94% 0%;
     opacity: 0.85;
   }
   75% {
     background-size: 32% 80%, 28% 70%, 34% 95%, 26% 60%, 32% 75%;
-    background-position: 12% 100%, 32% 100%, 50% 100%, 68% 100%, 88% 100%;
+    background-position: 12% 0%, 32% 0%, 50% 0%, 68% 0%, 88% 0%;
     opacity: 0.95;
   }
 }
 .cell.on-fire::before {
   content: '';
   position: absolute;
-  bottom: 0;
+  top: 0;
   left: 0;
   right: 0;
   height: 12px;
   background:
-    radial-gradient(ellipse at 50% 100%, rgba(255,60,0,0.85) 0%, rgba(255,120,0,0.3) 50%, transparent 70%),
-    radial-gradient(ellipse at 50% 100%, rgba(255,140,20,0.9) 0%, rgba(255,180,50,0.3) 45%, transparent 65%),
-    radial-gradient(ellipse at 50% 100%, rgba(255,90,0,0.8) 0%, rgba(255,160,30,0.25) 50%, transparent 70%),
-    radial-gradient(ellipse at 50% 100%, rgba(255,120,10,0.85) 0%, rgba(255,170,40,0.3) 45%, transparent 65%),
-    radial-gradient(ellipse at 50% 100%, rgba(255,70,0,0.75) 0%, rgba(255,130,20,0.25) 50%, transparent 70%);
+    radial-gradient(ellipse at 50% 0%, rgba(255,60,0,0.85) 0%, rgba(255,120,0,0.3) 50%, transparent 70%),
+    radial-gradient(ellipse at 50% 0%, rgba(255,140,20,0.9) 0%, rgba(255,180,50,0.3) 45%, transparent 65%),
+    radial-gradient(ellipse at 50% 0%, rgba(255,90,0,0.8) 0%, rgba(255,160,30,0.25) 50%, transparent 70%),
+    radial-gradient(ellipse at 50% 0%, rgba(255,120,10,0.85) 0%, rgba(255,170,40,0.3) 45%, transparent 65%),
+    radial-gradient(ellipse at 50% 0%, rgba(255,70,0,0.75) 0%, rgba(255,130,20,0.25) 50%, transparent 70%);
   background-repeat: no-repeat;
   background-size: 30% 70%, 35% 100%, 28% 60%, 32% 80%, 26% 55%;
-  background-position: 8% 100%, 28% 100%, 50% 100%, 72% 100%, 92% 100%;
+  background-position: 8% 0%, 28% 0%, 50% 0%, 72% 0%, 92% 0%;
   filter: blur(1.5px);
   pointer-events: none;
   z-index: 5;
@@ -1428,19 +1428,22 @@ function showPointFloat(row, col, delta, type, isFireDoubled) {
 }
 
 function checkLocalWordBonus(row, col) {
-  if (!PUZZLE) return 0;
+  if (!PUZZLE) return { bonus: 0, completed: 0, wordCellKeys: [] };
   let completed = 0;
+  const wordCellKeys = [];
   for (const dir of ['across', 'down']) {
     const clue = getClueForCell(row, col, dir);
     if (!clue) continue;
     const cells = getWordCells(clue, dir);
     if (cells.every(([r, c]) => userGrid[r][c] && userGrid[r][c] === getCorrectAnswer(r, c))) {
       completed++;
+      for (const [r, c] of cells) wordCellKeys.push(`${r},${c}`);
     }
   }
-  if (completed >= 2) return 15;
-  if (completed === 1) return 5;
-  return 0;
+  let bonus = 0;
+  if (completed >= 2) bonus = 15;
+  else if (completed === 1) bonus = 5;
+  return { bonus, completed, wordCellKeys };
 }
 
 function triggerWordWave(row, col) {
@@ -1499,9 +1502,8 @@ function sendCellUpdate(row, col, letter) {
 
       // Word completion bonus (check after grid is updated)
       if (isCorrect) {
-        const rawWb = checkLocalWordBonus(row, col);
+        const { bonus: rawWb, completed: wordsCompleted, wordCellKeys } = checkLocalWordBonus(row, col);
         if (rawWb > 0) {
-          const wordsCompleted = rawWb >= 15 ? 2 : 1;
           // Double word bonus only if was already on fire (not if fire starts this turn)
           let wb = rawWb;
           if (wasOnFire) wb *= 2;
@@ -1511,13 +1513,13 @@ function sendCellUpdate(row, col, letter) {
 
           // Track word completions toward fire trigger (only when not on fire)
           if (!myFireActive) {
-            for (let i = 0; i < wordsCompleted; i++) {
-              myRecentWordCompletions.push({ timestamp: now, row, col });
-            }
+            myRecentWordCompletions.push({ timestamp: now, count: wordsCompleted, wordCells: wordCellKeys });
             myRecentWordCompletions = myRecentWordCompletions.filter(e => now - e.timestamp < 30000);
-            if (myRecentWordCompletions.length >= 3) {
-              const triggerCells = [...new Set(myRecentWordCompletions.slice(-3).map(e => `${e.row},${e.col}`))];
-              startMyFire(triggerCells, now + 30000);
+            const totalCompletions = myRecentWordCompletions.reduce((sum, e) => sum + e.count, 0);
+            if (totalCompletions >= 3) {
+              // Collect all word cells from triggering completions (deduplicated)
+              const allFireCells = [...new Set(myRecentWordCompletions.flatMap(e => e.wordCells))];
+              startMyFire(allFireCells, now + 30000);
               myRecentWordCompletions = [];
             }
           }
