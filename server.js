@@ -219,7 +219,7 @@ const socketPuzzle = new Map(); // socketId → puzzleDate (which puzzle they're
 const COLOR_POOL = ['#4CAF50','#2196F3','#FF9800','#E91E63','#9C27B0','#00BCD4','#FF5722','#8BC34A'];
 
 // Fire streak state (ephemeral, in-memory only)
-// socketId → { puzzleDate, userName, color, recentCorrect: [{timestamp,row,col},...],
+// socketId → { puzzleDate, userName, color, recentWordCompletions: [{timestamp,row,col},...],
 //              onFire, fireExpiresAt, fireCells: [{row,col},...], fireTimer }
 const fireStreaks = new Map();
 
@@ -232,7 +232,7 @@ function expireFire(socketId) {
   fs.fireExpiresAt = 0;
   fs.fireCells = [];
   fs.fireTimer = null;
-  fs.recentCorrect = [];
+  fs.recentWordCompletions = [];
   // Broadcast to room
   const roomName = `puzzle:${fs.puzzleDate}`;
   io.to(roomName).emit('fire-expired', {
@@ -377,7 +377,7 @@ io.on('connection', async (socket) => {
     // Initialize fire streak tracking
     fireStreaks.set(socket.id, {
       puzzleDate, userName, color,
-      recentCorrect: [],
+      recentWordCompletions: [],
       onFire: false, fireExpiresAt: 0, fireCells: [], fireTimer: null,
     });
 
@@ -424,7 +424,7 @@ io.on('connection', async (socket) => {
       // Get or create fire streak state
       let fs = fireStreaks.get(socket.id);
       if (!fs) {
-        fs = { puzzleDate, userName, color: userColor, recentCorrect: [], onFire: false, fireExpiresAt: 0, fireCells: [], fireTimer: null };
+        fs = { puzzleDate, userName, color: userColor, recentWordCompletions: [], onFire: false, fireExpiresAt: 0, fireCells: [], fireTimer: null };
         fireStreaks.set(socket.id, fs);
       }
 
@@ -433,6 +433,7 @@ io.on('connection', async (socket) => {
         const correctAnswer = getCorrectAnswer(pData, row, col);
         if (correctAnswer) {
           const isCorrect = (letter === correctAnswer);
+          const wasOnFire = fs.onFire;
 
           if (isCorrect && fs.onFire) {
             // Correct + on fire: extend fire, double points
@@ -444,18 +445,6 @@ io.on('connection', async (socket) => {
             fireEvent = { type: 'extended', userName, color: userColor, fireCells: fs.fireCells.slice(), remainingMs };
             pointDelta = 2; // doubled
           } else if (isCorrect && !fs.onFire) {
-            // Correct + not on fire: track toward streak
-            fs.recentCorrect.push({ timestamp: now, row, col });
-            fs.recentCorrect = fs.recentCorrect.filter(e => now - e.timestamp < 30000);
-            if (fs.recentCorrect.length >= 3) {
-              // Start fire!
-              fs.onFire = true;
-              fs.fireExpiresAt = now + 30000;
-              fs.fireCells = fs.recentCorrect.slice(-3).map(e => ({ row: e.row, col: e.col }));
-              fs.fireTimer = setTimeout(() => expireFire(socket.id), 30000);
-              fireEvent = { type: 'started', userName, color: userColor, fireCells: fs.fireCells.slice(), remainingMs: 30000 };
-              fs.recentCorrect = []; // reset streak counter
-            }
             pointDelta = 1;
           } else if (!isCorrect && fs.onFire) {
             // Incorrect + on fire: break fire
@@ -465,11 +454,11 @@ io.on('connection', async (socket) => {
             fs.fireExpiresAt = 0;
             fs.fireCells = [];
             fs.fireTimer = null;
-            fs.recentCorrect = [];
+            fs.recentWordCompletions = [];
             pointDelta = -1;
           } else {
-            // Incorrect + not on fire
-            fs.recentCorrect = [];
+            // Incorrect + not on fire: reset word completion streak
+            fs.recentWordCompletions = [];
             pointDelta = -1;
           }
 
@@ -480,9 +469,26 @@ io.on('connection', async (socket) => {
             const completed = await checkWordCompletions(puzzleDate, row, col, pData);
             if (completed >= 2) wordBonus = 15;
             else if (completed === 1) wordBonus = 5;
-            // Double word bonus if on fire
-            if (wordBonus && fs.onFire) wordBonus *= 2;
+            // Double word bonus only if was already on fire (not if fire just started this turn)
+            if (wordBonus && wasOnFire) wordBonus *= 2;
             if (wordBonus) await db.addPoints(puzzleDate, userName, wordBonus);
+
+            // Track word completions toward fire trigger (only when not already on fire)
+            if (completed > 0 && !fs.onFire) {
+              for (let i = 0; i < completed; i++) {
+                fs.recentWordCompletions.push({ timestamp: now, row, col });
+              }
+              fs.recentWordCompletions = fs.recentWordCompletions.filter(e => now - e.timestamp < 30000);
+              if (fs.recentWordCompletions.length >= 3) {
+                // Start fire!
+                fs.onFire = true;
+                fs.fireExpiresAt = now + 30000;
+                fs.fireCells = fs.recentWordCompletions.slice(-3).map(e => ({ row: e.row, col: e.col }));
+                fs.fireTimer = setTimeout(() => expireFire(socket.id), 30000);
+                fireEvent = { type: 'started', userName, color: userColor, fireCells: fs.fireCells.slice(), remainingMs: 30000 };
+                fs.recentWordCompletions = [];
+              }
+            }
           }
         }
       }
