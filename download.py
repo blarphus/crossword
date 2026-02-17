@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Download crossword pages from xwordinfo.com for the past 30 days."""
 
+import argparse
 import os
 import time
 import random
@@ -23,7 +24,41 @@ HEADERS = {
 }
 
 
+def download_single(date_str):
+    """Download a single date's HTML. date_str should be YYYY-MM-DD."""
+    os.makedirs(DATA_DIR, exist_ok=True)
+
+    filename = f"{date_str}.html"
+    filepath = os.path.join(DATA_DIR, filename)
+
+    if os.path.exists(filepath):
+        print(f"[{date_str}] Already exists, skipping")
+        return
+
+    d = date.fromisoformat(date_str)
+    url_date = f"{d.month}/{d.day}/{d.year}"
+    url = f"{BASE_URL}?date={url_date}"
+
+    print(f"[{date_str}] Fetching {url} ... ", end="", flush=True)
+
+    resp = requests.get(url, headers=HEADERS, timeout=30)
+    resp.raise_for_status()
+
+    with open(filepath, "w", encoding="utf-8") as f:
+        f.write(resp.text)
+
+    print(f"OK ({len(resp.text):,} bytes)")
+
+
 def main():
+    parser = argparse.ArgumentParser(description="Download crossword pages from xwordinfo.com")
+    parser.add_argument("--date", help="Download a single date (YYYY-MM-DD)")
+    args = parser.parse_args()
+
+    if args.date:
+        download_single(args.date)
+        return
+
     os.makedirs(DATA_DIR, exist_ok=True)
 
     today = date.today()

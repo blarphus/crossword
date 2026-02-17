@@ -3,6 +3,7 @@ const http = require('http');
 const { Server } = require('socket.io');
 const path = require('path');
 const fs = require('fs');
+const zlib = require('zlib');
 const cron = require('node-cron');
 const db = require('./db');
 const { scrapeDate } = require('./scrape');
@@ -13,8 +14,6 @@ const io = new Server(server);
 
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
-
-const PUZZLES_DIR = path.join(__dirname, 'puzzles');
 
 function todayET() {
   return new Date().toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
@@ -259,20 +258,35 @@ io.on('connection', (socket) => {
 
 // ─── Startup ─────────────────────────────────────────────────────
 
-async function seedPuzzlesFromFilesystem() {
-  if (!fs.existsSync(PUZZLES_DIR)) {
-    console.log('[seed] No puzzles/ directory found, skipping filesystem seed');
+async function seedPuzzlesFromBundle() {
+  const bundlePath = path.join(__dirname, 'puzzles-bundle.json.gz');
+  if (!fs.existsSync(bundlePath)) {
+    console.log('[seed] No puzzles-bundle.json.gz found, skipping');
     return;
   }
-  const files = fs.readdirSync(PUZZLES_DIR).filter(f => f.endsWith('.json'));
-  let count = 0;
-  for (const f of files) {
-    const data = JSON.parse(fs.readFileSync(path.join(PUZZLES_DIR, f), 'utf8'));
-    const dateStr = f.replace('.json', '');
-    await db.savePuzzle(dateStr, data);
-    count++;
+
+  // Check if we've already seeded this bundle
+  const seeded = await db.getMetadata('bundle_seeded');
+  if (seeded) {
+    console.log('[seed] Bundle already seeded, skipping');
+    return;
   }
-  console.log(`[seed] Seeded ${count} puzzles from filesystem`);
+
+  console.log('[seed] Loading puzzles from bundle...');
+  const compressed = fs.readFileSync(bundlePath);
+  const json = zlib.gunzipSync(compressed).toString('utf8');
+  const bundle = JSON.parse(json);
+  const dates = Object.keys(bundle);
+  let count = 0;
+
+  for (const dateStr of dates) {
+    await db.savePuzzle(dateStr, bundle[dateStr]);
+    count++;
+    if (count % 200 === 0) console.log(`[seed] ${count}/${dates.length} puzzles seeded...`);
+  }
+
+  await db.setMetadata('bundle_seeded', new Date().toISOString());
+  console.log(`[seed] Seeded ${count} puzzles from bundle`);
 }
 
 async function checkAndScrapeToday() {
@@ -290,58 +304,12 @@ async function checkAndScrapeToday() {
   }
 }
 
-async function backfillPuzzles() {
-  const done = await db.getMetadata('backfill_complete');
-  if (done) {
-    console.log('[backfill] Already completed, skipping');
-    return;
-  }
-
-  console.log('[backfill] Starting one-time historical puzzle backfill...');
-
-  const current = new Date();
-  let consecutiveFails = 0;
-  let scraped = 0;
-  let skipped = 0;
-
-  while (consecutiveFails < 2) {
-    const y = current.getFullYear();
-    const m = String(current.getMonth() + 1).padStart(2, '0');
-    const d = String(current.getDate()).padStart(2, '0');
-    const dateStr = `${y}-${m}-${d}`;
-
-    const exists = await db.hasPuzzle(dateStr);
-    if (exists) {
-      skipped++;
-      consecutiveFails = 0;
-      current.setDate(current.getDate() - 1);
-      continue;
-    }
-
-    try {
-      await scrapeDate(dateStr);
-      scraped++;
-      consecutiveFails = 0;
-      console.log(`[backfill] ${dateStr} OK (${scraped} scraped, ${skipped} skipped)`);
-    } catch (err) {
-      consecutiveFails++;
-      console.log(`[backfill] ${dateStr} failed (${consecutiveFails}/2 consecutive)`);
-    }
-
-    current.setDate(current.getDate() - 1);
-    await new Promise(r => setTimeout(r, 1500));
-  }
-
-  await db.setMetadata('backfill_complete', new Date().toISOString());
-  console.log(`[backfill] Complete! Scraped ${scraped}, skipped ${skipped}`);
-}
-
 const PORT = process.env.PORT || 3000;
 
 (async () => {
   try {
     await db.initDb();
-    await seedPuzzlesFromFilesystem();
+    await seedPuzzlesFromBundle();
     await checkAndScrapeToday();
 
     // Daily scrape at 5:00 AM ET
@@ -355,13 +323,7 @@ const PORT = process.env.PORT || 3000;
       }
     });
 
-    server.listen(PORT, () => {
-      console.log(`Server running on port ${PORT}`);
-      // Run historical backfill in background (non-blocking)
-      backfillPuzzles().catch(err => {
-        console.error('[backfill] Error:', err.message);
-      });
-    });
+    server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
   } catch (err) {
     console.error('Failed to initialize:', err);
     process.exit(1);

@@ -9,10 +9,12 @@ services:
     plan: free
     name: crossword
     runtime: node
-    buildCommand: npm install
+    buildCommand: pip install -r requirements.txt && npm install
     startCommand: node server.js
     envVars:
       - key: DATABASE_URL
         fromDatabase:
           name: crossword-db
           property: connectionString
+      - key: TZ
+        value: America/New_York

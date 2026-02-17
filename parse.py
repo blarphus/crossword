@@ -5,6 +5,7 @@ Extracts grid, clues, answers, and metadata directly from the HTML table
 and clue divs present in xwordinfo pages.
 """
 
+import argparse
 import json
 import os
 import re
@@ -169,6 +170,32 @@ def parse_file(filepath: str) -> dict | None:
 
 
 def main():
+    parser = argparse.ArgumentParser(description="Parse xwordinfo HTML files into puzzle JSON")
+    parser.add_argument("--date", help="Parse a single date (YYYY-MM-DD)")
+    parser.add_argument("--stdout", action="store_true", help="Print parsed JSON to stdout instead of writing files")
+    args = parser.parse_args()
+
+    # Single-date mode
+    if args.date:
+        filepath = os.path.join(DATA_DIR, f"{args.date}.html")
+        if not os.path.exists(filepath):
+            print(f"File not found: {filepath}", file=sys.stderr)
+            sys.exit(1)
+        result = parse_file(filepath)
+        if not result:
+            print(f"Could not extract puzzle data from {filepath}", file=sys.stderr)
+            sys.exit(1)
+        if args.stdout:
+            json.dump(result, sys.stdout, ensure_ascii=False)
+        else:
+            os.makedirs(PUZZLES_DIR, exist_ok=True)
+            out_path = os.path.join(PUZZLES_DIR, f"{args.date}.json")
+            with open(out_path, "w", encoding="utf-8") as f:
+                json.dump(result, f, indent=2, ensure_ascii=False)
+            print(f"Wrote {out_path}")
+        return
+
+    # Bulk mode (existing behavior)
     os.makedirs(PUZZLES_DIR, exist_ok=True)
     base_dir = os.path.dirname(os.path.abspath(__file__))
 
