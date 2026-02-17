@@ -448,10 +448,12 @@ body {
 .point-float.plus { color: #2e7d32; }
 .point-float.minus { color: #c62828; }
 .point-float.word {
-  font-size: 13px;
+  font-size: 12px;
   color: #1565c0;
-  left: -2px;
+  left: 50%;
   right: auto;
+  transform: translateX(-50%);
+  white-space: nowrap;
   animation: float-up-slow 1.6s ease-out forwards;
 }
 .point-float.combo {
@@ -1288,7 +1290,7 @@ function showPointFloat(row, col, delta, type) {
     float.textContent = '+15 COMBO';
   } else if (type === 'word') {
     float.className = 'point-float word';
-    float.textContent = '+5';
+    float.textContent = 'word complete +5';
   } else {
     float.className = `point-float ${delta > 0 ? 'plus' : 'minus'}`;
     float.textContent = delta > 0 ? '+1' : '-1';
