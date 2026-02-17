@@ -117,8 +117,8 @@ app.get('/api/state/:date', async (req, res) => {
   try {
     const state = await db.getState(req.params.date);
     res.json(state
-      ? { userGrid: state.user_grid, cellFillers: state.cell_fillers || {}, updatedAt: state.updated_at }
-      : { userGrid: {}, cellFillers: {} });
+      ? { userGrid: state.user_grid, cellFillers: state.cell_fillers || {}, points: state.points || {}, updatedAt: state.updated_at }
+      : { userGrid: {}, cellFillers: {}, points: {} });
   } catch (err) {
     console.error('GET /api/state error:', err);
     res.status(500).json({ error: 'Database error' });
@@ -152,6 +152,16 @@ app.delete('/api/state/:date', async (req, res) => {
 });
 
 // ─── In-memory user presence ─────────────────────────────────────
+
+const puzzleGridCache = new Map(); // puzzleDate → grid (2D array of correct answers)
+
+async function getPuzzleGrid(puzzleDate) {
+  if (puzzleGridCache.has(puzzleDate)) return puzzleGridCache.get(puzzleDate);
+  const data = await db.getPuzzle(puzzleDate);
+  if (!data) return null;
+  puzzleGridCache.set(puzzleDate, data.grid);
+  return data.grid;
+}
 
 const puzzleRooms = new Map(); // puzzleDate → Map<socketId, {userId, userName, color, row, col, direction}>
 const socketPuzzle = new Map(); // socketId → puzzleDate (which puzzle they're in)
@@ -308,7 +318,18 @@ io.on('connection', async (socket) => {
     try {
       await db.upsertCell(puzzleDate, row, col, letter);
       await db.upsertCellFiller(puzzleDate, row, col, letter ? userName : '');
-      socket.to(`puzzle:${puzzleDate}`).emit('cell-updated', { row, col, letter, userId, userName, color: userColor });
+
+      // Score points on letter placement (not on delete)
+      let pointDelta = 0;
+      if (letter) {
+        const grid = await getPuzzleGrid(puzzleDate);
+        if (grid && grid[row] && grid[row][col] !== '.') {
+          pointDelta = (letter === grid[row][col]) ? 1 : -1;
+          await db.addPoints(puzzleDate, userName, pointDelta);
+        }
+      }
+
+      socket.to(`puzzle:${puzzleDate}`).emit('cell-updated', { row, col, letter, userId, userName, color: userColor, pointDelta });
       debounceProgressBroadcast(puzzleDate);
     } catch (err) {
       console.error('[ws] cell-update error:', err);

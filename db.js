@@ -45,6 +45,10 @@ async function initDb() {
   await pool.query(`
     ALTER TABLE puzzle_state ADD COLUMN IF NOT EXISTS cell_fillers JSONB DEFAULT '{}'
   `);
+  // Persisted points column (userName → number)
+  await pool.query(`
+    ALTER TABLE puzzle_state ADD COLUMN IF NOT EXISTS points JSONB DEFAULT '{}'
+  `);
 }
 
 async function savePuzzle(date, data) {
@@ -81,7 +85,7 @@ async function hasPuzzle(date) {
 
 async function getState(puzzleDate) {
   const { rows } = await pool.query(
-    'SELECT user_grid, updated_at, cell_fillers FROM puzzle_state WHERE puzzle_date = $1',
+    'SELECT user_grid, updated_at, cell_fillers, points FROM puzzle_state WHERE puzzle_date = $1',
     [puzzleDate]
   );
   return rows[0] || null;
@@ -289,4 +293,24 @@ async function getCellFillers(puzzleDate) {
   return rows[0]?.cell_fillers || {};
 }
 
-module.exports = { initDb, getState, upsertCell, clearState, savePuzzle, getPuzzle, getAllPuzzleMeta, hasPuzzle, getCalendarData, getProgressSummary, getTimer, saveTimer, getMetadata, setMetadata, getUser, createUser, getUserCount, upsertCellFiller, getCellFillers };
+async function addPoints(puzzleDate, userName, delta) {
+  if (delta === 0) return;
+  const existing = await getState(puzzleDate);
+  if (!existing) {
+    const pts = { [userName]: delta };
+    await pool.query(
+      `INSERT INTO puzzle_state (puzzle_date, user_grid, points, updated_at)
+       VALUES ($1, '{}', $2, NOW())`,
+      [puzzleDate, JSON.stringify(pts)]
+    );
+  } else {
+    const pts = existing.points || {};
+    pts[userName] = (pts[userName] || 0) + delta;
+    await pool.query(
+      'UPDATE puzzle_state SET points = $1 WHERE puzzle_date = $2',
+      [JSON.stringify(pts), puzzleDate]
+    );
+  }
+}
+
+module.exports = { initDb, getState, upsertCell, clearState, savePuzzle, getPuzzle, getAllPuzzleMeta, hasPuzzle, getCalendarData, getProgressSummary, getTimer, saveTimer, getMetadata, setMetadata, getUser, createUser, getUserCount, upsertCellFiller, getCellFillers, addPoints };

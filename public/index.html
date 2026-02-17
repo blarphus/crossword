@@ -803,6 +803,7 @@ function stopTimerTick() {
 const remoteUsers = new Map(); // socketId → {userId, userName, color, row, col, direction}
 const cellColors = new Map();  // "r,c" → color (who filled this cell)
 const cellFillers = new Map(); // "r,c" → {userName, color} (who filled this cell)
+const persistedPoints = new Map(); // userName → number (base points from DB, excludes word bonuses)
 const roomCounts = new Map();  // puzzleDate → player count
 let lastCursorKey = '';
 
@@ -1046,6 +1047,7 @@ async function loadPuzzle(dateStr) {
   remoteUsers.clear();
   cellColors.clear();
   cellFillers.clear();
+  persistedPoints.clear();
   lastCursorKey = '';
 
   // Fetch puzzle data and shared state in parallel
@@ -1104,7 +1106,7 @@ async function loadPuzzle(dateStr) {
   congratsEl.classList.remove('show');
 
   // Apply shared state
-  applySharedState(stateData.userGrid || {}, stateData.cellFillers || {});
+  applySharedState(stateData.userGrid || {}, stateData.cellFillers || {}, stateData.points || {});
 
   // Update header
   const d = new Date(dateStr + 'T12:00:00');
@@ -1148,7 +1150,7 @@ async function loadPuzzle(dateStr) {
 }
 
 // ─── Collaboration helpers ────────────────────────────────────
-function applySharedState(gridMap, fillersMap) {
+function applySharedState(gridMap, fillersMap, pointsMap) {
   for (const [key, letter] of Object.entries(gridMap)) {
     const [r, c] = key.split(',').map(Number);
     if (r >= 0 && r < ROWS && c >= 0 && c < COLS) {
@@ -1163,6 +1165,12 @@ function applySharedState(gridMap, fillersMap) {
       }
     }
   }
+  // Apply persisted base points
+  if (pointsMap) {
+    for (const [name, pts] of Object.entries(pointsMap)) {
+      persistedPoints.set(name, pts);
+    }
+  }
 }
 
 function sendCellUpdate(row, col, letter) {
@@ -1171,9 +1179,15 @@ function sendCellUpdate(row, col, letter) {
   if (letter) {
     cellColors.set(key, myColor);
     cellFillers.set(key, { userName: myName, color: myColor });
+    // Immediate local point scoring
+    if (PUZZLE) {
+      const delta = (letter === PUZZLE.grid[row][col]) ? 1 : -1;
+      persistedPoints.set(myName, (persistedPoints.get(myName) || 0) + delta);
+    }
   } else {
     cellColors.delete(key);
     cellFillers.delete(key);
+    // No point change on delete — penalties/rewards persist
   }
   socket.emit('cell-update', { puzzleDate: currentDate, row, col, letter });
 }
@@ -1225,7 +1239,7 @@ function setupSocketHandlers() {
     if (PUZZLE) render();
   });
 
-  socket.on('cell-updated', ({ row, col, letter, userId: remoteUserId, userName: remoteName, color: remoteColor }) => {
+  socket.on('cell-updated', ({ row, col, letter, userId: remoteUserId, userName: remoteName, color: remoteColor, pointDelta }) => {
     if (!PUZZLE) return;
     if (row >= 0 && row < ROWS && col >= 0 && col < COLS) {
       userGrid[row][col] = letter;
@@ -1240,6 +1254,10 @@ function setupSocketHandlers() {
       } else {
         cellColors.delete(key);
         cellFillers.delete(key);
+      }
+      // Apply remote point delta
+      if (pointDelta && remoteName) {
+        persistedPoints.set(remoteName, (persistedPoints.get(remoteName) || 0) + pointDelta);
       }
       render();
       checkCompletion();
@@ -1274,6 +1292,7 @@ function setupSocketHandlers() {
       }
     cellColors.clear();
     cellFillers.clear();
+    persistedPoints.clear();
     solved = false;
     congratsEl.classList.remove('show');
     render();
@@ -1340,23 +1359,20 @@ function computeUserPoints() {
   const points = new Map(); // userName → { color, pts }
 
   function ensure(name, color) {
-    if (!points.has(name)) points.set(name, { color, pts: 0 });
+    if (!points.has(name)) points.set(name, { color: color || '#ccc', pts: 0 });
     const p = points.get(name);
     if (color && color !== '#ccc') p.color = color;
     return p;
   }
 
-  // +1 correct letter, -1 wrong letter
-  for (const [key, filler] of cellFillers) {
-    const [r, c] = key.split(',').map(Number);
-    const letter = userGrid[r]?.[c];
-    if (!letter) continue;
-    const p = ensure(filler.userName, filler.color);
-    if (letter === PUZZLE.grid[r][c]) {
-      p.pts += 1;
-    } else {
-      p.pts -= 1;
-    }
+  // Start from persisted base points (includes all historical +1/-1 from letter placements)
+  for (const [name, pts] of persistedPoints) {
+    ensure(name, null).pts = pts;
+  }
+
+  // Apply filler colors (so we know each user's color for display)
+  for (const [, filler] of cellFillers) {
+    ensure(filler.userName, filler.color);
   }
 
   // +5 for each fully correct word to every user who filled a cell in it
@@ -1367,7 +1383,6 @@ function computeUserPoints() {
         userGrid[r][c] && userGrid[r][c] === PUZZLE.grid[r][c]
       );
       if (!allCorrect) continue;
-      // Find unique fillers in this word
       const wordFillers = new Set();
       for (const [r, c] of cells) {
         const filler = cellFillers.get(`${r},${c}`);
@@ -1935,6 +1950,7 @@ btnClear.addEventListener('click', () => {
     }
   cellColors.clear();
   cellFillers.clear();
+  persistedPoints.clear();
   solved = false;
   congratsEl.classList.remove('show');
   if (currentDate && socket) {
