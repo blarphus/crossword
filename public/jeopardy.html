@@ -794,6 +794,7 @@ body {
 <body>
 
 <a class="home-link" href="/">&#8592; Home</a>
+<button id="mute-btn" style="position:fixed; top:12px; right:12px; z-index:50; background:rgba(0,0,0,0.3); border:none; color:rgba(255,255,255,0.5); font-size:1.2rem; padding:6px 10px; border-radius:6px; cursor:pointer;" onclick="toggleMute()">&#128264;</button>
 
 <!-- ─── Lobby ───────────────────────────────────────────────── -->
 <div id="lobby">
@@ -983,6 +984,65 @@ body {
   let gameState = null; // full room-state from server
   let answerTimerInterval = null;
   let fjTimerInterval = null;
+  let hasBuzzedThisClue = false;
+  let lastAnnouncedRound = null;
+
+  // ─── Sound system ──────────────────────────────────────────
+  const sfx = {};
+  let isMuted = localStorage.getItem('jeopardy-muted') === 'true';
+
+  ['buzz','correct','incorrect','intro','select','think','tick','timesup'].forEach(n => {
+    sfx[n] = new Audio(`/audio/${n}.mp3`);
+    sfx[n].preload = 'auto';
+  });
+
+  function playSound(name) {
+    if (isMuted || !sfx[name]) return;
+    const s = sfx[name].cloneNode();
+    s.play().catch(() => {});
+  }
+  function playLoop(name) {
+    if (isMuted || !sfx[name]) return;
+    sfx[name].loop = true;
+    sfx[name].currentTime = 0;
+    sfx[name].play().catch(() => {});
+  }
+  function stopLoop(name) {
+    if (!sfx[name]) return;
+    sfx[name].loop = false;
+    sfx[name].pause();
+    sfx[name].currentTime = 0;
+  }
+
+  // TTS host voice
+  function hostSay(text, onEnd) {
+    if (isMuted || !window.speechSynthesis) { if (onEnd) setTimeout(onEnd, 100); return; }
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = 'en-US';
+    u.rate = 0.9;
+    if (onEnd) u.onend = onEnd;
+    speechSynthesis.speak(u);
+  }
+
+  function hostSaySequence(texts, cb) {
+    let i = 0;
+    (function next() {
+      if (i >= texts.length) { if (cb) cb(); return; }
+      hostSay(texts[i++], next);
+    })();
+  }
+
+  window.toggleMute = function() {
+    isMuted = !isMuted;
+    localStorage.setItem('jeopardy-muted', isMuted);
+    document.getElementById('mute-btn').innerHTML = isMuted ? '&#128263;' : '&#128264;';
+    if (isMuted) {
+      speechSynthesis.cancel();
+      Object.values(sfx).forEach(s => { s.pause(); s.currentTime = 0; s.loop = false; });
+    }
+  };
+  // Set initial mute icon
+  if (isMuted) document.getElementById('mute-btn').innerHTML = '&#128263;';
 
   // Device ID for user identity
   function getDeviceId() {
@@ -1265,7 +1325,10 @@ body {
       const li = document.createElement('li');
       let badges = '';
       if (p.isHost) badges += '<span class="player-host">HOST</span>';
-      if (p.isAI) badges += '<span class="player-host" style="background:#9C27B0;">CPU</span>';
+      if (p.isAI) {
+        const diffLabel = p.difficulty ? p.difficulty.charAt(0).toUpperCase() + p.difficulty.slice(1) : 'CPU';
+        badges += `<span class="player-host" style="background:#9C27B0;">CPU - ${esc(diffLabel)}</span>`;
+      }
       let removeBtn = '';
       if (p.isAI && isHost && state.phase === 'lobby') {
         removeBtn = `<button onclick="removeCPU('${p.socketId}')" style="background:none; border:none; color:#F44336; cursor:pointer; font-size:1.1rem; margin-left:4px;" title="Remove">&times;</button>`;
@@ -1336,7 +1399,16 @@ body {
     if (gameState) gameState.phase = phase;
 
     if (phase === 'buzzerOpen') {
-      showBuzzer();
+      playSound('tick');
+      // Only show buzzer if we haven't buzzed on this clue
+      if (!hasBuzzedThisClue) {
+        showBuzzer();
+      } else {
+        // Hide buzzer, just show clue while others can buzz
+        document.getElementById('buzz-btn').classList.remove('active');
+        document.getElementById('result-display').classList.remove('active');
+        document.getElementById('answer-area').classList.remove('active');
+      }
       startClueTimer(5); // 5s buzzer window
     } else if (phase === 'selectingClue') {
       $clueOverlay.classList.remove('active');
@@ -1348,14 +1420,33 @@ body {
   function onRoundChange({ round }) {
     if (gameState) gameState.currentRound = round;
     renderRoundIndicator(round);
+
     if (round === 'finalJeopardy') {
       $clueOverlay.classList.remove('active');
+    }
+
+    // Announce round with intro music + TTS
+    if (lastAnnouncedRound !== round && round !== 'finalJeopardy') {
+      lastAnnouncedRound = round;
+      playSound('intro');
+      const roundLabel = round === 'jeopardy' ? 'Jeopardy' : 'Double Jeopardy';
+      const cats = round === 'jeopardy'
+        ? gameState?.gameData?.jRound?.categories
+        : gameState?.gameData?.djRound?.categories;
+      const texts = [`Let's play ${roundLabel}!`];
+      if (cats && cats.length) {
+        texts.push("Today's categories are");
+        cats.forEach(c => texts.push(c));
+      }
+      hostSaySequence(texts);
     }
   }
 
   // ─── Clue events ──────────────────────────────────────────
   function onClueSelected({ cat, row, value, clue, dailyDouble }) {
     $clueOverlay.classList.add('active');
+    hasBuzzedThisClue = false;
+    playSound('select');
 
     const $ddSplash = document.getElementById('dd-splash');
     const $clueText = document.getElementById('clue-text');
@@ -1379,6 +1470,10 @@ body {
     $clueVal.textContent = `$${value}`;
     $clueText.textContent = clue;
 
+    // TTS read the clue
+    speechSynthesis.cancel();
+    hostSay(clue);
+
     // Mark cell as used on board
     if (gameState) {
       const key = `${cat},${row}`;
@@ -1400,6 +1495,7 @@ body {
 
   function onDailyDouble({ cat, row, value, playerSocketId, playerName }) {
     $clueOverlay.classList.add('active');
+    playSound('select');
 
     const $ddSplash = document.getElementById('dd-splash');
     const $clueText = document.getElementById('clue-text');
@@ -1480,21 +1576,24 @@ body {
     }
   });
 
-  function onBuzzerResult({ playerId, playerName }) {
+  function onBuzzerResult({ playerId, playerName, isAI }) {
     const $buzzBtn = document.getElementById('buzz-btn');
     $buzzBtn.classList.remove('active');
     stopClueTimer();
+    stopLoop('tick');
+    playSound('buzz');
 
     if (playerId === mySocketId) {
+      hasBuzzedThisClue = true;
       showAnswerInput(10);
     } else {
       const $answerArea = document.getElementById('answer-area');
-      $answerArea.classList.remove('active');
-      document.getElementById('answering-label').textContent = `${esc(playerName)} is answering...`;
-      // Show label without input
       const $resultDisplay = document.getElementById('result-display');
+      $answerArea.classList.remove('active');
       $resultDisplay.classList.remove('active');
-      $statusBar.textContent = `${esc(playerName)} is answering...`;
+      const label = isAI ? `${esc(playerName)} buzzed in!` : `${esc(playerName)} is answering...`;
+      $statusBar.textContent = label;
+      document.getElementById('answering-label').textContent = label;
     }
   }
 
@@ -1560,6 +1659,8 @@ body {
     $buzzBtn.classList.remove('active');
     stopClueTimer();
     clearAnswerTimer();
+    stopLoop('tick');
+    playSound('timesup');
 
     const $resultDisplay = document.getElementById('result-display');
     const $resultLabel = document.getElementById('result-label');
@@ -1573,9 +1674,11 @@ body {
     $resultLabel.className = 'result-label incorrect';
     $resultAnswer.textContent = correctAnswer;
     $resultScoreChange.textContent = '';
+
+    hostSay(`The correct answer is ${correctAnswer}`);
   }
 
-  function onAnswerResult({ playerId, playerName, playerAnswer, correctAnswer, correct, scoreChange, newScore }) {
+  function onAnswerResult({ playerId, playerName, playerAnswer, correctAnswer, correct, scoreChange, newScore, isAI }) {
     const $resultDisplay = document.getElementById('result-display');
     const $resultLabel = document.getElementById('result-label');
     const $resultAnswer = document.getElementById('result-answer');
@@ -1587,14 +1690,34 @@ body {
     $buzzBtn.classList.remove('active');
     clearAnswerTimer();
     stopClueTimer();
+    stopLoop('tick');
+
+    playSound(correct ? 'correct' : 'incorrect');
 
     $resultDisplay.classList.add('active');
-    $resultLabel.textContent = correct ? 'Correct!' : 'Incorrect';
+
+    if (isAI && correct) {
+      $resultLabel.textContent = `${esc(playerName)}: "${esc(playerAnswer)}"`;
+    } else if (isAI && !correct) {
+      $resultLabel.textContent = `${esc(playerName)}: Incorrect`;
+    } else {
+      $resultLabel.textContent = correct ? 'Correct!' : 'Incorrect';
+    }
     $resultLabel.className = `result-label ${correct ? 'correct' : 'incorrect'}`;
-    $resultAnswer.textContent = '';
+
+    // Show correct answer on incorrect responses (only if server sent it)
+    $resultAnswer.textContent = (!correct && correctAnswer) ? correctAnswer : '';
+
     const sign = scoreChange >= 0 ? '+' : '';
     $resultScoreChange.textContent = `${esc(playerName)}: ${sign}$${Math.abs(scoreChange)}`;
     $resultScoreChange.style.color = correct ? 'var(--correct)' : 'var(--incorrect)';
+
+    // TTS announce result
+    if (correct) {
+      hostSay(`${playerName}, that is correct!`);
+    } else if (!correct && correctAnswer) {
+      // Only announce correct answer if buzzer won't reopen (server handles that)
+    }
   }
 
   function onScoresUpdate(players) {
@@ -1612,6 +1735,9 @@ body {
     document.getElementById('fj-answer-area').classList.remove('active');
     document.getElementById('fj-waiting').textContent = 'Get ready...';
     document.getElementById('fj-reveals').innerHTML = '';
+
+    playSound('intro');
+    hostSay(`The Final Jeopardy category is: ${category}`);
   }
 
   function onFinalClue({ category, clue }) {
@@ -1619,6 +1745,12 @@ body {
     document.getElementById('fj-clue').textContent = clue;
     document.getElementById('fj-wager-area').classList.remove('active');
     document.getElementById('fj-waiting').textContent = '';
+
+    // TTS read the clue, then start the think music
+    speechSynthesis.cancel();
+    hostSay(clue, () => {
+      playLoop('think');
+    });
 
     // Show answer input
     const $fjAnswerArea = document.getElementById('fj-answer-area');
@@ -1635,7 +1767,11 @@ body {
       const left = Math.max(0, 30 - (Date.now() - start) / 1000);
       $timer.textContent = Math.ceil(left);
       $timerBar.style.width = `${(left / 30) * 100}%`;
-      if (left <= 0) clearInterval(fjTimerInterval);
+      if (left <= 0) {
+        clearInterval(fjTimerInterval);
+        stopLoop('think');
+        playSound('timesup');
+      }
     }, 100);
   }
 
@@ -1670,6 +1806,7 @@ body {
     document.getElementById('fj-answer-area').classList.remove('active');
     document.getElementById('fj-waiting').textContent = 'Waiting for other players...';
     if (fjTimerInterval) clearInterval(fjTimerInterval);
+    stopLoop('think');
   };
   document.getElementById('fj-answer-input').onkeydown = (e) => {
     if (e.key === 'Enter') document.getElementById('fj-answer-btn').click();
@@ -1684,6 +1821,9 @@ body {
   }
 
   function onFinalReveal({ playerName, answer, wager, correct, scoreChange, newScore }) {
+    stopLoop('think');
+    playSound(correct ? 'correct' : 'incorrect');
+
     const $reveals = document.getElementById('fj-reveals');
     const card = document.createElement('div');
     card.className = 'fj-reveal-card';
@@ -1704,6 +1844,11 @@ body {
     $clueOverlay.classList.remove('active');
     $gameoverOverlay.classList.add('active');
 
+    // Stop all sounds
+    stopLoop('think');
+    stopLoop('tick');
+    speechSynthesis.cancel();
+
     const $list = document.getElementById('standings-list');
     $list.innerHTML = '';
     standings.forEach((p, i) => {
@@ -1716,9 +1861,22 @@ body {
       `;
       $list.appendChild(li);
     });
+
+    // Announce winner
+    if (standings.length > 0) {
+      hostSay(`Game over! ${standings[0].name} wins with $${standings[0].score}!`);
+    }
   }
 
   document.getElementById('btn-play-again').onclick = () => {
+    // Stop all sounds and reset state
+    stopLoop('think');
+    stopLoop('tick');
+    speechSynthesis.cancel();
+    Object.values(sfx).forEach(s => { s.pause(); s.currentTime = 0; s.loop = false; });
+    lastAnnouncedRound = null;
+    hasBuzzedThisClue = false;
+
     $gameoverOverlay.classList.remove('active');
     $game.classList.remove('active');
     $lobby.style.display = 'flex';

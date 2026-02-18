@@ -23,7 +23,11 @@ module.exports = function initJeopardy(io, db) {
   function playerList(room) {
     const list = [];
     for (const [sid, p] of room.players) {
-      list.push({ socketId: sid, name: p.name, color: p.color, score: p.score, isHost: sid === room.hostSocket, isAI: !!p.isAI });
+      list.push({
+        socketId: sid, name: p.name, color: p.color, score: p.score,
+        isHost: sid === room.hostSocket, isAI: !!p.isAI,
+        difficulty: p.difficultyLabel || null,
+      });
     }
     return list;
   }
@@ -87,26 +91,40 @@ module.exports = function initJeopardy(io, db) {
   const AI_NAMES = ['Watson', 'DeepBlue', 'HAL'];
   const AI_COLORS = ['#9C27B0', '#00BCD4', '#FF5722'];
 
+  const AI_DIFF_MAP = {
+    easy:   { buzzSpeed: 0.3, accuracy: 0.5, skipChance: 0.35 },
+    medium: { buzzSpeed: 0.5, accuracy: 0.7, skipChance: 0.15 },
+    hard:   { buzzSpeed: 0.8, accuracy: 0.9, skipChance: 0.05 },
+  };
+
   function scheduleAIBuzz(room) {
     if (room.phase !== 'buzzerOpen') return;
     for (const [sid, p] of room.players) {
       if (!p.isAI) continue;
       if (room.buzzedPlayers.has(sid)) continue;
-      const diff = p.aiDifficulty || { buzzSpeed: 0.5, accuracy: 0.7 };
-      const baseDelay = Math.max(1.0, 1.5 - diff.buzzSpeed);
-      const delay = baseDelay + Math.random() * 1.5;
+      const diff = p.aiDifficulty || AI_DIFF_MAP.medium;
+
+      // Chance to not buzz at all
+      if (Math.random() < (diff.skipChance || 0)) continue;
+
+      // Variable delay: 1s minimum, up to ~4.5s for easy
+      const baseDelay = Math.max(1.0, 2.0 - diff.buzzSpeed * 1.5);
+      const delay = baseDelay + Math.random() * 2.0;
+
       const timerId = setTimeout(() => {
         if (room.phase !== 'buzzerOpen' || room.buzzedPlayers.has(sid)) return;
         room.buzzedPlayers.add(sid);
         if (room.timers.buzzer) { clearTimeout(room.timers.buzzer); room.timers.buzzer = null; }
+        cancelAIBuzzTimers(room);
         room.answeringPlayer = sid;
         room.phase = 'playerAnswering';
-        nsp.to(room.roomId).emit('buzzer-result', { playerId: sid, playerName: p.name });
+        nsp.to(room.roomId).emit('buzzer-result', {
+          playerId: sid, playerName: p.name, isAI: true,
+        });
         broadcastState(room);
-        // AI answers after 1s
-        room.timers.answer = setTimeout(() => processAIAnswer(room, sid), 1000);
+        // AI answers after 1.5s
+        room.timers.answer = setTimeout(() => processAIAnswer(room, sid), 1500);
       }, delay * 1000);
-      // Store timer so we can cancel
       if (!room.timers.aiBuzz) room.timers.aiBuzz = [];
       room.timers.aiBuzz.push(timerId);
     }
@@ -122,7 +140,7 @@ module.exports = function initJeopardy(io, db) {
   function processAIAnswer(room, sid) {
     const p = room.players.get(sid);
     if (!p || !p.isAI) return;
-    const diff = p.aiDifficulty || { accuracy: 0.7 };
+    const diff = p.aiDifficulty || AI_DIFF_MAP.medium;
     const correct = Math.random() < diff.accuracy;
     const answer = correct ? room.currentClue.answer : '';
     handleAnswerResult(room, sid, answer, correct);
@@ -131,7 +149,7 @@ module.exports = function initJeopardy(io, db) {
   function scheduleAIDailyDouble(room, sid) {
     const p = room.players.get(sid);
     if (!p || !p.isAI) return;
-    const diff = p.aiDifficulty || { accuracy: 0.7 };
+    const diff = p.aiDifficulty || AI_DIFF_MAP.medium;
     const maxForRound = room.currentRound === 'jeopardy' ? 1000 : 2000;
     const maxWager = Math.max(p.score, maxForRound);
     let wager;
@@ -171,7 +189,7 @@ module.exports = function initJeopardy(io, db) {
   function scheduleAIFinalAnswers(room) {
     for (const [sid, p] of room.players) {
       if (!p.isAI) continue;
-      const diff = p.aiDifficulty || { accuracy: 0.7 };
+      const diff = p.aiDifficulty || AI_DIFF_MAP.medium;
       const correct = Math.random() < diff.accuracy;
       room.finalJeopardy.answers.set(sid, correct ? room.gameData.fj.answer : '');
     }
@@ -187,7 +205,6 @@ module.exports = function initJeopardy(io, db) {
       });
       broadcastState(room);
       room.timers.finalAnswer = setTimeout(() => finalizeFinalJeopardy(room), 30000);
-      // AI submits answers after a delay
       setTimeout(() => scheduleAIFinalAnswers(room), 2000);
     }
   }
@@ -208,11 +225,9 @@ module.exports = function initJeopardy(io, db) {
       if (room.phase !== 'selectingClue') return;
       const roundData = getRoundData(room);
       if (!roundData) return;
-      // Pick a random available clue
       const available = roundData.clues.filter(c => !room.usedClues.has(clueKey(c.cat, c.row)));
       if (available.length === 0) return;
       const pick = available[Math.floor(Math.random() * available.length)];
-      // Simulate the select-clue event
       room.usedClues.add(clueKey(pick.cat, pick.row));
       room.currentClue = { ...pick };
       if (pick.dailyDouble) {
@@ -232,20 +247,32 @@ module.exports = function initJeopardy(io, db) {
         cat: pick.cat, row: pick.row, value: pick.value, clue: pick.clue, dailyDouble: false,
       });
       broadcastState(room);
-      room.timers.reading = setTimeout(() => {
-        room.phase = 'buzzerOpen';
-        room.buzzedPlayers = new Set();
-        nsp.to(room.roomId).emit('phase-change', { phase: 'buzzerOpen' });
-        broadcastState(room);
-        scheduleAIBuzz(room);
-        room.timers.buzzer = setTimeout(() => {
-          cancelAIBuzzTimers(room);
-          nsp.to(room.roomId).emit('buzzer-expired', { correctAnswer: room.currentClue.answer });
-          room.timers.result = setTimeout(() => transitionToClueSelection(room), 3000);
-        }, 5000);
-      }, 3000);
+      startBuzzerPhase(room);
     }, 1500);
   }
+
+  // Open buzzer with 5s window — used for initial open and rebuzz
+  function startBuzzerPhase(room) {
+    room.timers.reading = setTimeout(() => {
+      room.phase = 'buzzerOpen';
+      nsp.to(room.roomId).emit('phase-change', { phase: 'buzzerOpen' });
+      broadcastState(room);
+      scheduleAIBuzz(room);
+      room.timers.buzzer = setTimeout(() => {
+        cancelAIBuzzTimers(room);
+        // Check if anyone can still buzz
+        const remaining = [...room.players.keys()].filter(sid => !room.buzzedPlayers.has(sid));
+        if (remaining.length === 0 || true) {
+          // Time's up — reveal answer
+          nsp.to(room.roomId).emit('buzzer-expired', { correctAnswer: room.currentClue.answer });
+          room.timers.result = setTimeout(() => transitionToClueSelection(room), 3000);
+        }
+      }, 5000);
+    }, room._skipReadingDelay ? 0 : 3000);
+    room._skipReadingDelay = false; // reset
+  }
+
+  // ─── Answer handling with rebuzz support ───────────────────────
 
   function handleAnswerResult(room, socketId, playerAnswer, correct) {
     const player = room.players.get(socketId);
@@ -255,26 +282,43 @@ module.exports = function initJeopardy(io, db) {
     const scoreChange = correct ? value : -value;
     player.score += scoreChange;
 
-    room.phase = 'showingResult';
+    const isAI = !!player.isAI;
+
     nsp.to(room.roomId).emit('answer-result', {
       playerId: socketId,
       playerName: player.name,
-      playerAnswer,
+      playerAnswer: correct ? playerAnswer : '',
       correctAnswer: correct ? room.currentClue.answer : null,
       correct,
       scoreChange,
       newScore: player.score,
+      isAI,
     });
     nsp.to(room.roomId).emit('scores-update', playerList(room));
 
     if (correct) {
       room.controllingPlayer = socketId;
+      room.phase = 'showingResult';
       room.timers.result = setTimeout(() => transitionToClueSelection(room), 2500);
     } else {
-      nsp.to(room.roomId).emit('buzzer-expired', {
-        correctAnswer: room.currentClue.answer,
-      });
-      room.timers.result = setTimeout(() => transitionToClueSelection(room), 3000);
+      // Check remaining unbuzzed players
+      const remaining = [...room.players.keys()].filter(sid => !room.buzzedPlayers.has(sid));
+      if (remaining.length > 0) {
+        // Reopen buzzer for remaining players after brief delay
+        room.phase = 'showingResult';
+        room.timers.result = setTimeout(() => {
+          room.answeringPlayer = null;
+          room._skipReadingDelay = true;
+          startBuzzerPhase(room);
+        }, 1500);
+      } else {
+        // No one left — reveal answer and move on
+        room.phase = 'showingResult';
+        nsp.to(room.roomId).emit('buzzer-expired', {
+          correctAnswer: room.currentClue.answer,
+        });
+        room.timers.result = setTimeout(() => transitionToClueSelection(room), 3000);
+      }
     }
   }
 
@@ -295,6 +339,7 @@ module.exports = function initJeopardy(io, db) {
       correct,
       scoreChange,
       newScore: player.score,
+      isAI: !!player.isAI,
     });
     nsp.to(room.roomId).emit('scores-update', playerList(room));
 
@@ -326,20 +371,19 @@ module.exports = function initJeopardy(io, db) {
     room.buzzerQueue = [];
     room.buzzedPlayers = new Set();
     room.dailyDoubleWager = null;
+    room._skipReadingDelay = false;
     saveProgress(room);
 
     if (allCluesUsed(room)) {
       if (room.currentRound === 'jeopardy') {
         room.currentRound = 'doubleJeopardy';
         room.usedClues = new Set();
-        // Pre-mark missing slots in DJ round
         for (const key of getMissingSlots(room.gameData.djRound)) room.usedClues.add(key);
         room.phase = 'selectingClue';
         nsp.to(room.roomId).emit('round-change', { round: 'doubleJeopardy' });
         broadcastState(room);
         scheduleAIClueSelection(room);
       } else {
-        // Double Jeopardy done → Final Jeopardy
         startFinalJeopardy(room);
       }
       return;
@@ -362,12 +406,10 @@ module.exports = function initJeopardy(io, db) {
     nsp.to(room.roomId).emit('final-category', { category: room.gameData.fj.category });
     broadcastState(room);
 
-    // After 5s showing category, move to wager phase
     room.timers.reading = setTimeout(() => {
       room.phase = 'finalWager';
       nsp.to(room.roomId).emit('phase-change', { phase: 'finalWager' });
       broadcastState(room);
-      // AI submits wagers immediately
       scheduleAIFinalWagers(room);
     }, 5000);
   }
@@ -379,9 +421,48 @@ module.exports = function initJeopardy(io, db) {
     const standings = playerList(room).sort((a, b) => b.score - a.score);
     nsp.to(room.roomId).emit('game-over', { standings });
     broadcastState(room);
-
-    // Clean up room after 5 minutes
     setTimeout(() => { rooms.delete(room.roomId); }, 5 * 60 * 1000);
+  }
+
+  function finalizeFinalJeopardy(room) {
+    clearTimers(room);
+    room.phase = 'finalResults';
+
+    const reveals = [];
+    const sorted = [...room.players.entries()]
+      .sort((a, b) => a[1].score - b[1].score);
+
+    for (const [sid, player] of sorted) {
+      const answer = room.finalJeopardy.answers.get(sid) || '';
+      const wager = room.finalJeopardy.wagers.get(sid) || 0;
+      const result = checkAnswer(answer, room.gameData.fj.answer);
+      const scoreChange = result.correct ? wager : -wager;
+      player.score += scoreChange;
+
+      reveals.push({
+        playerId: sid,
+        playerName: player.name,
+        answer,
+        wager,
+        correct: result.correct,
+        scoreChange,
+        newScore: player.score,
+      });
+    }
+
+    room.finalJeopardy.reveals = reveals;
+
+    let delay = 0;
+    for (let i = 0; i < reveals.length; i++) {
+      delay += 3000;
+      setTimeout(() => {
+        nsp.to(room.roomId).emit('final-jeopardy-reveal', reveals[i]);
+      }, delay);
+    }
+
+    setTimeout(() => {
+      endGame(room);
+    }, delay + 3000);
   }
 
   // ─── Socket event handlers ─────────────────────────────────────
@@ -391,7 +472,6 @@ module.exports = function initJeopardy(io, db) {
       const { playerName, deviceId } = data || {};
       const name = (playerName || 'Player 1').trim().substring(0, 20);
 
-      // Get a random game
       const row = await db.getRandomJeopardyGame();
       if (!row) {
         if (cb) cb({ error: 'No games available' });
@@ -419,6 +499,7 @@ module.exports = function initJeopardy(io, db) {
         dailyDoubleWager: null,
         finalJeopardy: { wagers: new Map(), answers: new Map(), reveals: [] },
         timers: { buzzer: null, answer: null, reading: null, result: null, finalAnswer: null },
+        _skipReadingDelay: false,
       };
 
       const color = COLORS[0];
@@ -463,11 +544,11 @@ module.exports = function initJeopardy(io, db) {
       if (!room || room.phase !== 'lobby') return;
       if (socket.id !== room.hostSocket) return;
 
-      // Pre-mark missing clue slots as used
       for (const key of getMissingSlots(room.gameData.jRound)) room.usedClues.add(key);
 
       room.phase = 'selectingClue';
       room.controllingPlayer = room.hostSocket;
+      nsp.to(room.roomId).emit('round-change', { round: 'jeopardy' });
       nsp.to(room.roomId).emit('phase-change', { phase: 'selectingClue' });
       broadcastState(room);
       scheduleAIClueSelection(room);
@@ -502,28 +583,12 @@ module.exports = function initJeopardy(io, db) {
 
       // Normal clue: show text, then open buzzer
       room.phase = 'readingClue';
+      room.buzzedPlayers = new Set();
       nsp.to(room.roomId).emit('clue-selected', {
         cat, row, value: clue.value, clue: clue.clue, dailyDouble: false,
       });
       broadcastState(room);
-
-      // After 3s reading delay, open buzzer
-      room.timers.reading = setTimeout(() => {
-        room.phase = 'buzzerOpen';
-        room.buzzedPlayers = new Set();
-        nsp.to(room.roomId).emit('phase-change', { phase: 'buzzerOpen' });
-        broadcastState(room);
-        scheduleAIBuzz(room);
-
-        // 5s buzzer window
-        room.timers.buzzer = setTimeout(() => {
-          cancelAIBuzzTimers(room);
-          nsp.to(room.roomId).emit('buzzer-expired', {
-            correctAnswer: room.currentClue.answer,
-          });
-          room.timers.result = setTimeout(() => transitionToClueSelection(room), 3000);
-        }, 5000);
-      }, 3000);
+      startBuzzerPhase(room);
     });
 
     socket.on('buzz-in', () => {
@@ -543,6 +608,7 @@ module.exports = function initJeopardy(io, db) {
       nsp.to(room.roomId).emit('buzzer-result', {
         playerId: socket.id,
         playerName: player?.name,
+        isAI: false,
       });
       broadcastState(room);
 
@@ -595,13 +661,10 @@ module.exports = function initJeopardy(io, db) {
       });
       broadcastState(room);
 
-      // 10s to answer
       room.timers.answer = setTimeout(() => {
         handleDailyDoubleAnswer(room, socket.id, '', false);
       }, 10000);
     });
-
-    // handleAnswerResult and handleDailyDoubleAnswer are defined at module scope above
 
     // ─── Final Jeopardy ─────────────────────────────────────────
 
@@ -622,7 +685,6 @@ module.exports = function initJeopardy(io, db) {
         needed: room.players.size,
       });
 
-      // Check if all wagers are in
       checkAllFinalWagers(room);
     });
 
@@ -642,50 +704,6 @@ module.exports = function initJeopardy(io, db) {
       checkAllFinalAnswers(room);
     });
 
-    function finalizeFinalJeopardy(room) {
-      clearTimers(room);
-      room.phase = 'finalResults';
-
-      const reveals = [];
-      // Reveal in order of score (lowest first for drama)
-      const sorted = [...room.players.entries()]
-        .sort((a, b) => a[1].score - b[1].score);
-
-      for (const [sid, player] of sorted) {
-        const answer = room.finalJeopardy.answers.get(sid) || '';
-        const wager = room.finalJeopardy.wagers.get(sid) || 0;
-        const result = checkAnswer(answer, room.gameData.fj.answer);
-        const scoreChange = result.correct ? wager : -wager;
-        player.score += scoreChange;
-
-        reveals.push({
-          playerId: sid,
-          playerName: player.name,
-          answer,
-          wager,
-          correct: result.correct,
-          scoreChange,
-          newScore: player.score,
-        });
-      }
-
-      room.finalJeopardy.reveals = reveals;
-
-      // Reveal one by one with delays
-      let delay = 0;
-      for (let i = 0; i < reveals.length; i++) {
-        delay += 3000;
-        setTimeout(() => {
-          nsp.to(room.roomId).emit('final-jeopardy-reveal', reveals[i]);
-        }, delay);
-      }
-
-      // After all reveals, end game
-      setTimeout(() => {
-        endGame(room);
-      }, delay + 3000);
-    }
-
     // ─── Disconnect ──────────────────────────────────────────────
 
     socket.on('disconnect', () => {
@@ -693,6 +711,9 @@ module.exports = function initJeopardy(io, db) {
       if (!roomId) return;
       const room = getRoom(roomId);
       if (!room) return;
+
+      const wasAnswering = socket.id === room.answeringPlayer;
+      const wasPhase = room.phase;
 
       room.players.delete(socket.id);
       nsp.to(roomId).emit('player-left', { socketId: socket.id });
@@ -703,22 +724,28 @@ module.exports = function initJeopardy(io, db) {
         return;
       }
 
-      // If host left, reassign
       if (socket.id === room.hostSocket) {
         room.hostSocket = room.players.keys().next().value;
       }
-
-      // If controlling player left, reassign
       if (socket.id === room.controllingPlayer) {
         room.controllingPlayer = room.hostSocket;
       }
 
-      // If answering player left during their turn, handle gracefully
-      if (socket.id === room.answeringPlayer) {
-        if (room.phase === 'playerAnswering') {
+      if (wasAnswering) {
+        if (wasPhase === 'playerAnswering') {
           clearTimeout(room.timers.answer);
-          handleAnswerResult(room, socket.id, '', false);
-        } else if (room.phase === 'dailyDoubleAnswer') {
+          // Treat as wrong answer to trigger rebuzz
+          room.buzzedPlayers.add(socket.id);
+          const remaining = [...room.players.keys()].filter(sid => !room.buzzedPlayers.has(sid));
+          if (remaining.length > 0) {
+            room.answeringPlayer = null;
+            room._skipReadingDelay = true;
+            startBuzzerPhase(room);
+          } else {
+            nsp.to(room.roomId).emit('buzzer-expired', { correctAnswer: room.currentClue?.answer });
+            room.timers.result = setTimeout(() => transitionToClueSelection(room), 3000);
+          }
+        } else if (wasPhase === 'dailyDoubleAnswer') {
           clearTimeout(room.timers.answer);
           transitionToClueSelection(room);
         }
@@ -752,7 +779,6 @@ module.exports = function initJeopardy(io, db) {
       }
     });
 
-    // Choose a specific game (from lobby)
     socket.on('change-game', async ({ gameId }) => {
       const room = getRoom(socket.jeopardyRoom);
       if (!room || room.phase !== 'lobby') return;
@@ -785,14 +811,9 @@ module.exports = function initJeopardy(io, db) {
       if (socket.id !== room.hostSocket) return;
       if (room.players.size >= 4) return;
 
-      const diffMap = {
-        easy: { buzzSpeed: 0.3, accuracy: 0.5 },
-        medium: { buzzSpeed: 0.5, accuracy: 0.7 },
-        hard: { buzzSpeed: 0.8, accuracy: 0.9 },
-      };
-      const aiDiff = diffMap[difficulty] || diffMap.medium;
+      const aiDiff = AI_DIFF_MAP[difficulty] || AI_DIFF_MAP.medium;
+      const label = difficulty || 'medium';
 
-      // Count existing AIs for naming
       let aiCount = 0;
       for (const p of room.players.values()) if (p.isAI) aiCount++;
       const aiId = `ai-${Date.now()}-${aiCount}`;
@@ -800,8 +821,8 @@ module.exports = function initJeopardy(io, db) {
       const usedColors = new Set([...room.players.values()].map(p => p.color));
       const color = AI_COLORS[aiCount] || COLORS.find(c => !usedColors.has(c)) || COLORS[0];
 
-      room.players.set(aiId, { name, color, score: 0, isAI: true, aiDifficulty: aiDiff });
-      nsp.to(room.roomId).emit('player-joined', { socketId: aiId, name, color, score: 0, isAI: true, difficulty });
+      room.players.set(aiId, { name, color, score: 0, isAI: true, aiDifficulty: aiDiff, difficultyLabel: label });
+      nsp.to(room.roomId).emit('player-joined', { socketId: aiId, name, color, score: 0, isAI: true, difficulty: label });
       broadcastState(room);
     });
 
