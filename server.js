@@ -169,6 +169,21 @@ app.delete('/api/state/:date', async (req, res) => {
   }
 });
 
+// POST /api/scrape/:date — manually trigger scrape for a date
+app.post('/api/scrape/:date', async (req, res) => {
+  const dateStr = req.params.date;
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+    return res.status(400).json({ error: 'Invalid date format, use YYYY-MM-DD' });
+  }
+  try {
+    await scrapeDate(dateStr);
+    res.json({ ok: true, date: dateStr });
+  } catch (err) {
+    console.error(`POST /api/scrape error:`, err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // SPA catch-all: serve index.html for non-API routes (e.g. /2025-02-15)
 app.get('*', (req, res, next) => {
   if (req.path.startsWith('/api/') || req.path.startsWith('/socket.io/')) return next();
@@ -639,18 +654,34 @@ async function seedPuzzlesFromBundle() {
   console.log(`[seed] Seeded ${count} puzzles from bundle`);
 }
 
-async function checkAndScrapeToday() {
-  const today = todayET();
-  const exists = await db.hasPuzzle(today);
-  if (!exists) {
-    console.log(`[startup] Today's puzzle (${today}) not found, attempting scrape...`);
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+async function scrapeRecentMissing() {
+  // Scrape any missing puzzles from the last 7 days
+  const today = new Date();
+  const missing = [];
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(today);
+    d.setDate(d.getDate() - i);
+    const dateStr = d.toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
+    const exists = await db.hasPuzzle(dateStr);
+    if (!exists) missing.push(dateStr);
+  }
+  if (missing.length === 0) {
+    console.log(`[startup] All recent puzzles present`);
+    return;
+  }
+  console.log(`[startup] Missing ${missing.length} recent puzzles: ${missing.join(', ')}`);
+  for (const dateStr of missing) {
     try {
-      await scrapeDate(today);
+      await scrapeDate(dateStr);
     } catch (err) {
-      console.error(`[startup] Failed to scrape today's puzzle:`, err.message);
+      console.error(`[startup] Failed to scrape ${dateStr}:`, err.message);
     }
-  } else {
-    console.log(`[startup] Today's puzzle (${today}) already in DB`);
+    // Delay between requests to avoid rate limiting
+    if (missing.indexOf(dateStr) < missing.length - 1) {
+      await sleep(2000);
+    }
   }
 }
 
@@ -660,16 +691,19 @@ const PORT = process.env.PORT || 3000;
   try {
     await db.initDb();
     await seedPuzzlesFromBundle();
-    await checkAndScrapeToday();
+    await scrapeRecentMissing();
 
-    // Daily scrape at 5:00 AM ET
-    cron.schedule('0 5 * * *', async () => {
+    // Scrape every hour to catch new puzzles and recover from failures
+    cron.schedule('0 * * * *', async () => {
       const today = todayET();
-      console.log(`[cron] Running daily scrape for ${today}`);
-      try {
-        await scrapeDate(today);
-      } catch (err) {
-        console.error(`[cron] Failed to scrape:`, err.message);
+      const exists = await db.hasPuzzle(today);
+      if (!exists) {
+        console.log(`[cron] Today's puzzle (${today}) not found, scraping...`);
+        try {
+          await scrapeDate(today);
+        } catch (err) {
+          console.error(`[cron] Failed to scrape ${today}:`, err.message);
+        }
       }
     });
 
