@@ -2261,20 +2261,19 @@ function render() {
     const k = `${direction}-${currentClue.n}`;
     if (clueItemEls[k]) {
       clueItemEls[k].classList.add('active');
-      // Manual scroll that accounts for sticky header height
+      // Scroll active clue into view, accounting for sticky header
       const el = clueItemEls[k];
       const section = el.closest('.clue-section');
       if (section) {
         const stickyH = section.querySelector('h2');
         const headerHeight = stickyH ? stickyH.offsetHeight : 0;
-        const elTop = el.offsetTop - headerHeight;
-        const elBottom = el.offsetTop + el.offsetHeight;
-        const viewTop = section.scrollTop;
-        const viewBottom = section.scrollTop + section.clientHeight;
-        if (elTop < viewTop) {
-          section.scrollTo({ top: elTop, behavior: 'smooth' });
-        } else if (elBottom > viewBottom) {
-          section.scrollTo({ top: elBottom - section.clientHeight, behavior: 'smooth' });
+        const sectionRect = section.getBoundingClientRect();
+        const elRect = el.getBoundingClientRect();
+        const visibleTop = sectionRect.top + headerHeight;
+        if (elRect.top < visibleTop) {
+          section.scrollTop += elRect.top - visibleTop;
+        } else if (elRect.bottom > sectionRect.bottom) {
+          section.scrollTop += elRect.bottom - sectionRect.bottom;
         }
       }
     }
