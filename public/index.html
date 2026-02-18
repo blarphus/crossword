@@ -259,7 +259,7 @@ body {
   display: flex;
   justify-content: center;
   gap: 24px;
-  padding: 16px;
+  padding: 16px 16px 24px;
   max-width: 1200px;
   margin: 0 auto;
   flex: 1;
@@ -1844,8 +1844,8 @@ async function loadPuzzle(dateStr) {
     cellSize = Math.max(16, Math.min(40, Math.floor(Math.min(availW / COLS, availH / ROWS))));
   } else {
     const maxGridW = Math.min(window.innerWidth - 420, 650);
-    // Account for header (~60px) + toolbar (~45px) + presence bar (~28px) + clue bar (~36px) + fire bar (~22px) + app padding (32px)
-    const headerEtc = 225;
+    // Account for header (~60px) + toolbar (~45px) + presence bar (~28px) + clue bar (~36px) + fire bar (~22px) + app padding (32px) + bottom gap (24px)
+    const headerEtc = 249;
     const maxGridH = window.innerHeight - headerEtc;
     cellSize = Math.max(16, Math.min(40, Math.floor(Math.min(maxGridW / COLS, maxGridH / ROWS))));
   }
