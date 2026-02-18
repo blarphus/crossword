@@ -827,15 +827,9 @@ body {
 
   connect();
 
-  // Check URL for room code — if present, skip to join form
-  const urlPath = window.location.pathname.replace('/jeopardy', '').replace(/^\//, '');
-  let pendingRoomCode = null;
-  if (urlPath && /^[A-Za-z0-9]{4}$/.test(urlPath)) {
-    pendingRoomCode = urlPath.toUpperCase();
-    $lobbyChoice.style.display = 'none';
-    $lobbyJoinForm.style.display = 'block';
-    document.getElementById('room-code-input').value = pendingRoomCode;
-    document.getElementById('join-name').focus();
+  // Ensure clean URL on load
+  if (window.location.pathname !== '/jeopardy') {
+    history.replaceState(null, '', '/jeopardy');
   }
 
   function hideAllLobbyCards() {
@@ -901,7 +895,6 @@ body {
     hideAllLobbyCards();
     $lobbyRoom.style.display = 'block';
     document.getElementById('room-code').textContent = roomId;
-    history.replaceState(null, '', `/jeopardy/${roomId}`);
 
     // Show episode picker for host
     if (isHost) {
@@ -985,9 +978,12 @@ body {
       return;
     }
 
-    // In-game
+    // In-game — set URL to include room code
     $lobby.style.display = 'none';
     $game.classList.add('active');
+    if (roomId && window.location.pathname !== `/jeopardy/${roomId}`) {
+      history.replaceState(null, '', `/jeopardy/${roomId}`);
+    }
 
     renderScores(state.players, state.controllingPlayer);
     renderRoundIndicator(state.currentRound);
