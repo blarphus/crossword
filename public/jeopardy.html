@@ -620,6 +620,125 @@ body {
 }
 
 /* Responsive */
+/* ─── Episode Picker Modal ────────────────────────────────── */
+.ep-modal {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.7);
+  z-index: 300;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+.ep-modal.active { display: flex; }
+
+.ep-modal-content {
+  background: #0a0a3a;
+  border-radius: 16px;
+  width: 100%;
+  max-width: 500px;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.ep-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  background: rgba(0,0,0,0.3);
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+.ep-title {
+  font-weight: 700;
+  font-size: 1rem;
+}
+.ep-back, .ep-close {
+  background: none;
+  border: none;
+  color: var(--gold);
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 4px 8px;
+}
+
+.ep-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px;
+}
+
+.ep-row {
+  display: flex;
+  align-items: center;
+  padding: 12px 14px;
+  background: rgba(255,255,255,0.05);
+  border-radius: 10px;
+  margin-bottom: 8px;
+  cursor: pointer;
+  transition: background 0.15s;
+  gap: 12px;
+}
+.ep-row:hover { background: rgba(255,255,255,0.1); }
+.ep-row.selected { background: rgba(215,163,42,0.2); border: 2px solid var(--gold); }
+
+.ep-row-info {
+  flex: 1;
+  min-width: 0;
+}
+.ep-row-title {
+  font-weight: 700;
+  color: var(--gold);
+  font-size: 0.95rem;
+}
+.ep-row-sub {
+  font-size: 0.8rem;
+  color: rgba(255,255,255,0.5);
+  margin-top: 2px;
+}
+.ep-row-badges {
+  display: flex;
+  gap: 8px;
+  margin-top: 4px;
+}
+.ep-badge {
+  font-size: 0.7rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+.ep-badge.completed { color: #4CAF50; }
+.ep-badge.in-progress { color: #FFC107; }
+
+.ep-row-arrow {
+  color: rgba(255,255,255,0.3);
+  font-size: 1.1rem;
+}
+
+.ep-row-status {
+  font-size: 0.85rem;
+  flex-shrink: 0;
+}
+
+/* Progress bar for individual games */
+.ep-progress {
+  height: 3px;
+  background: rgba(255,255,255,0.1);
+  border-radius: 2px;
+  margin-top: 4px;
+  overflow: hidden;
+}
+.ep-progress-fill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.3s;
+}
+
 @media (max-width: 600px) {
   .board-category { font-size: 0.55rem; padding: 4px 2px; min-height: 40px; }
   .board-cell { font-size: 1rem; min-height: 44px; }
@@ -670,16 +789,10 @@ body {
 
     <!-- Episode picker (host only) -->
     <div id="episode-picker" style="display:none; margin-top:16px;">
-      <div style="font-size:0.85rem; font-weight:700; margin-bottom:8px;">Choose Episode</div>
-      <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
-        <select class="lobby-input" id="season-select" style="flex:1; min-width:120px; margin-bottom:0;">
-          <option value="">Season...</option>
-        </select>
-        <select class="lobby-input" id="episode-select" style="flex:2; min-width:160px; margin-bottom:0; display:none;">
-          <option value="">Episode...</option>
-        </select>
-      </div>
-      <button class="lobby-btn btn-outline" id="btn-random-game" style="margin-top:8px; padding:8px;">Random Episode</button>
+      <button class="lobby-btn btn-outline" id="btn-pick-episode" style="text-align:left; padding:12px 16px;">
+        <span id="pick-episode-label">Pick an Episode</span>
+      </button>
+      <button class="lobby-btn btn-outline" id="btn-random-game" style="margin-top:6px; padding:10px;">Random Episode</button>
     </div>
 
     <button class="lobby-btn btn-gold" id="btn-start" style="display:none; margin-top:16px;">Start Game</button>
@@ -757,6 +870,20 @@ body {
 
   <!-- FJ Reveals -->
   <div id="fj-reveals"></div>
+</div>
+
+<!-- ─── Episode Picker Modal ──────────────────────────────────── -->
+<div class="ep-modal" id="ep-modal">
+  <div class="ep-modal-content">
+    <div class="ep-header">
+      <button class="ep-back" id="ep-back" style="visibility:hidden;">&#8592; Seasons</button>
+      <span class="ep-title" id="ep-title">Select Episode</span>
+      <button class="ep-close" id="ep-close">Done</button>
+    </div>
+    <div class="ep-body" id="ep-body">
+      <!-- Season list or game list rendered here -->
+    </div>
+  </div>
 </div>
 
 <!-- ─── Game Over Overlay ────────────────────────────────────── -->
@@ -899,52 +1026,113 @@ body {
     // Show episode picker for host
     if (isHost) {
       document.getElementById('episode-picker').style.display = 'block';
-      loadSeasons();
     }
   }
 
-  // ─── Episode picker ─────────────────────────────────────────
-  async function loadSeasons() {
-    try {
-      const res = await fetch('/api/jeopardy/seasons');
-      const seasons = await res.json();
-      const $sel = document.getElementById('season-select');
-      $sel.innerHTML = '<option value="">Season...</option>';
-      for (const s of seasons) {
-        const opt = document.createElement('option');
-        opt.value = s;
-        opt.textContent = `Season ${s}`;
-        $sel.appendChild(opt);
-      }
-    } catch (e) { console.error('Failed to load seasons', e); }
-  }
+  // ─── Episode picker modal ──────────────────────────────────
+  const $epModal = document.getElementById('ep-modal');
+  const $epBody = document.getElementById('ep-body');
+  const $epTitle = document.getElementById('ep-title');
+  const $epBack = document.getElementById('ep-back');
+  let epSeasonsCache = null;
 
-  document.getElementById('season-select').onchange = async function() {
-    const season = this.value;
-    const $ep = document.getElementById('episode-select');
-    if (!season) { $ep.style.display = 'none'; return; }
-    try {
-      const res = await fetch(`/api/jeopardy/seasons/${season}`);
-      const games = await res.json();
-      $ep.innerHTML = '<option value="">Episode...</option>';
-      for (const g of games) {
-        const opt = document.createElement('option');
-        opt.value = g.game_id;
-        opt.textContent = `#${g.show_number} — ${g.air_date}`;
-        $ep.appendChild(opt);
-      }
-      $ep.style.display = 'block';
-    } catch (e) { console.error('Failed to load episodes', e); }
+  document.getElementById('btn-pick-episode').onclick = () => {
+    $epModal.classList.add('active');
+    showSeasonList();
   };
-
-  document.getElementById('episode-select').onchange = function() {
-    const gameId = this.value;
-    if (gameId) socket.emit('change-game', { gameId });
+  document.getElementById('ep-close').onclick = () => {
+    $epModal.classList.remove('active');
+  };
+  document.getElementById('ep-back').onclick = () => {
+    showSeasonList();
   };
 
   document.getElementById('btn-random-game').onclick = () => {
     socket.emit('random-game');
   };
+
+  async function showSeasonList() {
+    $epTitle.textContent = 'Select Episode';
+    $epBack.style.visibility = 'hidden';
+    $epBody.innerHTML = '<div style="text-align:center; padding:20px; color:#888;">Loading...</div>';
+
+    try {
+      const res = await fetch('/api/jeopardy/seasons');
+      const seasons = await res.json();
+      epSeasonsCache = seasons;
+      $epBody.innerHTML = '';
+
+      // Show newest seasons first
+      for (const s of [...seasons].reverse()) {
+        const row = document.createElement('div');
+        row.className = 'ep-row';
+        let badges = '';
+        if (s.completed_count > 0) {
+          badges += `<span class="ep-badge completed">&#10003; ${s.completed_count}</span>`;
+        }
+        if (s.in_progress_count > 0) {
+          badges += `<span class="ep-badge in-progress">&#9998; ${s.in_progress_count}</span>`;
+        }
+        row.innerHTML = `
+          <div class="ep-row-info">
+            <div class="ep-row-title">Season ${s.season}</div>
+            <div class="ep-row-sub">${s.game_count} games &middot; ${s.first_date || ''} to ${s.last_date || ''}</div>
+            ${badges ? `<div class="ep-row-badges">${badges}</div>` : ''}
+          </div>
+          <span class="ep-row-arrow">&#8250;</span>
+        `;
+        row.onclick = () => showGameList(s.season);
+        $epBody.appendChild(row);
+      }
+    } catch (e) {
+      $epBody.innerHTML = '<div style="text-align:center; padding:20px; color:#f44;">Failed to load seasons</div>';
+    }
+  }
+
+  async function showGameList(season) {
+    $epTitle.textContent = `Season ${season}`;
+    $epBack.style.visibility = 'visible';
+    $epBody.innerHTML = '<div style="text-align:center; padding:20px; color:#888;">Loading...</div>';
+
+    try {
+      const res = await fetch(`/api/jeopardy/seasons/${season}`);
+      const games = await res.json();
+      $epBody.innerHTML = '';
+
+      for (const g of games) {
+        const row = document.createElement('div');
+        const isSelected = gameState && gameState.gameId === g.game_id;
+        row.className = 'ep-row' + (isSelected ? ' selected' : '');
+
+        let status = '';
+        let progressBar = '';
+        if (g.completed) {
+          status = '<span class="ep-badge completed" style="font-size:0.85rem;">&#10003; Completed</span>';
+        } else if (g.clues_answered > 0) {
+          const pct = Math.round((g.clues_answered / (g.total_clues || 60)) * 100);
+          status = `<span class="ep-badge in-progress" style="font-size:0.85rem;">In Progress</span>`;
+          progressBar = `<div class="ep-progress"><div class="ep-progress-fill" style="width:${pct}%; background:var(--gold);"></div></div>`;
+        }
+
+        row.innerHTML = `
+          <div class="ep-row-info">
+            <div class="ep-row-title">Show #${g.show_number} <span style="font-weight:400; color:rgba(255,255,255,0.5); font-size:0.8rem;">${g.air_date}</span></div>
+            ${status}
+            ${progressBar}
+          </div>
+          <span class="ep-row-arrow">&#8250;</span>
+        `;
+        row.onclick = () => {
+          socket.emit('change-game', { gameId: g.game_id });
+          document.getElementById('pick-episode-label').textContent = `Show #${g.show_number} — ${g.air_date}`;
+          $epModal.classList.remove('active');
+        };
+        $epBody.appendChild(row);
+      }
+    } catch (e) {
+      $epBody.innerHTML = '<div style="text-align:center; padding:20px; color:#f44;">Failed to load games</div>';
+    }
+  }
 
   // ─── Room state handler ─────────────────────────────────────
   function onRoomState(state) {
@@ -970,6 +1158,7 @@ body {
     const $info = document.getElementById('game-info');
     if (state.showNumber) {
       $info.textContent = `Show #${state.showNumber} — ${state.airDate || ''}`;
+      document.getElementById('pick-episode-label').textContent = `Show #${state.showNumber} — ${state.airDate || ''}`;
     }
 
     if (state.phase === 'lobby') {

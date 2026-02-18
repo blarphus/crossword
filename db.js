@@ -70,6 +70,18 @@ async function initDb() {
   `);
   await pool.query(`CREATE INDEX IF NOT EXISTS jeopardy_games_air_date_idx ON jeopardy_games (air_date)`);
   await pool.query(`CREATE INDEX IF NOT EXISTS jeopardy_games_season_idx ON jeopardy_games (season)`);
+
+  // Jeopardy shared progress (like puzzle_state for crosswords)
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS jeopardy_progress (
+      game_id        TEXT PRIMARY KEY,
+      clues_answered INTEGER DEFAULT 0,
+      total_clues    INTEGER DEFAULT 60,
+      current_round  TEXT DEFAULT 'jeopardy',
+      completed      BOOLEAN DEFAULT FALSE,
+      updated_at     TIMESTAMPTZ DEFAULT NOW()
+    )
+  `);
 }
 
 async function savePuzzle(date, data) {
@@ -415,20 +427,46 @@ async function getRandomJeopardyGame() {
   return rows[0] || null;
 }
 
+async function getJeopardySeasons() {
+  const { rows } = await pool.query(
+    `SELECT jg.season, COUNT(*)::int AS game_count,
+            MIN(jg.air_date) AS first_date, MAX(jg.air_date) AS last_date,
+            COUNT(jp.game_id) FILTER (WHERE jp.completed) ::int AS completed_count,
+            COUNT(jp.game_id) FILTER (WHERE NOT jp.completed) ::int AS in_progress_count
+     FROM jeopardy_games jg
+     LEFT JOIN jeopardy_progress jp ON jp.game_id = jg.game_id
+     GROUP BY jg.season ORDER BY jg.season`
+  );
+  return rows;
+}
+
 async function getJeopardyGamesBySeason(season) {
   const { rows } = await pool.query(
-    `SELECT game_id, show_number, air_date, season FROM jeopardy_games
-     WHERE season = $1 ORDER BY air_date`,
+    `SELECT jg.game_id, jg.show_number, jg.air_date, jg.season,
+            jp.clues_answered, jp.total_clues, jp.current_round, jp.completed
+     FROM jeopardy_games jg
+     LEFT JOIN jeopardy_progress jp ON jp.game_id = jg.game_id
+     WHERE jg.season = $1 ORDER BY jg.air_date`,
     [season]
   );
   return rows;
 }
 
-async function getJeopardySeasons() {
-  const { rows } = await pool.query(
-    'SELECT DISTINCT season FROM jeopardy_games ORDER BY season'
+async function saveJeopardyProgress(gameId, cluesAnswered, totalClues, currentRound, completed) {
+  await pool.query(
+    `INSERT INTO jeopardy_progress (game_id, clues_answered, total_clues, current_round, completed, updated_at)
+     VALUES ($1, $2, $3, $4, $5, NOW())
+     ON CONFLICT (game_id) DO UPDATE SET clues_answered = $2, total_clues = $3, current_round = $4, completed = $5, updated_at = NOW()`,
+    [gameId, cluesAnswered, totalClues, currentRound, completed]
   );
-  return rows.map(r => r.season);
 }
 
-module.exports = { initDb, getState, upsertCell, clearState, savePuzzle, getPuzzle, getAllPuzzleMeta, hasPuzzle, getCalendarData, getProgressSummary, getTimer, saveTimer, getMetadata, setMetadata, getUser, createUser, getUserCount, upsertCellFiller, getCellFillers, getUserColors, addPoints, addGuess, saveJeopardyGame, getJeopardyGame, getRandomJeopardyGame, getJeopardyGamesBySeason, getJeopardySeasons };
+async function getJeopardyProgress(gameId) {
+  const { rows } = await pool.query(
+    'SELECT * FROM jeopardy_progress WHERE game_id = $1',
+    [gameId]
+  );
+  return rows[0] || null;
+}
+
+module.exports = { initDb, getState, upsertCell, clearState, savePuzzle, getPuzzle, getAllPuzzleMeta, hasPuzzle, getCalendarData, getProgressSummary, getTimer, saveTimer, getMetadata, setMetadata, getUser, createUser, getUserCount, upsertCellFiller, getCellFillers, getUserColors, addPoints, addGuess, saveJeopardyGame, getJeopardyGame, getRandomJeopardyGame, getJeopardyGamesBySeason, getJeopardySeasons, saveJeopardyProgress, getJeopardyProgress };

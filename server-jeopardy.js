@@ -31,6 +31,7 @@ module.exports = function initJeopardy(io, db) {
   function broadcastState(room) {
     const state = {
       roomId: room.roomId,
+      gameId: room.gameId,
       phase: room.phase,
       currentRound: room.currentRound,
       players: playerList(room),
@@ -69,6 +70,15 @@ module.exports = function initJeopardy(io, db) {
     return roundData.clues.every(c => room.usedClues.has(clueKey(c.cat, c.row)));
   }
 
+  function saveProgress(room, completed = false) {
+    const totalClues = (room.gameData.jRound?.clues?.length || 30) +
+                       (room.gameData.djRound?.clues?.length || 30);
+    db.saveJeopardyProgress(
+      room.gameId, room.usedClues.size, totalClues,
+      room.currentRound, completed
+    ).catch(err => console.error('[jeopardy] Failed to save progress:', err));
+  }
+
   function clearTimers(room) {
     if (room.timers.buzzer) { clearTimeout(room.timers.buzzer); room.timers.buzzer = null; }
     if (room.timers.answer) { clearTimeout(room.timers.answer); room.timers.answer = null; }
@@ -84,6 +94,7 @@ module.exports = function initJeopardy(io, db) {
     room.buzzerQueue = [];
     room.buzzedPlayers = new Set();
     room.dailyDoubleWager = null;
+    saveProgress(room);
 
     if (allCluesUsed(room)) {
       if (room.currentRound === 'jeopardy') {
@@ -126,6 +137,7 @@ module.exports = function initJeopardy(io, db) {
   function endGame(room) {
     clearTimers(room);
     room.phase = 'gameOver';
+    saveProgress(room, true);
     const standings = playerList(room).sort((a, b) => b.score - a.score);
     nsp.to(room.roomId).emit('game-over', { standings });
     broadcastState(room);
