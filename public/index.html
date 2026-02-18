@@ -1570,10 +1570,11 @@ function showPuzzle(dateStr, pushState = true, showEntry = false) {
   puzzleView.style.display = 'flex';
   if (pushState) history.pushState({ view: 'puzzle', date: dateStr }, '', `/${dateStr}`);
 
+  // Always load the puzzle first so grid renders behind overlay
+  loadPuzzle(dateStr);
+
   if (showEntry) {
     showPuzzleEntryOverlay(dateStr);
-  } else {
-    loadPuzzle(dateStr);
   }
 }
 
@@ -1651,12 +1652,11 @@ async function showPuzzleEntryOverlay(dateStr) {
   // Show overlay
   overlay.classList.add('show');
 
-  // Start button
+  // Start button — puzzle is already loaded behind the overlay
   const handleStart = () => {
     overlay.classList.remove('show');
     startBtn.removeEventListener('click', handleStart);
     changeNameBtn.removeEventListener('click', handleChangeName);
-    loadPuzzle(dateStr);
   };
 
   // Change name button
