@@ -598,7 +598,18 @@ body {
 }
 .home-link:hover { color: var(--white); }
 
-/* Timer bar */
+/* Global timer bar pinned to bottom of clue overlay */
+.clue-timer-bar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 6px;
+  background: var(--gold);
+  transition: width 0.1s linear;
+  width: 0%;
+}
+
+/* Timer bar (FJ) */
 .timer-bar {
   height: 4px;
   background: var(--gold);
@@ -656,6 +667,21 @@ body {
     <div style="font-size:0.8rem; color:#888; margin-bottom:12px;">Share this code with friends</div>
     <ul class="player-list" id="player-list"></ul>
     <div class="game-info" id="game-info"></div>
+
+    <!-- Episode picker (host only) -->
+    <div id="episode-picker" style="display:none; margin-top:16px;">
+      <div style="font-size:0.85rem; font-weight:700; margin-bottom:8px;">Choose Episode</div>
+      <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+        <select class="lobby-input" id="season-select" style="flex:1; min-width:120px; margin-bottom:0;">
+          <option value="">Season...</option>
+        </select>
+        <select class="lobby-input" id="episode-select" style="flex:2; min-width:160px; margin-bottom:0; display:none;">
+          <option value="">Episode...</option>
+        </select>
+      </div>
+      <button class="lobby-btn btn-outline" id="btn-random-game" style="margin-top:8px; padding:8px;">Random Episode</button>
+    </div>
+
     <button class="lobby-btn btn-gold" id="btn-start" style="display:none; margin-top:16px;">Start Game</button>
   </div>
 </div>
@@ -693,7 +719,6 @@ body {
     <input class="answer-input" id="answer-input" placeholder="What is..." autocomplete="off">
     <button class="answer-submit-btn" id="answer-submit-btn">Submit</button>
     <div class="answer-timer" id="answer-timer"></div>
-    <div class="timer-bar" id="answer-timer-bar"></div>
   </div>
 
   <!-- Result -->
@@ -702,6 +727,9 @@ body {
     <div class="result-answer" id="result-answer"></div>
     <div class="result-score-change" id="result-score-change"></div>
   </div>
+
+  <!-- Global timer bar pinned to bottom of clue overlay -->
+  <div class="clue-timer-bar" id="clue-timer-bar"></div>
 </div>
 
 <!-- ─── Final Jeopardy Overlay ───────────────────────────────── -->
@@ -874,7 +902,56 @@ body {
     $lobbyRoom.style.display = 'block';
     document.getElementById('room-code').textContent = roomId;
     history.replaceState(null, '', `/jeopardy/${roomId}`);
+
+    // Show episode picker for host
+    if (isHost) {
+      document.getElementById('episode-picker').style.display = 'block';
+      loadSeasons();
+    }
   }
+
+  // ─── Episode picker ─────────────────────────────────────────
+  async function loadSeasons() {
+    try {
+      const res = await fetch('/api/jeopardy/seasons');
+      const seasons = await res.json();
+      const $sel = document.getElementById('season-select');
+      $sel.innerHTML = '<option value="">Season...</option>';
+      for (const s of seasons) {
+        const opt = document.createElement('option');
+        opt.value = s;
+        opt.textContent = `Season ${s}`;
+        $sel.appendChild(opt);
+      }
+    } catch (e) { console.error('Failed to load seasons', e); }
+  }
+
+  document.getElementById('season-select').onchange = async function() {
+    const season = this.value;
+    const $ep = document.getElementById('episode-select');
+    if (!season) { $ep.style.display = 'none'; return; }
+    try {
+      const res = await fetch(`/api/jeopardy/seasons/${season}`);
+      const games = await res.json();
+      $ep.innerHTML = '<option value="">Episode...</option>';
+      for (const g of games) {
+        const opt = document.createElement('option');
+        opt.value = g.game_id;
+        opt.textContent = `#${g.show_number} — ${g.air_date}`;
+        $ep.appendChild(opt);
+      }
+      $ep.style.display = 'block';
+    } catch (e) { console.error('Failed to load episodes', e); }
+  };
+
+  document.getElementById('episode-select').onchange = function() {
+    const gameId = this.value;
+    if (gameId) socket.emit('change-game', { gameId });
+  };
+
+  document.getElementById('btn-random-game').onclick = () => {
+    socket.emit('random-game');
+  };
 
   // ─── Room state handler ─────────────────────────────────────
   function onRoomState(state) {
@@ -940,9 +1017,11 @@ body {
 
     if (phase === 'buzzerOpen') {
       showBuzzer();
+      startClueTimer(5); // 5s buzzer window
     } else if (phase === 'selectingClue') {
       $clueOverlay.classList.remove('active');
       clearAnswerTimer();
+      stopClueTimer();
     }
   }
 
@@ -985,6 +1064,17 @@ body {
       const key = `${cat},${row}`;
       if (!gameState.usedClues.includes(key)) gameState.usedClues.push(key);
       renderBoard(gameState);
+    }
+
+    // Daily Double: show answer input for the answering player
+    if (dailyDouble) {
+      const amAnswerer = gameState && gameState.answeringPlayer === mySocketId;
+      if (amAnswerer) {
+        showAnswerInput(10);
+      } else {
+        const name = gameState?.answeringPlayerName || 'Player';
+        $statusBar.textContent = `${esc(name)} is answering the Daily Double...`;
+      }
     }
   }
 
@@ -1073,6 +1163,7 @@ body {
   function onBuzzerResult({ playerId, playerName }) {
     const $buzzBtn = document.getElementById('buzz-btn');
     $buzzBtn.classList.remove('active');
+    stopClueTimer();
 
     if (playerId === mySocketId) {
       showAnswerInput(10);
@@ -1087,28 +1178,44 @@ body {
     }
   }
 
+  // ─── Global clue timer bar ──────────────────────────────────
+  let clueTimerInterval = null;
+  const $clueTimerBar = document.getElementById('clue-timer-bar');
+
+  function startClueTimer(seconds) {
+    stopClueTimer();
+    $clueTimerBar.style.width = '100%';
+    const start = Date.now();
+    clueTimerInterval = setInterval(() => {
+      const left = Math.max(0, seconds - (Date.now() - start) / 1000);
+      $clueTimerBar.style.width = `${(left / seconds) * 100}%`;
+      if (left <= 0) stopClueTimer();
+    }, 50);
+  }
+
+  function stopClueTimer() {
+    if (clueTimerInterval) { clearInterval(clueTimerInterval); clueTimerInterval = null; }
+    $clueTimerBar.style.width = '0%';
+  }
+
   function showAnswerInput(seconds) {
     const $answerArea = document.getElementById('answer-area');
     const $answerInput = document.getElementById('answer-input');
     const $timer = document.getElementById('answer-timer');
-    const $timerBar = document.getElementById('answer-timer-bar');
 
     $answerArea.classList.add('active');
     document.getElementById('answering-label').textContent = 'Your answer:';
     $answerInput.value = '';
     $answerInput.focus();
 
-    let remaining = seconds;
-    $timer.textContent = remaining;
-    $timerBar.style.width = '100%';
+    $timer.textContent = seconds;
 
     clearAnswerTimer();
+    startClueTimer(seconds);
     const start = Date.now();
     answerTimerInterval = setInterval(() => {
-      const elapsed = (Date.now() - start) / 1000;
-      const left = Math.max(0, seconds - elapsed);
+      const left = Math.max(0, seconds - (Date.now() - start) / 1000);
       $timer.textContent = Math.ceil(left);
-      $timerBar.style.width = `${(left / seconds) * 100}%`;
       if (left <= 0) clearAnswerTimer();
     }, 100);
   }
@@ -1131,11 +1238,15 @@ body {
   function onBuzzerExpired({ correctAnswer }) {
     const $buzzBtn = document.getElementById('buzz-btn');
     $buzzBtn.classList.remove('active');
+    stopClueTimer();
+    clearAnswerTimer();
 
     const $resultDisplay = document.getElementById('result-display');
     const $resultLabel = document.getElementById('result-label');
     const $resultAnswer = document.getElementById('result-answer');
     const $resultScoreChange = document.getElementById('result-score-change');
+    const $answerArea = document.getElementById('answer-area');
+    $answerArea.classList.remove('active');
 
     $resultDisplay.classList.add('active');
     $resultLabel.textContent = 'Time\'s Up!';
@@ -1155,11 +1266,12 @@ body {
     $answerArea.classList.remove('active');
     $buzzBtn.classList.remove('active');
     clearAnswerTimer();
+    stopClueTimer();
 
     $resultDisplay.classList.add('active');
     $resultLabel.textContent = correct ? 'Correct!' : 'Incorrect';
     $resultLabel.className = `result-label ${correct ? 'correct' : 'incorrect'}`;
-    $resultAnswer.textContent = correct && correctAnswer ? '' : '';
+    $resultAnswer.textContent = '';
     const sign = scoreChange >= 0 ? '+' : '';
     $resultScoreChange.textContent = `${esc(playerName)}: ${sign}$${Math.abs(scoreChange)}`;
     $resultScoreChange.style.color = correct ? 'var(--correct)' : 'var(--incorrect)';
