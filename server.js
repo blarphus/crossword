@@ -169,6 +169,12 @@ app.delete('/api/state/:date', async (req, res) => {
   }
 });
 
+// SPA catch-all: serve index.html for non-API routes (e.g. /2025-02-15)
+app.get('*', (req, res, next) => {
+  if (req.path.startsWith('/api/') || req.path.startsWith('/socket.io/')) return next();
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
 // ─── In-memory user presence ─────────────────────────────────────
 
 const puzzleDataCache = new Map(); // puzzleDate → { grid, rebus, clues, dimensions }

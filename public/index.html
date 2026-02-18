@@ -1401,7 +1401,7 @@ function drawThumbnail(canvas, info) {
 }
 
 // ─── View management ───────────────────────────────────────────
-function showCalendar() {
+function showCalendar(pushState = true) {
   puzzleView.style.display = 'none';
   calendarView.style.display = 'block';
   document.title = 'NYT Crossword';
@@ -1418,12 +1418,14 @@ function showCalendar() {
   PUZZLE = null;
   remoteUsers.clear();
   lastCursorKey = '';
+  if (pushState) history.pushState({ view: 'calendar' }, '', '/');
   fetchAndRenderCalendar();
 }
 
-function showPuzzle(dateStr) {
+function showPuzzle(dateStr, pushState = true) {
   calendarView.style.display = 'none';
   puzzleView.style.display = 'flex';
+  if (pushState) history.pushState({ view: 'puzzle', date: dateStr }, '', `/${dateStr}`);
   loadPuzzle(dateStr);
 }
 
@@ -3097,13 +3099,31 @@ document.getElementById('clue-next').addEventListener('click', () => {
 
 // ─── Init ──────────────────────────────────────────────────────
 function startApp() {
-  const savedPuzzle = localStorage.getItem('crossword-current-puzzle');
   initCalendarNav();
-  if (savedPuzzle) {
-    showPuzzle(savedPuzzle);
+
+  // Check URL path for a puzzle date (e.g. /2025-02-15)
+  const urlPath = window.location.pathname.slice(1); // strip leading /
+  if (/^\d{4}-\d{2}-\d{2}$/.test(urlPath)) {
+    showPuzzle(urlPath, false); // don't push state, we're already at this URL
+    history.replaceState({ view: 'puzzle', date: urlPath }, '', `/${urlPath}`);
   } else {
-    fetchAndRenderCalendar();
+    const savedPuzzle = localStorage.getItem('crossword-current-puzzle');
+    if (savedPuzzle) {
+      showPuzzle(savedPuzzle);
+    } else {
+      history.replaceState({ view: 'calendar' }, '', '/');
+      fetchAndRenderCalendar();
+    }
   }
+
+  // Handle browser back/forward
+  window.addEventListener('popstate', (e) => {
+    if (e.state?.view === 'puzzle' && e.state.date) {
+      showPuzzle(e.state.date, false);
+    } else {
+      showCalendar(false);
+    }
+  });
 }
 
 // Begin: check identity first, then connect socket, then start app
