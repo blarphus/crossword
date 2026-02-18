@@ -330,9 +330,23 @@ const hintState = new Map();
 
 function getHintState(puzzleDate) {
   if (!hintState.has(puzzleDate)) {
-    hintState.set(puzzleDate, { votes: new Set(), hintCells: new Set(), available: false });
+    hintState.set(puzzleDate, { votes: new Set(), hintCells: new Set(), available: false, loaded: false });
   }
   return hintState.get(puzzleDate);
+}
+
+// Load hint cells from DB (cell_fillers with value '(hint)')
+async function loadHintCellsFromDb(puzzleDate) {
+  const hs = getHintState(puzzleDate);
+  if (hs.loaded) return hs;
+  hs.loaded = true;
+  try {
+    const fillers = await db.getCellFillers(puzzleDate);
+    for (const [key, name] of Object.entries(fillers)) {
+      if (name === '(hint)') hs.hintCells.add(key);
+    }
+  } catch (e) { /* ignore */ }
+  return hs;
 }
 
 function getNextColor(room) {
@@ -533,7 +547,7 @@ io.on('connection', async (socket) => {
       }
 
       // Check if this cell is a hint cell (no scoring for hints)
-      const hs = getHintState(puzzleDate);
+      const hs = await loadHintCellsFromDb(puzzleDate);
       const isHintCell = hs.hintCells.has(`${row},${col}`);
 
       if (letter && !isHintCell) {

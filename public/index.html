@@ -2889,12 +2889,16 @@ function render() {
         el.classList.remove('error');
       }
 
-      // Background color priority: my cell/word CSS > remote cursor (orange) > remote word tint > none
-      // Clear inline bg first so CSS classes can take effect, then apply remote highlights below
+      // Background color priority: hint cells (CSS handles) > my cell/word > remote cursor > remote word > none
+      const isHint = hintCells.has(key);
       const remoteCursorColor = remoteCursorCells.get(key);
       const remoteWordColor = remoteWordCells.get(key);
 
-      if (isMyCell || isMyWord) {
+      if (isHint) {
+        // Hint cells: clear inline bg so CSS gradient takes full effect
+        el.style.backgroundColor = '';
+        el.style.background = '';
+      } else if (isMyCell || isMyWord) {
         // Let CSS classes (highlight-cell / highlight-word) handle it
         el.style.backgroundColor = '';
       } else if (remoteCursorColor) {
