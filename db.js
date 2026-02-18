@@ -56,6 +56,20 @@ async function initDb() {
   await pool.query(`
     ALTER TABLE puzzle_state ADD COLUMN IF NOT EXISTS guesses JSONB DEFAULT '{}'
   `);
+
+  // ─── Jeopardy tables ──────────────────────────────────────────
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS jeopardy_games (
+      game_id    TEXT PRIMARY KEY,
+      show_number TEXT,
+      air_date   TEXT,
+      season     INTEGER,
+      data       JSONB NOT NULL,
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    )
+  `);
+  await pool.query(`CREATE INDEX IF NOT EXISTS jeopardy_games_air_date_idx ON jeopardy_games (air_date)`);
+  await pool.query(`CREATE INDEX IF NOT EXISTS jeopardy_games_season_idx ON jeopardy_games (season)`);
 }
 
 async function savePuzzle(date, data) {
@@ -375,4 +389,46 @@ async function addGuess(puzzleDate, userName, isCorrect) {
   }
 }
 
-module.exports = { initDb, getState, upsertCell, clearState, savePuzzle, getPuzzle, getAllPuzzleMeta, hasPuzzle, getCalendarData, getProgressSummary, getTimer, saveTimer, getMetadata, setMetadata, getUser, createUser, getUserCount, upsertCellFiller, getCellFillers, getUserColors, addPoints, addGuess };
+// ─── Jeopardy queries ──────────────────────────────────────────
+
+async function saveJeopardyGame(gameId, data) {
+  await pool.query(
+    `INSERT INTO jeopardy_games (game_id, show_number, air_date, season, data)
+     VALUES ($1, $2, $3, $4, $5)
+     ON CONFLICT (game_id) DO UPDATE SET data = $5`,
+    [gameId, data.showNumber, data.airDate, data.season, JSON.stringify(data)]
+  );
+}
+
+async function getJeopardyGame(gameId) {
+  const { rows } = await pool.query(
+    'SELECT data FROM jeopardy_games WHERE game_id = $1',
+    [gameId]
+  );
+  return rows[0]?.data || null;
+}
+
+async function getRandomJeopardyGame() {
+  const { rows } = await pool.query(
+    'SELECT game_id, data FROM jeopardy_games ORDER BY RANDOM() LIMIT 1'
+  );
+  return rows[0] || null;
+}
+
+async function getJeopardyGamesBySeason(season) {
+  const { rows } = await pool.query(
+    `SELECT game_id, show_number, air_date, season FROM jeopardy_games
+     WHERE season = $1 ORDER BY air_date`,
+    [season]
+  );
+  return rows;
+}
+
+async function getJeopardySeasons() {
+  const { rows } = await pool.query(
+    'SELECT DISTINCT season FROM jeopardy_games ORDER BY season'
+  );
+  return rows.map(r => r.season);
+}
+
+module.exports = { initDb, getState, upsertCell, clearState, savePuzzle, getPuzzle, getAllPuzzleMeta, hasPuzzle, getCalendarData, getProgressSummary, getTimer, saveTimer, getMetadata, setMetadata, getUser, createUser, getUserCount, upsertCellFiller, getCellFillers, getUserColors, addPoints, addGuess, saveJeopardyGame, getJeopardyGame, getRandomJeopardyGame, getJeopardyGamesBySeason, getJeopardySeasons };

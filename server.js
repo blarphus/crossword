@@ -7,6 +7,7 @@ const zlib = require('zlib');
 const cron = require('node-cron');
 const db = require('./db');
 const { scrapeDate } = require('./scrape');
+const initJeopardy = require('./server-jeopardy');
 
 const app = express();
 app.set('trust proxy', true);
@@ -184,9 +185,55 @@ app.post('/api/scrape/:date', async (req, res) => {
   }
 });
 
+// ─── Jeopardy REST endpoints ─────────────────────────────────
+app.get('/api/jeopardy/random', async (req, res) => {
+  try {
+    const row = await db.getRandomJeopardyGame();
+    if (!row) return res.status(404).json({ error: 'No games available' });
+    res.json({ gameId: row.game_id });
+  } catch (err) {
+    console.error('GET /api/jeopardy/random error:', err);
+    res.status(500).json({ error: 'Database error' });
+  }
+});
+
+app.get('/api/jeopardy/seasons', async (req, res) => {
+  try {
+    const seasons = await db.getJeopardySeasons();
+    res.json(seasons);
+  } catch (err) {
+    console.error('GET /api/jeopardy/seasons error:', err);
+    res.status(500).json({ error: 'Database error' });
+  }
+});
+
+app.get('/api/jeopardy/seasons/:season', async (req, res) => {
+  try {
+    const games = await db.getJeopardyGamesBySeason(parseInt(req.params.season, 10));
+    res.json(games);
+  } catch (err) {
+    console.error('GET /api/jeopardy/seasons/:season error:', err);
+    res.status(500).json({ error: 'Database error' });
+  }
+});
+
+app.get('/api/jeopardy/games/:gameId', async (req, res) => {
+  try {
+    const data = await db.getJeopardyGame(req.params.gameId);
+    if (!data) return res.status(404).json({ error: 'Game not found' });
+    res.json(data);
+  } catch (err) {
+    console.error('GET /api/jeopardy/games/:gameId error:', err);
+    res.status(500).json({ error: 'Database error' });
+  }
+});
+
 // SPA catch-all: serve index.html for non-API routes (e.g. /2025-02-15)
 app.get('*', (req, res, next) => {
   if (req.path.startsWith('/api/') || req.path.startsWith('/socket.io/')) return next();
+  if (req.path.startsWith('/jeopardy')) {
+    return res.sendFile(path.join(__dirname, 'public', 'jeopardy.html'));
+  }
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
@@ -654,6 +701,37 @@ async function seedPuzzlesFromBundle() {
   console.log(`[seed] Seeded ${count} puzzles from bundle`);
 }
 
+async function seedJeopardyFromBundle() {
+  const bundlePath = path.join(__dirname, 'jeopardy-bundle.json.gz');
+  if (!fs.existsSync(bundlePath)) {
+    console.log('[seed] No jeopardy-bundle.json.gz found, skipping');
+    return;
+  }
+
+  const BUNDLE_VERSION = '1';
+  const seeded = await db.getMetadata('jeopardy_bundle_seeded_v');
+  if (seeded === BUNDLE_VERSION) {
+    console.log('[seed] Jeopardy bundle already seeded (v' + BUNDLE_VERSION + '), skipping');
+    return;
+  }
+
+  console.log('[seed] Loading Jeopardy games from bundle...');
+  const compressed = fs.readFileSync(bundlePath);
+  const json = zlib.gunzipSync(compressed).toString('utf8');
+  const bundle = JSON.parse(json);
+  const gameIds = Object.keys(bundle);
+  let count = 0;
+
+  for (const gameId of gameIds) {
+    await db.saveJeopardyGame(gameId, bundle[gameId]);
+    count++;
+    if (count % 500 === 0) console.log(`[seed] ${count}/${gameIds.length} Jeopardy games seeded...`);
+  }
+
+  await db.setMetadata('jeopardy_bundle_seeded_v', BUNDLE_VERSION);
+  console.log(`[seed] Seeded ${count} Jeopardy games from bundle`);
+}
+
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
 async function scrapeRecentMissing() {
@@ -691,6 +769,8 @@ const PORT = process.env.PORT || 3000;
   try {
     await db.initDb();
     await seedPuzzlesFromBundle();
+    await seedJeopardyFromBundle();
+    initJeopardy(io, db);
     await scrapeRecentMissing();
 
     // Scrape every hour to catch new puzzles and recover from failures

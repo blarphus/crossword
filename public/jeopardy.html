@@ -1,0 +1,1342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Jeopardy!</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --board-blue: #060CE9;
+  --dark-blue: #000080;
+  --gold: #D7A32A;
+  --white: #fff;
+  --correct: #4CAF50;
+  --incorrect: #F44336;
+}
+
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&display=swap');
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background: #1a1a2e;
+  color: var(--white);
+  min-height: 100vh;
+  min-height: 100dvh;
+  overflow-x: hidden;
+}
+
+/* ─── Lobby ──────────────────────────────────────────────────── */
+#lobby {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  min-height: 100dvh;
+  padding: 20px;
+  text-align: center;
+}
+
+.lobby-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 3rem;
+  color: var(--gold);
+  text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+  margin-bottom: 8px;
+}
+
+.lobby-subtitle {
+  color: #aaa;
+  margin-bottom: 32px;
+  font-size: 0.9rem;
+}
+
+.lobby-card {
+  background: rgba(255,255,255,0.08);
+  border-radius: 16px;
+  padding: 32px;
+  width: 100%;
+  max-width: 420px;
+  backdrop-filter: blur(10px);
+}
+
+.lobby-card h2 {
+  margin-bottom: 20px;
+  font-size: 1.2rem;
+}
+
+.lobby-input {
+  width: 100%;
+  padding: 12px 16px;
+  border: 2px solid rgba(255,255,255,0.2);
+  border-radius: 8px;
+  background: rgba(255,255,255,0.05);
+  color: var(--white);
+  font-size: 1rem;
+  margin-bottom: 12px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+.lobby-input:focus { border-color: var(--gold); }
+.lobby-input::placeholder { color: rgba(255,255,255,0.4); }
+
+.lobby-btn {
+  width: 100%;
+  padding: 14px;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.1s, opacity 0.2s;
+  margin-bottom: 8px;
+}
+.lobby-btn:active { transform: scale(0.97); }
+.lobby-btn:disabled { opacity: 0.5; cursor: default; }
+
+.btn-gold { background: var(--gold); color: #1a1a2e; }
+.btn-blue { background: var(--board-blue); color: var(--white); }
+.btn-outline {
+  background: transparent;
+  color: var(--gold);
+  border: 2px solid var(--gold);
+}
+
+.lobby-or {
+  color: #666;
+  margin: 12px 0;
+  font-size: 0.85rem;
+}
+
+.room-code-display {
+  font-family: monospace;
+  font-size: 2.5rem;
+  font-weight: 900;
+  letter-spacing: 8px;
+  color: var(--gold);
+  margin: 16px 0;
+}
+
+.player-list {
+  list-style: none;
+  margin: 16px 0;
+}
+.player-list li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 0;
+  font-size: 0.95rem;
+}
+.player-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.player-host {
+  font-size: 0.7rem;
+  background: var(--gold);
+  color: #1a1a2e;
+  padding: 2px 6px;
+  border-radius: 4px;
+  margin-left: auto;
+}
+
+.game-info {
+  color: #888;
+  font-size: 0.8rem;
+  margin-top: 12px;
+}
+
+/* ─── Game Container ─────────────────────────────────────────── */
+#game { display: none; }
+#game.active { display: flex; flex-direction: column; min-height: 100vh; min-height: 100dvh; }
+
+/* Scores bar */
+.scores-bar {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  padding: 10px 16px;
+  background: var(--dark-blue);
+  flex-wrap: wrap;
+}
+.score-item {
+  text-align: center;
+  min-width: 80px;
+}
+.score-name {
+  font-size: 0.75rem;
+  opacity: 0.8;
+  white-space: nowrap;
+}
+.score-value {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+.score-value.negative { color: var(--incorrect); }
+.score-item.controlling { border-bottom: 3px solid var(--gold); }
+
+/* Round indicator */
+.round-indicator {
+  text-align: center;
+  padding: 6px;
+  font-size: 0.8rem;
+  color: var(--gold);
+  background: rgba(0,0,0,0.3);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+}
+
+/* Board */
+.board-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 8px;
+  max-width: 900px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.board {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  grid-template-rows: auto repeat(5, 1fr);
+  gap: 4px;
+  flex: 1;
+}
+
+.board-category {
+  background: var(--board-blue);
+  padding: 8px 4px;
+  text-align: center;
+  font-family: 'Playfair Display', serif;
+  font-size: 0.7rem;
+  font-weight: 900;
+  color: var(--white);
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  line-height: 1.2;
+  min-height: 48px;
+}
+
+.board-cell {
+  background: var(--board-blue);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Playfair Display', serif;
+  font-size: 1.4rem;
+  font-weight: 900;
+  color: var(--gold);
+  cursor: pointer;
+  border-radius: 4px;
+  transition: transform 0.1s, background 0.15s;
+  text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+  min-height: 56px;
+  user-select: none;
+}
+.board-cell:hover:not(.used):not(.disabled) {
+  background: #1010FF;
+  transform: scale(1.03);
+}
+.board-cell.used {
+  background: #0a0a4a;
+  color: transparent;
+  cursor: default;
+}
+.board-cell.disabled {
+  cursor: default;
+  opacity: 0.7;
+}
+
+/* ─── Clue Overlay ───────────────────────────────────────────── */
+.clue-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: var(--board-blue);
+  z-index: 100;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+.clue-overlay.active { display: flex; }
+
+.clue-value-label {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.5rem;
+  color: var(--gold);
+  margin-bottom: 16px;
+}
+
+.daily-double-splash {
+  display: none;
+  font-family: 'Playfair Display', serif;
+  font-size: 3rem;
+  color: var(--gold);
+  text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+  animation: ddPulse 0.6s ease-in-out;
+}
+.daily-double-splash.active { display: block; }
+
+@keyframes ddPulse {
+  0% { transform: scale(0.5); opacity: 0; }
+  60% { transform: scale(1.1); opacity: 1; }
+  100% { transform: scale(1); }
+}
+
+.clue-text {
+  font-size: 1.6rem;
+  text-align: center;
+  max-width: 700px;
+  line-height: 1.5;
+  text-shadow: 1px 1px 3px rgba(0,0,0,0.3);
+}
+
+.clue-category-label {
+  font-size: 0.85rem;
+  color: rgba(255,255,255,0.6);
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+/* Buzzer */
+.buzz-btn {
+  margin-top: 32px;
+  width: 180px;
+  height: 180px;
+  border-radius: 50%;
+  border: 4px solid var(--gold);
+  background: radial-gradient(circle, #ff4444, #cc0000);
+  color: var(--white);
+  font-size: 1.2rem;
+  font-weight: 900;
+  cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  box-shadow: 0 0 30px rgba(255,0,0,0.3);
+  transition: transform 0.1s;
+  display: none;
+}
+.buzz-btn.active {
+  display: block;
+  animation: buzzPulse 1s ease-in-out infinite;
+}
+.buzz-btn:active { transform: scale(0.9); }
+
+@keyframes buzzPulse {
+  0%, 100% { box-shadow: 0 0 20px rgba(255,0,0,0.3); }
+  50% { box-shadow: 0 0 40px rgba(255,0,0,0.6); }
+}
+
+/* Answer input */
+.answer-area {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 24px;
+  width: 100%;
+  max-width: 500px;
+}
+.answer-area.active { display: flex; }
+
+.answering-label {
+  font-size: 0.9rem;
+  margin-bottom: 8px;
+  color: var(--gold);
+}
+
+.answer-input {
+  width: 100%;
+  padding: 14px 18px;
+  border: 2px solid var(--gold);
+  border-radius: 8px;
+  background: rgba(255,255,255,0.1);
+  color: var(--white);
+  font-size: 1.2rem;
+  text-align: center;
+  outline: none;
+}
+.answer-input:focus { border-color: #fff; }
+
+.answer-timer {
+  margin-top: 8px;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--gold);
+}
+
+.answer-submit-btn {
+  margin-top: 12px;
+  padding: 12px 40px;
+  border: none;
+  border-radius: 8px;
+  background: var(--gold);
+  color: #1a1a2e;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+/* Result display */
+.result-display {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 24px;
+  gap: 8px;
+}
+.result-display.active { display: flex; }
+
+.result-label {
+  font-size: 1.5rem;
+  font-weight: 900;
+}
+.result-label.correct { color: var(--correct); }
+.result-label.incorrect { color: var(--incorrect); }
+
+.result-answer {
+  font-size: 1.1rem;
+  color: rgba(255,255,255,0.7);
+}
+.result-score-change {
+  font-size: 1.2rem;
+  font-weight: 700;
+}
+
+/* Wager input (DD + FJ) */
+.wager-area {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 24px;
+  width: 100%;
+  max-width: 400px;
+}
+.wager-area.active { display: flex; }
+
+.wager-label {
+  font-size: 1rem;
+  margin-bottom: 8px;
+}
+.wager-input {
+  width: 100%;
+  padding: 14px;
+  border: 2px solid var(--gold);
+  border-radius: 8px;
+  background: rgba(255,255,255,0.1);
+  color: var(--white);
+  font-size: 1.5rem;
+  text-align: center;
+  outline: none;
+}
+.wager-submit-btn {
+  margin-top: 12px;
+  padding: 12px 40px;
+  border: none;
+  border-radius: 8px;
+  background: var(--gold);
+  color: #1a1a2e;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+/* ─── Final Jeopardy ─────────────────────────────────────────── */
+.fj-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: var(--board-blue);
+  z-index: 100;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+.fj-overlay.active { display: flex; }
+
+.fj-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 2rem;
+  color: var(--gold);
+  margin-bottom: 24px;
+}
+.fj-category {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.8rem;
+  text-transform: uppercase;
+  margin-bottom: 16px;
+}
+.fj-clue {
+  font-size: 1.5rem;
+  text-align: center;
+  max-width: 700px;
+  line-height: 1.5;
+  margin-bottom: 24px;
+}
+.fj-waiting {
+  color: rgba(255,255,255,0.5);
+  font-size: 0.9rem;
+}
+
+/* FJ reveal */
+.fj-reveal-card {
+  background: rgba(0,0,0,0.3);
+  border-radius: 12px;
+  padding: 20px 32px;
+  margin: 8px 0;
+  min-width: 300px;
+  text-align: center;
+  animation: revealSlide 0.5s ease-out;
+}
+@keyframes revealSlide {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.fj-reveal-name { font-size: 1.1rem; font-weight: 700; }
+.fj-reveal-answer { font-size: 0.9rem; color: rgba(255,255,255,0.6); margin: 4px 0; }
+.fj-reveal-wager { font-size: 0.9rem; }
+.fj-reveal-score { font-size: 1.3rem; font-weight: 900; margin-top: 4px; }
+
+/* ─── Game Over ──────────────────────────────────────────────── */
+.gameover-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.9);
+  z-index: 200;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+.gameover-overlay.active { display: flex; }
+
+.gameover-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 2.5rem;
+  color: var(--gold);
+  margin-bottom: 24px;
+}
+.standings-list {
+  list-style: none;
+  width: 100%;
+  max-width: 400px;
+}
+.standings-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  background: rgba(255,255,255,0.05);
+  border-radius: 8px;
+  margin-bottom: 8px;
+}
+.standings-item:first-child {
+  background: rgba(215,163,42,0.2);
+  border: 2px solid var(--gold);
+}
+.standings-rank {
+  font-weight: 900;
+  width: 30px;
+  color: var(--gold);
+}
+.standings-name { flex: 1; }
+.standings-score {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.2rem;
+  font-weight: 700;
+}
+
+.play-again-btn {
+  margin-top: 24px;
+  padding: 14px 40px;
+  border: 2px solid var(--gold);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--gold);
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+/* Status bar */
+.status-bar {
+  padding: 8px 16px;
+  text-align: center;
+  font-size: 0.85rem;
+  color: rgba(255,255,255,0.7);
+  background: rgba(0,0,0,0.3);
+}
+
+/* Home link */
+.home-link {
+  position: fixed;
+  top: 12px;
+  left: 12px;
+  z-index: 50;
+  color: rgba(255,255,255,0.5);
+  text-decoration: none;
+  font-size: 0.8rem;
+  padding: 6px 12px;
+  border-radius: 6px;
+  background: rgba(0,0,0,0.3);
+  transition: color 0.2s;
+}
+.home-link:hover { color: var(--white); }
+
+/* Timer bar */
+.timer-bar {
+  height: 4px;
+  background: var(--gold);
+  transition: width 0.1s linear;
+  border-radius: 2px;
+  margin-top: 16px;
+  width: 100%;
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+  .board-category { font-size: 0.55rem; padding: 4px 2px; min-height: 40px; }
+  .board-cell { font-size: 1rem; min-height: 44px; }
+  .clue-text { font-size: 1.2rem; }
+  .buzz-btn { width: 140px; height: 140px; font-size: 1rem; }
+  .lobby-title { font-size: 2rem; }
+}
+</style>
+</head>
+<body>
+
+<a class="home-link" href="/">&#8592; Home</a>
+
+<!-- ─── Lobby ───────────────────────────────────────────────── -->
+<div id="lobby">
+  <div class="lobby-title">JEOPARDY!</div>
+  <div class="lobby-subtitle">Multiplayer Trivia</div>
+
+  <!-- Initial: create or join -->
+  <div id="lobby-menu" class="lobby-card">
+    <h2>Enter your name</h2>
+    <input class="lobby-input" id="player-name" placeholder="Your name" maxlength="20" autocomplete="off">
+    <button class="lobby-btn btn-gold" id="btn-create">Create Room</button>
+    <div class="lobby-or">- or -</div>
+    <input class="lobby-input" id="room-code-input" placeholder="Room code" maxlength="4" style="text-transform:uppercase; letter-spacing:4px; text-align:center;" autocomplete="off">
+    <button class="lobby-btn btn-blue" id="btn-join">Join Room</button>
+  </div>
+
+  <!-- In-room waiting -->
+  <div id="lobby-room" class="lobby-card" style="display:none;">
+    <h2>Room</h2>
+    <div class="room-code-display" id="room-code"></div>
+    <div style="font-size:0.8rem; color:#888; margin-bottom:12px;">Share this code with friends</div>
+    <ul class="player-list" id="player-list"></ul>
+    <div class="game-info" id="game-info"></div>
+    <button class="lobby-btn btn-gold" id="btn-start" style="display:none; margin-top:16px;">Start Game</button>
+  </div>
+</div>
+
+<!-- ─── Game ─────────────────────────────────────────────────── -->
+<div id="game">
+  <div class="scores-bar" id="scores-bar"></div>
+  <div class="round-indicator" id="round-indicator">Jeopardy!</div>
+  <div class="board-container">
+    <div class="board" id="board"></div>
+  </div>
+  <div class="status-bar" id="status-bar"></div>
+</div>
+
+<!-- ─── Clue Overlay ─────────────────────────────────────────── -->
+<div class="clue-overlay" id="clue-overlay">
+  <div class="daily-double-splash" id="dd-splash">DAILY DOUBLE!</div>
+  <div class="clue-category-label" id="clue-cat-label"></div>
+  <div class="clue-value-label" id="clue-value-label"></div>
+  <div class="clue-text" id="clue-text"></div>
+
+  <!-- Wager (DD) -->
+  <div class="wager-area" id="dd-wager-area">
+    <div class="wager-label">How much will you wager?</div>
+    <input class="wager-input" id="dd-wager-input" type="number" min="5" placeholder="$" autocomplete="off">
+    <button class="wager-submit-btn" id="dd-wager-btn">Wager</button>
+  </div>
+
+  <!-- Buzzer -->
+  <button class="buzz-btn" id="buzz-btn">BUZZ IN</button>
+
+  <!-- Answer input -->
+  <div class="answer-area" id="answer-area">
+    <div class="answering-label" id="answering-label"></div>
+    <input class="answer-input" id="answer-input" placeholder="What is..." autocomplete="off">
+    <button class="answer-submit-btn" id="answer-submit-btn">Submit</button>
+    <div class="answer-timer" id="answer-timer"></div>
+    <div class="timer-bar" id="answer-timer-bar"></div>
+  </div>
+
+  <!-- Result -->
+  <div class="result-display" id="result-display">
+    <div class="result-label" id="result-label"></div>
+    <div class="result-answer" id="result-answer"></div>
+    <div class="result-score-change" id="result-score-change"></div>
+  </div>
+</div>
+
+<!-- ─── Final Jeopardy Overlay ───────────────────────────────── -->
+<div class="fj-overlay" id="fj-overlay">
+  <div class="fj-title">Final Jeopardy!</div>
+  <div class="fj-category" id="fj-category"></div>
+  <div class="fj-clue" id="fj-clue"></div>
+
+  <!-- FJ Wager -->
+  <div class="wager-area" id="fj-wager-area">
+    <div class="wager-label">Your wager (up to your score):</div>
+    <input class="wager-input" id="fj-wager-input" type="number" min="0" placeholder="$" autocomplete="off">
+    <button class="wager-submit-btn" id="fj-wager-btn">Lock In Wager</button>
+  </div>
+
+  <!-- FJ Answer -->
+  <div class="answer-area" id="fj-answer-area">
+    <input class="answer-input" id="fj-answer-input" placeholder="What is..." autocomplete="off">
+    <button class="answer-submit-btn" id="fj-answer-btn">Submit Answer</button>
+    <div class="answer-timer" id="fj-timer">30</div>
+    <div class="timer-bar" id="fj-timer-bar"></div>
+  </div>
+
+  <div class="fj-waiting" id="fj-waiting"></div>
+
+  <!-- FJ Reveals -->
+  <div id="fj-reveals"></div>
+</div>
+
+<!-- ─── Game Over Overlay ────────────────────────────────────── -->
+<div class="gameover-overlay" id="gameover-overlay">
+  <div class="gameover-title">Game Over!</div>
+  <ul class="standings-list" id="standings-list"></ul>
+  <button class="play-again-btn" id="btn-play-again">Play Again</button>
+  <a class="play-again-btn" href="/" style="display:inline-block; text-decoration:none; margin-top:8px; text-align:center;">Back to Home</a>
+</div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+(function() {
+  // ─── State ──────────────────────────────────────────────────
+  let socket;
+  let mySocketId;
+  let roomId = null;
+  let isHost = false;
+  let gameState = null; // full room-state from server
+  let answerTimerInterval = null;
+  let fjTimerInterval = null;
+
+  // Device ID for user identity
+  function getDeviceId() {
+    let id = localStorage.getItem('jeopardy-device-id');
+    if (!id) { id = crypto.randomUUID(); localStorage.setItem('jeopardy-device-id', id); }
+    return id;
+  }
+
+  // ─── DOM refs ───────────────────────────────────────────────
+  const $lobby = document.getElementById('lobby');
+  const $lobbyMenu = document.getElementById('lobby-menu');
+  const $lobbyRoom = document.getElementById('lobby-room');
+  const $game = document.getElementById('game');
+  const $board = document.getElementById('board');
+  const $scoresBar = document.getElementById('scores-bar');
+  const $roundIndicator = document.getElementById('round-indicator');
+  const $statusBar = document.getElementById('status-bar');
+  const $clueOverlay = document.getElementById('clue-overlay');
+  const $fjOverlay = document.getElementById('fj-overlay');
+  const $gameoverOverlay = document.getElementById('gameover-overlay');
+
+  // ─── Connect ────────────────────────────────────────────────
+  function connect() {
+    socket = io('/jeopardy', { transports: ['websocket', 'polling'] });
+    socket.on('connect', () => { mySocketId = socket.id; });
+
+    socket.on('room-state', onRoomState);
+    socket.on('player-joined', onPlayerJoined);
+    socket.on('player-left', onPlayerLeft);
+    socket.on('phase-change', onPhaseChange);
+    socket.on('round-change', onRoundChange);
+    socket.on('clue-selected', onClueSelected);
+    socket.on('daily-double', onDailyDouble);
+    socket.on('buzzer-result', onBuzzerResult);
+    socket.on('buzzer-expired', onBuzzerExpired);
+    socket.on('answer-result', onAnswerResult);
+    socket.on('scores-update', onScoresUpdate);
+    socket.on('final-category', onFinalCategory);
+    socket.on('final-clue', onFinalClue);
+    socket.on('final-wager-submitted', onFinalWagerSubmitted);
+    socket.on('final-answer-submitted', onFinalAnswerSubmitted);
+    socket.on('final-jeopardy-reveal', onFinalReveal);
+    socket.on('game-over', onGameOver);
+  }
+
+  connect();
+
+  // Check URL for room code
+  const urlPath = window.location.pathname.replace('/jeopardy', '').replace(/^\//, '');
+  if (urlPath && urlPath.length === 4) {
+    document.getElementById('room-code-input').value = urlPath.toUpperCase();
+  }
+
+  // ─── Lobby handlers ────────────────────────────────────────
+  document.getElementById('btn-create').onclick = () => {
+    const name = document.getElementById('player-name').value.trim() || 'Player';
+    socket.emit('create-room', { playerName: name, deviceId: getDeviceId() }, (res) => {
+      if (res.error) { alert(res.error); return; }
+      roomId = res.roomId;
+      isHost = true;
+      showRoom();
+    });
+  };
+
+  document.getElementById('btn-join').onclick = () => {
+    const name = document.getElementById('player-name').value.trim() || 'Player';
+    const code = document.getElementById('room-code-input').value.trim().toUpperCase();
+    if (!code || code.length !== 4) { alert('Enter a 4-letter room code'); return; }
+    socket.emit('join-room', { roomId: code, playerName: name, deviceId: getDeviceId() }, (res) => {
+      if (res.error) { alert(res.error); return; }
+      roomId = res.roomId;
+      isHost = false;
+      showRoom();
+    });
+  };
+
+  // Enter key on inputs
+  document.getElementById('player-name').onkeydown = (e) => {
+    if (e.key === 'Enter') document.getElementById('btn-create').click();
+  };
+  document.getElementById('room-code-input').onkeydown = (e) => {
+    if (e.key === 'Enter') document.getElementById('btn-join').click();
+  };
+
+  document.getElementById('btn-start').onclick = () => {
+    socket.emit('start-game');
+  };
+
+  function showRoom() {
+    $lobbyMenu.style.display = 'none';
+    $lobbyRoom.style.display = 'block';
+    document.getElementById('room-code').textContent = roomId;
+    history.replaceState(null, '', `/jeopardy/${roomId}`);
+  }
+
+  // ─── Room state handler ─────────────────────────────────────
+  function onRoomState(state) {
+    gameState = state;
+
+    // Update player list in lobby
+    const $list = document.getElementById('player-list');
+    $list.innerHTML = '';
+    for (const p of state.players) {
+      const li = document.createElement('li');
+      li.innerHTML = `<span class="player-dot" style="background:${p.color}"></span>
+        <span>${esc(p.name)}</span>
+        ${p.isHost ? '<span class="player-host">HOST</span>' : ''}`;
+      $list.appendChild(li);
+    }
+
+    // Show start button for host in lobby
+    const btnStart = document.getElementById('btn-start');
+    const meHost = state.players.find(p => p.socketId === mySocketId && p.isHost);
+    btnStart.style.display = (state.phase === 'lobby' && meHost) ? 'block' : 'none';
+
+    // Game info
+    const $info = document.getElementById('game-info');
+    if (state.showNumber) {
+      $info.textContent = `Show #${state.showNumber} — ${state.airDate || ''}`;
+    }
+
+    if (state.phase === 'lobby') {
+      $lobby.style.display = 'flex';
+      $game.classList.remove('active');
+      return;
+    }
+
+    // In-game
+    $lobby.style.display = 'none';
+    $game.classList.add('active');
+
+    renderScores(state.players, state.controllingPlayer);
+    renderRoundIndicator(state.currentRound);
+    renderBoard(state);
+    renderStatusBar(state);
+
+    // Handle overlays based on phase
+    if (['readingClue','buzzerOpen','playerAnswering','showingResult','dailyDoubleWager','dailyDoubleAnswer'].includes(state.phase)) {
+      // clue overlay is managed by specific events
+    } else if (['finalCategory','finalWager','finalClue','finalResults'].includes(state.phase)) {
+      // FJ overlay managed by events
+    } else {
+      $clueOverlay.classList.remove('active');
+    }
+  }
+
+  function onPlayerJoined(data) {
+    // Will get full state update
+  }
+
+  function onPlayerLeft(data) {
+    // Will get full state update
+  }
+
+  function onPhaseChange({ phase }) {
+    if (gameState) gameState.phase = phase;
+
+    if (phase === 'buzzerOpen') {
+      showBuzzer();
+    } else if (phase === 'selectingClue') {
+      $clueOverlay.classList.remove('active');
+      clearAnswerTimer();
+    }
+  }
+
+  function onRoundChange({ round }) {
+    if (gameState) gameState.currentRound = round;
+    renderRoundIndicator(round);
+    if (round === 'finalJeopardy') {
+      $clueOverlay.classList.remove('active');
+    }
+  }
+
+  // ─── Clue events ──────────────────────────────────────────
+  function onClueSelected({ cat, row, value, clue, dailyDouble }) {
+    $clueOverlay.classList.add('active');
+
+    const $ddSplash = document.getElementById('dd-splash');
+    const $clueText = document.getElementById('clue-text');
+    const $clueCat = document.getElementById('clue-cat-label');
+    const $clueVal = document.getElementById('clue-value-label');
+    const $buzzBtn = document.getElementById('buzz-btn');
+    const $answerArea = document.getElementById('answer-area');
+    const $resultDisplay = document.getElementById('result-display');
+    const $ddWagerArea = document.getElementById('dd-wager-area');
+
+    $ddSplash.classList.remove('active');
+    $buzzBtn.classList.remove('active');
+    $answerArea.classList.remove('active');
+    $resultDisplay.classList.remove('active');
+    $ddWagerArea.classList.remove('active');
+
+    const categories = gameState.currentRound === 'jeopardy'
+      ? gameState.gameData.jRound.categories
+      : gameState.gameData.djRound.categories;
+    $clueCat.textContent = categories[cat] || '';
+    $clueVal.textContent = `$${value}`;
+    $clueText.textContent = clue;
+
+    // Mark cell as used on board
+    if (gameState) {
+      const key = `${cat},${row}`;
+      if (!gameState.usedClues.includes(key)) gameState.usedClues.push(key);
+      renderBoard(gameState);
+    }
+  }
+
+  function onDailyDouble({ cat, row, value, playerSocketId, playerName }) {
+    $clueOverlay.classList.add('active');
+
+    const $ddSplash = document.getElementById('dd-splash');
+    const $clueText = document.getElementById('clue-text');
+    const $clueCat = document.getElementById('clue-cat-label');
+    const $clueVal = document.getElementById('clue-value-label');
+    const $buzzBtn = document.getElementById('buzz-btn');
+    const $answerArea = document.getElementById('answer-area');
+    const $resultDisplay = document.getElementById('result-display');
+    const $ddWagerArea = document.getElementById('dd-wager-area');
+
+    $buzzBtn.classList.remove('active');
+    $answerArea.classList.remove('active');
+    $resultDisplay.classList.remove('active');
+
+    $ddSplash.classList.add('active');
+    $clueText.textContent = '';
+    $clueCat.textContent = '';
+    $clueVal.textContent = '';
+
+    // Mark used
+    if (gameState) {
+      const key = `${cat},${row}`;
+      if (!gameState.usedClues.includes(key)) gameState.usedClues.push(key);
+      renderBoard(gameState);
+    }
+
+    // Show wager UI if it's me
+    if (playerSocketId === mySocketId) {
+      setTimeout(() => {
+        $ddSplash.classList.remove('active');
+        $ddWagerArea.classList.add('active');
+        const myPlayer = gameState?.players.find(p => p.socketId === mySocketId);
+        const maxWager = gameState?.currentRound === 'jeopardy'
+          ? Math.max(1000, myPlayer?.score || 0)
+          : Math.max(2000, myPlayer?.score || 0);
+        document.getElementById('dd-wager-input').max = maxWager;
+        document.getElementById('dd-wager-input').placeholder = `$5 - $${maxWager}`;
+        document.getElementById('dd-wager-input').focus();
+      }, 1500);
+    } else {
+      setTimeout(() => {
+        $ddSplash.classList.remove('active');
+        $clueText.textContent = `${esc(playerName)} is wagering...`;
+      }, 1500);
+    }
+  }
+
+  document.getElementById('dd-wager-btn').onclick = () => {
+    const val = parseInt(document.getElementById('dd-wager-input').value);
+    if (isNaN(val) || val < 5) { alert('Minimum wager is $5'); return; }
+    socket.emit('daily-double-wager', { amount: val });
+    document.getElementById('dd-wager-area').classList.remove('active');
+  };
+  document.getElementById('dd-wager-input').onkeydown = (e) => {
+    if (e.key === 'Enter') document.getElementById('dd-wager-btn').click();
+  };
+
+  function showBuzzer() {
+    const $buzzBtn = document.getElementById('buzz-btn');
+    const $answerArea = document.getElementById('answer-area');
+    const $resultDisplay = document.getElementById('result-display');
+
+    $resultDisplay.classList.remove('active');
+    $answerArea.classList.remove('active');
+    $buzzBtn.classList.add('active');
+  }
+
+  document.getElementById('buzz-btn').onclick = () => {
+    socket.emit('buzz-in');
+    document.getElementById('buzz-btn').classList.remove('active');
+  };
+
+  // Spacebar to buzz
+  document.addEventListener('keydown', (e) => {
+    if (e.code === 'Space' && document.getElementById('buzz-btn').classList.contains('active')) {
+      e.preventDefault();
+      document.getElementById('buzz-btn').click();
+    }
+  });
+
+  function onBuzzerResult({ playerId, playerName }) {
+    const $buzzBtn = document.getElementById('buzz-btn');
+    $buzzBtn.classList.remove('active');
+
+    if (playerId === mySocketId) {
+      showAnswerInput(10);
+    } else {
+      const $answerArea = document.getElementById('answer-area');
+      $answerArea.classList.remove('active');
+      document.getElementById('answering-label').textContent = `${esc(playerName)} is answering...`;
+      // Show label without input
+      const $resultDisplay = document.getElementById('result-display');
+      $resultDisplay.classList.remove('active');
+      $statusBar.textContent = `${esc(playerName)} is answering...`;
+    }
+  }
+
+  function showAnswerInput(seconds) {
+    const $answerArea = document.getElementById('answer-area');
+    const $answerInput = document.getElementById('answer-input');
+    const $timer = document.getElementById('answer-timer');
+    const $timerBar = document.getElementById('answer-timer-bar');
+
+    $answerArea.classList.add('active');
+    document.getElementById('answering-label').textContent = 'Your answer:';
+    $answerInput.value = '';
+    $answerInput.focus();
+
+    let remaining = seconds;
+    $timer.textContent = remaining;
+    $timerBar.style.width = '100%';
+
+    clearAnswerTimer();
+    const start = Date.now();
+    answerTimerInterval = setInterval(() => {
+      const elapsed = (Date.now() - start) / 1000;
+      const left = Math.max(0, seconds - elapsed);
+      $timer.textContent = Math.ceil(left);
+      $timerBar.style.width = `${(left / seconds) * 100}%`;
+      if (left <= 0) clearAnswerTimer();
+    }, 100);
+  }
+
+  function clearAnswerTimer() {
+    if (answerTimerInterval) { clearInterval(answerTimerInterval); answerTimerInterval = null; }
+  }
+
+  document.getElementById('answer-submit-btn').onclick = () => {
+    const answer = document.getElementById('answer-input').value.trim();
+    if (!answer) return;
+    socket.emit('submit-answer', { answer });
+    document.getElementById('answer-area').classList.remove('active');
+    clearAnswerTimer();
+  };
+  document.getElementById('answer-input').onkeydown = (e) => {
+    if (e.key === 'Enter') document.getElementById('answer-submit-btn').click();
+  };
+
+  function onBuzzerExpired({ correctAnswer }) {
+    const $buzzBtn = document.getElementById('buzz-btn');
+    $buzzBtn.classList.remove('active');
+
+    const $resultDisplay = document.getElementById('result-display');
+    const $resultLabel = document.getElementById('result-label');
+    const $resultAnswer = document.getElementById('result-answer');
+    const $resultScoreChange = document.getElementById('result-score-change');
+
+    $resultDisplay.classList.add('active');
+    $resultLabel.textContent = 'Time\'s Up!';
+    $resultLabel.className = 'result-label incorrect';
+    $resultAnswer.textContent = correctAnswer;
+    $resultScoreChange.textContent = '';
+  }
+
+  function onAnswerResult({ playerId, playerName, playerAnswer, correctAnswer, correct, scoreChange, newScore }) {
+    const $resultDisplay = document.getElementById('result-display');
+    const $resultLabel = document.getElementById('result-label');
+    const $resultAnswer = document.getElementById('result-answer');
+    const $resultScoreChange = document.getElementById('result-score-change');
+    const $answerArea = document.getElementById('answer-area');
+    const $buzzBtn = document.getElementById('buzz-btn');
+
+    $answerArea.classList.remove('active');
+    $buzzBtn.classList.remove('active');
+    clearAnswerTimer();
+
+    $resultDisplay.classList.add('active');
+    $resultLabel.textContent = correct ? 'Correct!' : 'Incorrect';
+    $resultLabel.className = `result-label ${correct ? 'correct' : 'incorrect'}`;
+    $resultAnswer.textContent = correct ? '' : `Answer: ${correctAnswer}`;
+    const sign = scoreChange >= 0 ? '+' : '';
+    $resultScoreChange.textContent = `${esc(playerName)}: ${sign}$${Math.abs(scoreChange)}`;
+    $resultScoreChange.style.color = correct ? 'var(--correct)' : 'var(--incorrect)';
+  }
+
+  function onScoresUpdate(players) {
+    if (gameState) gameState.players = players;
+    renderScores(players, gameState?.controllingPlayer);
+  }
+
+  // ─── Final Jeopardy ──────────────────────────────────────
+  function onFinalCategory({ category }) {
+    $clueOverlay.classList.remove('active');
+    $fjOverlay.classList.add('active');
+    document.getElementById('fj-category').textContent = category;
+    document.getElementById('fj-clue').textContent = '';
+    document.getElementById('fj-wager-area').classList.remove('active');
+    document.getElementById('fj-answer-area').classList.remove('active');
+    document.getElementById('fj-waiting').textContent = 'Get ready...';
+    document.getElementById('fj-reveals').innerHTML = '';
+  }
+
+  function onFinalClue({ category, clue }) {
+    document.getElementById('fj-category').textContent = category;
+    document.getElementById('fj-clue').textContent = clue;
+    document.getElementById('fj-wager-area').classList.remove('active');
+    document.getElementById('fj-waiting').textContent = '';
+
+    // Show answer input
+    const $fjAnswerArea = document.getElementById('fj-answer-area');
+    $fjAnswerArea.classList.add('active');
+    document.getElementById('fj-answer-input').value = '';
+    document.getElementById('fj-answer-input').focus();
+
+    // 30s timer
+    const $timer = document.getElementById('fj-timer');
+    const $timerBar = document.getElementById('fj-timer-bar');
+    const start = Date.now();
+    if (fjTimerInterval) clearInterval(fjTimerInterval);
+    fjTimerInterval = setInterval(() => {
+      const left = Math.max(0, 30 - (Date.now() - start) / 1000);
+      $timer.textContent = Math.ceil(left);
+      $timerBar.style.width = `${(left / 30) * 100}%`;
+      if (left <= 0) clearInterval(fjTimerInterval);
+    }, 100);
+  }
+
+  // When phase changes to finalWager, show wager area
+  socket.on('phase-change', ({ phase }) => {
+    if (phase === 'finalWager') {
+      document.getElementById('fj-waiting').textContent = '';
+      document.getElementById('fj-wager-area').classList.add('active');
+      const myPlayer = gameState?.players.find(p => p.socketId === mySocketId);
+      const maxWager = Math.max(0, myPlayer?.score || 0);
+      document.getElementById('fj-wager-input').max = maxWager;
+      document.getElementById('fj-wager-input').placeholder = `$0 - $${maxWager}`;
+      document.getElementById('fj-wager-input').focus();
+    }
+  });
+
+  document.getElementById('fj-wager-btn').onclick = () => {
+    const val = parseInt(document.getElementById('fj-wager-input').value);
+    if (isNaN(val) || val < 0) { alert('Enter a valid wager'); return; }
+    socket.emit('final-jeopardy-wager', { amount: val });
+    document.getElementById('fj-wager-area').classList.remove('active');
+    document.getElementById('fj-waiting').textContent = 'Waiting for other players...';
+  };
+  document.getElementById('fj-wager-input').onkeydown = (e) => {
+    if (e.key === 'Enter') document.getElementById('fj-wager-btn').click();
+  };
+
+  document.getElementById('fj-answer-btn').onclick = () => {
+    const answer = document.getElementById('fj-answer-input').value.trim();
+    if (!answer) return;
+    socket.emit('final-jeopardy-answer', { answer });
+    document.getElementById('fj-answer-area').classList.remove('active');
+    document.getElementById('fj-waiting').textContent = 'Waiting for other players...';
+    if (fjTimerInterval) clearInterval(fjTimerInterval);
+  };
+  document.getElementById('fj-answer-input').onkeydown = (e) => {
+    if (e.key === 'Enter') document.getElementById('fj-answer-btn').click();
+  };
+
+  function onFinalWagerSubmitted({ playerName, total, needed }) {
+    document.getElementById('fj-waiting').textContent = `Wagers: ${total}/${needed}`;
+  }
+
+  function onFinalAnswerSubmitted({ playerName, total, needed }) {
+    document.getElementById('fj-waiting').textContent = `Answers: ${total}/${needed}`;
+  }
+
+  function onFinalReveal({ playerName, answer, wager, correct, scoreChange, newScore }) {
+    const $reveals = document.getElementById('fj-reveals');
+    const card = document.createElement('div');
+    card.className = 'fj-reveal-card';
+    card.innerHTML = `
+      <div class="fj-reveal-name">${esc(playerName)}</div>
+      <div class="fj-reveal-answer">"${esc(answer || '(no answer)')}"</div>
+      <div class="fj-reveal-wager" style="color:${correct ? 'var(--correct)' : 'var(--incorrect)'}">
+        ${correct ? '+' : '-'}$${wager}
+      </div>
+      <div class="fj-reveal-score">$${newScore.toLocaleString()}</div>
+    `;
+    $reveals.appendChild(card);
+  }
+
+  // ─── Game Over ──────────────────────────────────────────
+  function onGameOver({ standings }) {
+    $fjOverlay.classList.remove('active');
+    $clueOverlay.classList.remove('active');
+    $gameoverOverlay.classList.add('active');
+
+    const $list = document.getElementById('standings-list');
+    $list.innerHTML = '';
+    standings.forEach((p, i) => {
+      const li = document.createElement('li');
+      li.className = 'standings-item';
+      li.innerHTML = `
+        <span class="standings-rank">#${i + 1}</span>
+        <span class="standings-name" style="color:${p.color}">${esc(p.name)}</span>
+        <span class="standings-score">$${p.score.toLocaleString()}</span>
+      `;
+      $list.appendChild(li);
+    });
+  }
+
+  document.getElementById('btn-play-again').onclick = () => {
+    $gameoverOverlay.classList.remove('active');
+    $game.classList.remove('active');
+    $lobby.style.display = 'flex';
+    $lobbyMenu.style.display = 'block';
+    $lobbyRoom.style.display = 'none';
+    roomId = null;
+    isHost = false;
+    gameState = null;
+    history.replaceState(null, '', '/jeopardy');
+    socket.emit('leave-room');
+  };
+
+  // ─── Rendering helpers ──────────────────────────────────────
+  function renderScores(players, controllingPlayer) {
+    $scoresBar.innerHTML = '';
+    for (const p of players) {
+      const div = document.createElement('div');
+      div.className = `score-item${p.socketId === controllingPlayer ? ' controlling' : ''}`;
+      div.innerHTML = `
+        <div class="score-name" style="color:${p.color}">${esc(p.name)}</div>
+        <div class="score-value${p.score < 0 ? ' negative' : ''}">$${p.score.toLocaleString()}</div>
+      `;
+      $scoresBar.appendChild(div);
+    }
+  }
+
+  function renderRoundIndicator(round) {
+    const labels = { jeopardy: 'Jeopardy!', doubleJeopardy: 'Double Jeopardy!', finalJeopardy: 'Final Jeopardy!' };
+    $roundIndicator.textContent = labels[round] || round;
+  }
+
+  function renderBoard(state) {
+    $board.innerHTML = '';
+    const round = state.currentRound;
+    const categories = round === 'jeopardy'
+      ? state.gameData.jRound.categories
+      : (round === 'doubleJeopardy' ? state.gameData.djRound.categories : []);
+    const usedSet = new Set(state.usedClues);
+    const isSelector = state.controllingPlayer === mySocketId && state.phase === 'selectingClue';
+    const values = round === 'jeopardy' ? [200, 400, 600, 800, 1000] : [400, 800, 1200, 1600, 2000];
+
+    for (const cat of categories) {
+      const div = document.createElement('div');
+      div.className = 'board-category';
+      div.textContent = cat;
+      $board.appendChild(div);
+    }
+
+    for (let row = 1; row <= 5; row++) {
+      for (let catIdx = 0; catIdx < 6; catIdx++) {
+        const key = `${catIdx},${row}`;
+        const used = usedSet.has(key);
+        const cell = document.createElement('div');
+        cell.className = `board-cell${used ? ' used' : ''}${!isSelector ? ' disabled' : ''}`;
+        cell.textContent = used ? '' : `$${values[row - 1]}`;
+        if (!used && isSelector) {
+          cell.onclick = () => {
+            socket.emit('select-clue', { cat: catIdx, row });
+          };
+        }
+        $board.appendChild(cell);
+      }
+    }
+  }
+
+  function renderStatusBar(state) {
+    const phase = state.phase;
+    if (phase === 'selectingClue') {
+      const name = state.controllingPlayerName || 'Player';
+      if (state.controllingPlayer === mySocketId) {
+        $statusBar.textContent = 'Your turn — select a clue!';
+      } else {
+        $statusBar.textContent = `${esc(name)} is selecting a clue...`;
+      }
+    } else if (phase === 'readingClue') {
+      $statusBar.textContent = 'Read the clue...';
+    } else if (phase === 'buzzerOpen') {
+      $statusBar.textContent = 'BUZZ IN!';
+    } else if (phase === 'playerAnswering') {
+      const name = state.answeringPlayerName || 'Player';
+      $statusBar.textContent = `${esc(name)} is answering...`;
+    } else {
+      $statusBar.textContent = '';
+    }
+  }
+
+  function esc(str) {
+    if (!str) return '';
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+  }
+})();
+</script>
+</body>
+</html>
