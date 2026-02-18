@@ -763,6 +763,133 @@ body.mobile .mobile-keyboard { display: block; position: static; flex-shrink: 0;
   color: #ff6a00;
   text-shadow: 0 0 6px rgba(255,106,0,0.5);
 }
+
+/* ─── Puzzle Entry Overlay ──────────────────────────────────── */
+.puzzle-entry-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0,0,0,0.6);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+.puzzle-entry-overlay.show { display: flex; }
+
+.puzzle-entry-card {
+  background: var(--white);
+  border-radius: 16px;
+  padding: 36px 40px;
+  text-align: center;
+  box-shadow: 0 12px 48px rgba(0,0,0,0.4);
+  max-width: 380px;
+  width: 90%;
+  animation: entry-slide-up 0.3s ease-out;
+}
+@keyframes entry-slide-up {
+  from { opacity: 0; transform: translateY(24px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.puzzle-entry-card .entry-date {
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: #222;
+  margin-bottom: 4px;
+}
+.puzzle-entry-card .entry-weekday {
+  font-size: 0.9rem;
+  color: #888;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 4px;
+}
+.puzzle-entry-card .entry-meta {
+  font-size: 0.82rem;
+  color: #999;
+  margin-bottom: 20px;
+}
+.puzzle-entry-card .entry-players-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: #aaa;
+  margin-bottom: 8px;
+}
+.puzzle-entry-card .entry-players {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+  min-height: 24px;
+}
+.puzzle-entry-card .entry-player {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #444;
+}
+.puzzle-entry-card .entry-player-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+.puzzle-entry-card .entry-no-players {
+  font-size: 0.82rem;
+  color: #bbb;
+  font-style: italic;
+}
+
+.puzzle-entry-card .entry-start-btn {
+  width: 100%;
+  padding: 14px;
+  background: #2a6dd4;
+  color: var(--white);
+  border: none;
+  border-radius: 8px;
+  font-size: 1.05rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s;
+  margin-bottom: 10px;
+}
+.puzzle-entry-card .entry-start-btn:hover { background: #1d5cb8; }
+
+.puzzle-entry-card .entry-change-name {
+  background: none;
+  border: none;
+  color: #2a6dd4;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 4px 8px;
+}
+.puzzle-entry-card .entry-change-name:hover { text-decoration: underline; }
+
+.puzzle-entry-card .entry-user-preview {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 12px;
+  border-radius: 20px;
+  background: #eef3f8;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 16px;
+}
+.puzzle-entry-card .entry-user-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
 </style>
 </head>
 <body>
@@ -842,6 +969,20 @@ body.mobile .mobile-keyboard { display: block; position: static; flex-shrink: 0;
     <p id="congrats-msg">You solved the crossword!</p>
     <div class="leaderboard" id="leaderboard"></div>
     <button onclick="document.getElementById('congrats').classList.remove('show')">Close</button>
+  </div>
+</div>
+
+<!-- ─── Puzzle Entry Overlay ──────────────────────────────────── -->
+<div class="puzzle-entry-overlay" id="puzzle-entry-overlay">
+  <div class="puzzle-entry-card">
+    <div class="entry-weekday" id="entry-weekday"></div>
+    <div class="entry-date" id="entry-date"></div>
+    <div class="entry-meta" id="entry-meta"></div>
+    <div class="entry-user-preview" id="entry-user-preview"></div>
+    <div class="entry-players-label">PLAYERS SOLVING</div>
+    <div class="entry-players" id="entry-players"></div>
+    <button class="entry-start-btn" id="entry-start-btn">Start Solving</button>
+    <button class="entry-change-name" id="entry-change-name">Change Name / Color</button>
   </div>
 </div>
 
@@ -1357,7 +1498,7 @@ function renderCalendar() {
       star.textContent = '\u2B50';
       dayEl.appendChild(star);
 
-      dayEl.addEventListener('click', () => showPuzzle(dateStr));
+      dayEl.addEventListener('click', () => showPuzzle(dateStr, true, true));
     } else {
       dayEl.classList.add('no-puzzle');
     }
@@ -1405,6 +1546,7 @@ function drawThumbnail(canvas, info) {
 function showCalendar(pushState = true) {
   puzzleView.style.display = 'none';
   calendarView.style.display = 'block';
+  document.getElementById('puzzle-entry-overlay').classList.remove('show');
   document.title = 'NYT Crossword';
 
   if (currentDate) {
@@ -1423,11 +1565,118 @@ function showCalendar(pushState = true) {
   fetchAndRenderCalendar();
 }
 
-function showPuzzle(dateStr, pushState = true) {
+function showPuzzle(dateStr, pushState = true, showEntry = false) {
   calendarView.style.display = 'none';
   puzzleView.style.display = 'flex';
   if (pushState) history.pushState({ view: 'puzzle', date: dateStr }, '', `/${dateStr}`);
-  loadPuzzle(dateStr);
+
+  if (showEntry) {
+    showPuzzleEntryOverlay(dateStr);
+  } else {
+    loadPuzzle(dateStr);
+  }
+}
+
+// ─── Puzzle Entry Overlay ─────────────────────────────────────
+async function showPuzzleEntryOverlay(dateStr) {
+  const overlay = document.getElementById('puzzle-entry-overlay');
+  const dateEl = document.getElementById('entry-date');
+  const weekdayEl = document.getElementById('entry-weekday');
+  const metaEl2 = document.getElementById('entry-meta');
+  const playersEl = document.getElementById('entry-players');
+  const userPreviewEl = document.getElementById('entry-user-preview');
+  const startBtn = document.getElementById('entry-start-btn');
+  const changeNameBtn = document.getElementById('entry-change-name');
+
+  // Parse date for display
+  const [y, m, d] = dateStr.split('-').map(Number);
+  const dateObj = new Date(y, m - 1, d);
+  const weekday = DAYS[dateObj.getDay()];
+  const monthName = MONTH_NAMES[m - 1];
+
+  weekdayEl.textContent = weekday;
+  dateEl.textContent = `${monthName} ${d}, ${y}`;
+
+  // Show user preview
+  if (myName) {
+    userPreviewEl.innerHTML = `<span class="entry-user-dot" style="background:${myColor}"></span>Playing as ${myName}`;
+    userPreviewEl.style.display = '';
+  } else {
+    userPreviewEl.style.display = 'none';
+  }
+
+  // Fetch puzzle metadata for author/editor
+  try {
+    const res = await fetch('/api/puzzles');
+    const puzzles = await res.json();
+    const puzzle = puzzles.find(p => p.date === dateStr);
+    if (puzzle) {
+      const parts = [];
+      if (puzzle.author) parts.push(`By ${puzzle.author}`);
+      if (puzzle.editor) parts.push(`Edited by ${puzzle.editor}`);
+      metaEl2.textContent = parts.join(' \u00B7 ');
+    } else {
+      metaEl2.textContent = '';
+    }
+  } catch (e) {
+    metaEl2.textContent = '';
+  }
+
+  // Show current players from room counts / presence
+  function renderEntryPlayers() {
+    playersEl.innerHTML = '';
+    const count = roomCounts.get(dateStr) || 0;
+    if (count > 0) {
+      // We may not know exact names, but we can show the count
+      // If we have remote user data (from being in the room), show names
+      if (remoteUsers.size > 0) {
+        for (const [, user] of remoteUsers) {
+          const el = document.createElement('div');
+          el.className = 'entry-player';
+          el.innerHTML = `<span class="entry-player-dot" style="background:${user.color}"></span>${user.userName}`;
+          playersEl.appendChild(el);
+        }
+      } else {
+        const el = document.createElement('div');
+        el.className = 'entry-player';
+        el.innerHTML = `<span class="entry-player-dot" style="background:#2a6dd4"></span>${count} player${count > 1 ? 's' : ''} solving`;
+        playersEl.appendChild(el);
+      }
+    } else {
+      playersEl.innerHTML = '<div class="entry-no-players">No one here yet</div>';
+    }
+  }
+  renderEntryPlayers();
+
+  // Show overlay
+  overlay.classList.add('show');
+
+  // Start button
+  const handleStart = () => {
+    overlay.classList.remove('show');
+    startBtn.removeEventListener('click', handleStart);
+    changeNameBtn.removeEventListener('click', handleChangeName);
+    loadPuzzle(dateStr);
+  };
+
+  // Change name button
+  const handleChangeName = () => {
+    showNameModal(true);
+    // After name changes, update the preview
+    const observer = new MutationObserver(() => {
+      if (!document.getElementById('name-modal').classList.contains('show')) {
+        observer.disconnect();
+        if (myName) {
+          userPreviewEl.innerHTML = `<span class="entry-user-dot" style="background:${myColor}"></span>Playing as ${myName}`;
+          userPreviewEl.style.display = '';
+        }
+      }
+    });
+    observer.observe(document.getElementById('name-modal'), { attributes: true, attributeFilter: ['class'] });
+  };
+
+  startBtn.addEventListener('click', handleStart);
+  changeNameBtn.addEventListener('click', handleChangeName);
 }
 
 // ─── Load a puzzle (async) ────────────────────────────────────

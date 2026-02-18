@@ -407,8 +407,8 @@ async function saveJeopardyGame(gameId, data) {
   await pool.query(
     `INSERT INTO jeopardy_games (game_id, show_number, air_date, season, data)
      VALUES ($1, $2, $3, $4, $5)
-     ON CONFLICT (game_id) DO UPDATE SET data = $5`,
-    [gameId, data.showNumber, data.airDate, data.season, JSON.stringify(data)]
+     ON CONFLICT (game_id) DO UPDATE SET show_number = $2, air_date = $3, season = $4, data = $5`,
+    [gameId, data.showNumber, data.airDate, data.season || null, JSON.stringify(data)]
   );
 }
 

@@ -779,6 +779,105 @@ body {
   line-height: 1.4;
 }
 
+/* ─── Intro Animation ─────────────────────────────────────── */
+.intro-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: #0a0a3a;
+  z-index: 250;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+.intro-overlay.active { display: flex; }
+
+.intro-overlay::before {
+  content: '';
+  position: absolute;
+  inset: -50%;
+  background: radial-gradient(circle at 50% 50%, rgba(6,12,233,0.3) 0%, transparent 60%);
+  animation: intro-glow 3s ease-in-out infinite;
+}
+@keyframes intro-glow {
+  0%, 100% { opacity: 0.5; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.1); }
+}
+
+.intro-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 1rem;
+  color: rgba(255,255,255,0.7);
+  text-transform: uppercase;
+  letter-spacing: 6px;
+  opacity: 0;
+  transform: translateY(20px);
+  z-index: 1;
+}
+.intro-title.animate {
+  animation: intro-fade-in 0.8s ease-out forwards;
+}
+
+.intro-main-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 4rem;
+  font-weight: 900;
+  color: var(--gold);
+  text-shadow: 0 0 40px rgba(215,163,42,0.5), 2px 2px 4px rgba(0,0,0,0.5);
+  opacity: 0;
+  transform: scale(0.5);
+  z-index: 1;
+  margin: 12px 0 24px;
+}
+.intro-main-title.animate {
+  animation: intro-title-pop 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+@keyframes intro-fade-in {
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes intro-title-pop {
+  to { opacity: 1; transform: scale(1); }
+}
+
+.intro-categories {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  z-index: 1;
+}
+.intro-cat-item {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--white);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  opacity: 0;
+  transform: translateX(-30px);
+}
+.intro-cat-item.animate {
+  animation: intro-cat-slide 0.4s ease-out forwards;
+}
+@keyframes intro-cat-slide {
+  to { opacity: 1; transform: translateX(0); }
+}
+
+.intro-round-label {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.5rem;
+  font-weight: 900;
+  color: var(--gold);
+  opacity: 0;
+  z-index: 1;
+  margin-bottom: 16px;
+}
+.intro-round-label.animate {
+  animation: intro-fade-in 0.5s ease-out forwards;
+}
+
 @media (max-width: 600px) {
   .board-category { font-size: 0.55rem; padding: 4px 2px; min-height: 40px; }
   .board-cell { font-size: 1rem; min-height: 44px; }
@@ -788,6 +887,7 @@ body {
   .mode-selector { flex-direction: column; gap: 10px; }
   .mode-card { padding: 20px 18px; }
   .mode-card .mode-icon { font-size: 1.6rem; margin-bottom: 8px; }
+  .intro-main-title { font-size: 2.5rem; }
 }
 </style>
 </head>
@@ -962,6 +1062,14 @@ body {
       <!-- Season list or game list rendered here -->
     </div>
   </div>
+</div>
+
+<!-- ─── Intro Animation Overlay ──────────────────────────────── -->
+<div class="intro-overlay" id="intro-overlay">
+  <div class="intro-title" id="intro-subtitle">THIS IS</div>
+  <div class="intro-main-title" id="intro-main-title">JEOPARDY!</div>
+  <div class="intro-round-label" id="intro-round-label"></div>
+  <div class="intro-categories" id="intro-categories"></div>
 </div>
 
 <!-- ─── Game Over Overlay ────────────────────────────────────── -->
@@ -1425,21 +1533,75 @@ body {
       $clueOverlay.classList.remove('active');
     }
 
-    // Announce round with intro music + TTS
+    // Announce round with intro animation + music + TTS
     if (lastAnnouncedRound !== round && round !== 'finalJeopardy') {
       lastAnnouncedRound = round;
-      playSound('intro');
-      const roundLabel = round === 'jeopardy' ? 'Jeopardy' : 'Double Jeopardy';
+      const roundLabel = round === 'jeopardy' ? 'Jeopardy!' : 'Double Jeopardy!';
       const cats = round === 'jeopardy'
         ? gameState?.gameData?.jRound?.categories
         : gameState?.gameData?.djRound?.categories;
-      const texts = [`Let's play ${roundLabel}!`];
-      if (cats && cats.length) {
-        texts.push("Today's categories are");
-        cats.forEach(c => texts.push(c));
-      }
-      hostSaySequence(texts);
+
+      playIntroAnimation(roundLabel, cats || [], () => {
+        const texts = [`Let's play ${roundLabel}`];
+        if (cats && cats.length) {
+          texts.push("Today's categories are");
+          cats.forEach(c => texts.push(c));
+        }
+        hostSaySequence(texts);
+      });
     }
+  }
+
+  function playIntroAnimation(roundLabel, categories, onComplete) {
+    const $overlay = document.getElementById('intro-overlay');
+    const $subtitle = document.getElementById('intro-subtitle');
+    const $mainTitle = document.getElementById('intro-main-title');
+    const $roundLabel = document.getElementById('intro-round-label');
+    const $cats = document.getElementById('intro-categories');
+
+    // Reset all elements
+    $subtitle.className = 'intro-title';
+    $mainTitle.className = 'intro-main-title';
+    $roundLabel.className = 'intro-round-label';
+    $roundLabel.textContent = roundLabel;
+    $cats.innerHTML = '';
+
+    // Show overlay
+    $overlay.classList.add('active');
+    playSound('intro');
+
+    // Staggered animations
+    let delay = 200;
+
+    // "THIS IS"
+    setTimeout(() => $subtitle.classList.add('animate'), delay);
+    delay += 400;
+
+    // "JEOPARDY!"
+    setTimeout(() => $mainTitle.classList.add('animate'), delay);
+    delay += 800;
+
+    // Round label (e.g., "Double Jeopardy!")
+    setTimeout(() => $roundLabel.classList.add('animate'), delay);
+    delay += 600;
+
+    // Categories one by one
+    for (let i = 0; i < categories.length; i++) {
+      const catEl = document.createElement('div');
+      catEl.className = 'intro-cat-item';
+      catEl.textContent = categories[i];
+      $cats.appendChild(catEl);
+
+      setTimeout(() => catEl.classList.add('animate'), delay);
+      delay += 300;
+    }
+
+    // Hold for a moment then dismiss
+    delay += 1000;
+    setTimeout(() => {
+      $overlay.classList.remove('active');
+      if (onComplete) onComplete();
+    }, delay);
   }
 
   // ─── Clue events ──────────────────────────────────────────

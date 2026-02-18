@@ -708,7 +708,7 @@ async function seedJeopardyFromBundle() {
     return;
   }
 
-  const BUNDLE_VERSION = '2';  // v2: re-scraped with fixed text extraction (spaces preserved)
+  const BUNDLE_VERSION = '3';  // v3: season data derived from air date
   const seeded = await db.getMetadata('jeopardy_bundle_seeded_v');
   if (seeded === BUNDLE_VERSION) {
     console.log('[seed] Jeopardy bundle already seeded (v' + BUNDLE_VERSION + '), skipping');
