@@ -841,6 +841,98 @@ body.mobile .mobile-keyboard { display: block; position: static; flex-shrink: 0;
 
 <script src="/socket.io/socket.io.js"></script>
 <script>
+// ─── Sound Effects (Web Audio API) ─────────────────────────────
+const AudioCtx = window.AudioContext || window.webkitAudioContext;
+let audioCtx = null;
+function getAudioCtx() {
+  if (!audioCtx) audioCtx = new AudioCtx();
+  return audioCtx;
+}
+
+function sfxType(isCorrect) {
+  // Subtle key click — higher pitch for correct, lower for incorrect
+  const ctx = getAudioCtx();
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  osc.connect(gain);
+  gain.connect(ctx.destination);
+  osc.type = 'sine';
+  osc.frequency.value = isCorrect ? 880 : 340;
+  gain.gain.setValueAtTime(0.08, ctx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.08);
+  osc.start(ctx.currentTime);
+  osc.stop(ctx.currentTime + 0.08);
+}
+
+function sfxWordComplete() {
+  // Two-note rising chime
+  const ctx = getAudioCtx();
+  const t = ctx.currentTime;
+  [523, 659].forEach((freq, i) => {
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.type = 'sine';
+    osc.frequency.value = freq;
+    const start = t + i * 0.09;
+    gain.gain.setValueAtTime(0.1, start);
+    gain.gain.exponentialRampToValueAtTime(0.001, start + 0.2);
+    osc.start(start);
+    osc.stop(start + 0.2);
+  });
+}
+
+function sfxFireStart() {
+  // Rising whoosh with harmonic sweep
+  const ctx = getAudioCtx();
+  const t = ctx.currentTime;
+  // Noise-like whoosh via detuned oscillators
+  [260, 330, 520, 780].forEach((freq) => {
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(freq * 0.5, t);
+    osc.frequency.exponentialRampToValueAtTime(freq * 1.5, t + 0.35);
+    gain.gain.setValueAtTime(0.04, t);
+    gain.gain.linearRampToValueAtTime(0.07, t + 0.15);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.4);
+    osc.start(t);
+    osc.stop(t + 0.4);
+  });
+  // Bright chime on top
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  osc.connect(gain);
+  gain.connect(ctx.destination);
+  osc.type = 'sine';
+  osc.frequency.value = 1047;
+  gain.gain.setValueAtTime(0, t + 0.15);
+  gain.gain.linearRampToValueAtTime(0.12, t + 0.2);
+  gain.gain.exponentialRampToValueAtTime(0.001, t + 0.6);
+  osc.start(t + 0.15);
+  osc.stop(t + 0.6);
+}
+
+function sfxFireBreak() {
+  // Descending tone — subtle disappointment
+  const ctx = getAudioCtx();
+  const t = ctx.currentTime;
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  osc.connect(gain);
+  gain.connect(ctx.destination);
+  osc.type = 'sine';
+  osc.frequency.setValueAtTime(440, t);
+  osc.frequency.exponentialRampToValueAtTime(220, t + 0.3);
+  gain.gain.setValueAtTime(0.1, t);
+  gain.gain.exponentialRampToValueAtTime(0.001, t + 0.3);
+  osc.start(t);
+  osc.stop(t + 0.3);
+}
+
 // ─── User identity (IP-based, server-managed) ──────────────────
 let myName = '';
 let myColor = '#90EE90';
@@ -1532,6 +1624,8 @@ function sendCellUpdate(row, col, letter) {
       if (!isCorrect) gs.incorrect++;
       guessStats.set(myName, gs);
 
+      sfxType(isCorrect);
+
       if (isCorrect && myFireActive) {
         // Correct + on fire: doubled points (extension happens on word completion only)
         persistedPoints.set(myName, (persistedPoints.get(myName) || 0) + 2);
@@ -1561,6 +1655,7 @@ function sendCellUpdate(row, col, letter) {
           if (wasOnFire) wb *= 2;
           persistedPoints.set(myName, (persistedPoints.get(myName) || 0) + wb);
           setTimeout(() => showPointFloat(row, col, wb, wb >= (wasOnFire ? 30 : 15) ? 'combo' : 'word', wasOnFire), 200);
+          sfxWordComplete();
           triggerWordWave(row, col);
 
           // Extend fire on word completion while on fire
@@ -1605,6 +1700,7 @@ function startMyFire(fireCellKeys, expiresAt) {
   myFireActive = true;
   myFireExpiresAt = expiresAt;
   myFireCells = new Set(fireCellKeys);
+  sfxFireStart();
   showFireBar();
   applyFireCellEffects();
 }
@@ -1617,6 +1713,7 @@ function extendMyFire(cellKeys, newExpiresAt) {
 }
 
 function breakMyFire() {
+  sfxFireBreak();
   showComboBroken();
   hideFireBar();
   removeFireCellEffects();
