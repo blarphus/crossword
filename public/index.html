@@ -666,7 +666,7 @@ body.mobile .grid-container {
   overflow: hidden;
 }
 body.mobile .grid { touch-action: none; }
-body.mobile .hint-btn { right: 4px; top: auto; bottom: 4px; transform: none; }
+body.mobile .hint-btn { left: auto; right: 4px; top: auto; bottom: 4px; transform: none; }
 body.mobile .hint-btn:hover { transform: scale(1.1); }
 body.mobile .clue-panel { display: none; }
 
@@ -782,7 +782,7 @@ body.mobile .mobile-keyboard { display: block; position: static; flex-shrink: 0;
 .hint-btn {
   display: none;
   position: absolute;
-  right: -64px;
+  left: -64px;
   top: 50%;
   transform: translateY(-50%);
   width: 54px;
@@ -806,6 +806,24 @@ body.mobile .mobile-keyboard { display: block; position: static; flex-shrink: 0;
 .hint-btn.voted { opacity: 0.7; border-style: dashed; }
 .hint-btn .hint-icon { font-size: 1.2rem; }
 .hint-btn .hint-votes { font-size: 0.6rem; margin-top: 2px; }
+
+/* Flying hint letter */
+.hint-flyer {
+  position: fixed;
+  z-index: 100;
+  font-weight: 900;
+  color: #b8860b;
+  background: linear-gradient(135deg, #fff8dc, #ffd700);
+  border: 2px solid #daa520;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  pointer-events: none;
+  transition: all 0.6s cubic-bezier(0.2, 0, 0.2, 1);
+  box-shadow: 0 0 12px rgba(255,215,0,0.6);
+  opacity: 1;
+}
 
 /* Hint (gold) cells — shiny gold outline */
 @keyframes shimmer-border {
@@ -2100,14 +2118,61 @@ function voteForHint() {
 function applyHintReveal(cells) {
   lastWordCompletionTime = Date.now();
   hintVoted = false;
+
+  // Get hint button position for fly-from origin
+  const btn = document.getElementById('hint-btn');
+  const btnRect = btn ? btn.getBoundingClientRect() : null;
+  const btnX = btnRect ? btnRect.left + btnRect.width / 2 : 0;
+  const btnY = btnRect ? btnRect.top + btnRect.height / 2 : 0;
+
   hideHintBtn();
-  for (const { row: r, col: c, letter } of cells) {
+
+  // Get cell size for flyer dimensions
+  const cellSize = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--cell-size')) || 32;
+
+  cells.forEach(({ row: r, col: c, letter }, i) => {
     const key = `${r},${c}`;
     hintCells.add(key);
     userGrid[r][c] = letter;
-  }
-  render();
-  checkCompletion();
+
+    // Create flying letter element
+    const cellEl = cellEls[r]?.[c];
+    if (!cellEl || !btnRect) return;
+
+    const targetRect = cellEl.getBoundingClientRect();
+    const flyer = document.createElement('div');
+    flyer.className = 'hint-flyer';
+    flyer.textContent = letter;
+    flyer.style.width = cellSize + 'px';
+    flyer.style.height = cellSize + 'px';
+    flyer.style.fontSize = (cellSize * 0.5) + 'px';
+    // Start at button center
+    flyer.style.left = (btnX - cellSize / 2) + 'px';
+    flyer.style.top = (btnY - cellSize / 2) + 'px';
+    flyer.style.transform = 'scale(0.3)';
+    flyer.style.opacity = '0.6';
+    document.body.appendChild(flyer);
+
+    // Stagger each letter slightly
+    setTimeout(() => {
+      flyer.style.left = targetRect.left + 'px';
+      flyer.style.top = targetRect.top + 'px';
+      flyer.style.transform = 'scale(1)';
+      flyer.style.opacity = '1';
+    }, i * 100);
+
+    // After animation, remove flyer and show the real cell
+    setTimeout(() => {
+      flyer.remove();
+      render();
+    }, i * 100 + 650);
+  });
+
+  // Final render + completion check after all animations
+  setTimeout(() => {
+    render();
+    checkCompletion();
+  }, cells.length * 100 + 700);
 }
 
 // ─── Fire streak helpers ─────────────────────────────────────────
