@@ -2541,12 +2541,19 @@ function showLeaderboard() {
   const msgEl = document.getElementById('congrats-msg');
   const lbEl = document.getElementById('leaderboard');
 
+  // Count filled squares per player
+  const filledCells = new Map();
+  for (const [, filler] of cellFillers) {
+    filledCells.set(filler.userName, (filledCells.get(filler.userName) || 0) + 1);
+  }
+
   // Build sorted list
   const players = [];
   for (const [name, data] of points) {
     const acc = accuracy.get(name) || { correct: 0, total: 0 };
     const pct = acc.total > 0 ? Math.round((acc.correct / acc.total) * 100) : 0;
-    players.push({ name, color: data.color, pts: data.pts, pct, cells: acc.total });
+    const filled = filledCells.get(name) || 0;
+    players.push({ name, color: data.color, pts: data.pts, pct, filled });
   }
   players.sort((a, b) => b.pts - a.pts);
 
@@ -2566,6 +2573,7 @@ function showLeaderboard() {
       <span class="leaderboard-rank">${i + 1}.</span>
       <span class="leaderboard-dot" style="background:${p.color}"></span>
       <span class="leaderboard-name">${p.name}</span>
+      <span class="leaderboard-stats">${p.filled} sq</span>
       <span class="leaderboard-stats">${p.pct}% acc</span>
       <span class="leaderboard-pts">${p.pts > 0 ? '+' : ''}${p.pts} pts</span>
     `;
