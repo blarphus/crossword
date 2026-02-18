@@ -421,10 +421,27 @@ async function getJeopardyGame(gameId) {
 }
 
 async function getRandomJeopardyGame() {
+  // Prefer games with no progress; fall back to any game if all have progress
   const { rows } = await pool.query(
+    `SELECT jg.game_id, jg.data FROM jeopardy_games jg
+     LEFT JOIN jeopardy_progress jp ON jp.game_id = jg.game_id
+     WHERE jp.game_id IS NULL
+     ORDER BY RANDOM() LIMIT 1`
+  );
+  if (rows[0]) return rows[0];
+  // Fallback: any non-completed game
+  const { rows: rows2 } = await pool.query(
+    `SELECT jg.game_id, jg.data FROM jeopardy_games jg
+     LEFT JOIN jeopardy_progress jp ON jp.game_id = jg.game_id
+     WHERE jp.completed IS NOT TRUE
+     ORDER BY RANDOM() LIMIT 1`
+  );
+  if (rows2[0]) return rows2[0];
+  // Last resort: any game
+  const { rows: rows3 } = await pool.query(
     'SELECT game_id, data FROM jeopardy_games ORDER BY RANDOM() LIMIT 1'
   );
-  return rows[0] || null;
+  return rows3[0] || null;
 }
 
 async function getJeopardySeasons() {

@@ -785,6 +785,16 @@ body {
     <div class="room-code-display" id="room-code"></div>
     <div style="font-size:0.8rem; color:#888; margin-bottom:12px;">Share this code with friends</div>
     <ul class="player-list" id="player-list"></ul>
+
+    <!-- Add CPU (host only) -->
+    <div id="cpu-controls" style="display:none; margin-top:8px;">
+      <div style="display:flex; gap:6px; flex-wrap:wrap;">
+        <button class="lobby-btn btn-outline" style="flex:1; padding:8px; font-size:0.8rem;" onclick="addCPU('easy')">+ CPU Easy</button>
+        <button class="lobby-btn btn-outline" style="flex:1; padding:8px; font-size:0.8rem;" onclick="addCPU('medium')">+ CPU Med</button>
+        <button class="lobby-btn btn-outline" style="flex:1; padding:8px; font-size:0.8rem;" onclick="addCPU('hard')">+ CPU Hard</button>
+      </div>
+    </div>
+
     <div class="game-info" id="game-info"></div>
 
     <!-- Episode picker (host only) -->
@@ -1023,9 +1033,10 @@ body {
     $lobbyRoom.style.display = 'block';
     document.getElementById('room-code').textContent = roomId;
 
-    // Show episode picker for host
+    // Show episode picker and CPU controls for host
     if (isHost) {
       document.getElementById('episode-picker').style.display = 'block';
+      document.getElementById('cpu-controls').style.display = 'block';
     }
   }
 
@@ -1143,10 +1154,25 @@ body {
     $list.innerHTML = '';
     for (const p of state.players) {
       const li = document.createElement('li');
+      let badges = '';
+      if (p.isHost) badges += '<span class="player-host">HOST</span>';
+      if (p.isAI) badges += '<span class="player-host" style="background:#9C27B0;">CPU</span>';
+      let removeBtn = '';
+      if (p.isAI && isHost && state.phase === 'lobby') {
+        removeBtn = `<button onclick="removeCPU('${p.socketId}')" style="background:none; border:none; color:#F44336; cursor:pointer; font-size:1.1rem; margin-left:4px;" title="Remove">&times;</button>`;
+      }
       li.innerHTML = `<span class="player-dot" style="background:${p.color}"></span>
         <span>${esc(p.name)}</span>
-        ${p.isHost ? '<span class="player-host">HOST</span>' : ''}`;
+        ${badges}${removeBtn}`;
       $list.appendChild(li);
+    }
+
+    // Show/hide CPU controls based on player count and host status
+    const cpuCtrl = document.getElementById('cpu-controls');
+    if (isHost && state.phase === 'lobby' && state.players.length < 4) {
+      cpuCtrl.style.display = 'block';
+    } else {
+      cpuCtrl.style.display = 'none';
     }
 
     // Show start button for host in lobby
@@ -1676,6 +1702,14 @@ body {
     div.textContent = str;
     return div.innerHTML;
   }
+
+  // ─── CPU player controls (exposed globally for onclick) ───
+  window.addCPU = function(difficulty) {
+    socket.emit('add-cpu', { difficulty });
+  };
+  window.removeCPU = function(playerId) {
+    socket.emit('remove-cpu', { playerId });
+  };
 })();
 </script>
 </body>
