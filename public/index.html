@@ -1670,7 +1670,7 @@ function sendCellUpdate(row, col, letter) {
 
           // Extend fire on word completion while on fire
           if (myFireActive && wasOnFire) {
-            extendMyFire(wordCellKeys, myFireExpiresAt + 10000);
+            extendMyFire(wordCellKeys, myFireExpiresAt + 5000);
           }
 
           // Track word completions toward fire trigger (only when not on fire)

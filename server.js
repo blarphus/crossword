@@ -485,7 +485,7 @@ io.on('connection', async (socket) => {
 
               if (fs.onFire && wasOnFire) {
                 // Extend fire on word completion while on fire
-                fs.fireExpiresAt += 10000;
+                fs.fireExpiresAt += 5000;
                 const seen = new Set(fs.fireCells.map(c => `${c.row},${c.col}`));
                 for (const c of completedWordCells) {
                   const k = `${c.row},${c.col}`;
