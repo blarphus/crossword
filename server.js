@@ -76,11 +76,11 @@ app.get('/api/calendar/:yearMonth', async (req, res) => {
   }
 });
 
-// GET /api/me — look up current user by IP
+// GET /api/me — look up current user by device ID
 app.get('/api/me', async (req, res) => {
   try {
-    const ip = getIp(req);
-    const user = await db.getUser(ip);
+    const deviceId = req.headers['x-device-id'];
+    const user = await db.getUser(deviceId);
     if (user) {
       res.json({ name: user.name, color: user.color });
     } else {
@@ -92,10 +92,11 @@ app.get('/api/me', async (req, res) => {
   }
 });
 
-// POST /api/me — register or update user name/color for this IP
+// POST /api/me — register or update user name/color
 app.post('/api/me', async (req, res) => {
   try {
     const ip = getIp(req);
+    const deviceId = req.headers['x-device-id'];
     const { name, color: requestedColor } = req.body;
     if (!name || !name.trim()) {
       return res.status(400).json({ error: 'Name is required' });
@@ -109,7 +110,7 @@ app.post('/api/me', async (req, res) => {
       const count = await db.getUserCount();
       color = COLOR_POOL[count % COLOR_POOL.length];
     }
-    await db.createUser(ip, trimmedName, color);
+    await db.createUser(ip, trimmedName, color, deviceId);
     res.json({ name: trimmedName, color });
   } catch (err) {
     console.error('POST /api/me error:', err);
@@ -358,10 +359,10 @@ function leaveCurrentPuzzle(socket) {
 
 io.on('connection', async (socket) => {
   const userId = socket.handshake.query.userId || 'anon';
+  const deviceId = socket.handshake.query.deviceId;
 
-  // Look up user by IP
-  const ip = getSocketIp(socket);
-  const dbUser = await db.getUser(ip);
+  // Look up user by device ID
+  const dbUser = await db.getUser(deviceId);
   const userName = dbUser?.name || 'Anonymous';
   const userColor = dbUser?.color || null;
   socket.userName = userName;

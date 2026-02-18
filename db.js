@@ -32,7 +32,7 @@ async function initDb() {
   await pool.query(`
     ALTER TABLE puzzle_state ADD COLUMN IF NOT EXISTS timer_seconds INTEGER DEFAULT 0
   `);
-  // Users table (IP-based identity)
+  // Users table
   await pool.query(`
     CREATE TABLE IF NOT EXISTS users (
       ip         TEXT PRIMARY KEY,
@@ -41,6 +41,9 @@ async function initDb() {
       created_at TIMESTAMPTZ DEFAULT NOW()
     )
   `);
+  // Migrate users table to support device-based identity
+  await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS device_id TEXT`);
+  await pool.query(`CREATE UNIQUE INDEX IF NOT EXISTS users_device_id_idx ON users (device_id) WHERE device_id IS NOT NULL`);
   // Cell filler attribution column
   await pool.query(`
     ALTER TABLE puzzle_state ADD COLUMN IF NOT EXISTS cell_fillers JSONB DEFAULT '{}'
@@ -249,16 +252,35 @@ async function setMetadata(key, value) {
 
 // ─── User identity (IP-based) ──────────────────────────────────
 
-async function getUser(ip) {
-  const { rows } = await pool.query('SELECT ip, name, color FROM users WHERE ip = $1', [ip]);
-  return rows[0] || null;
+async function getUser(deviceId) {
+  if (deviceId) {
+    const { rows } = await pool.query('SELECT ip, name, color, device_id FROM users WHERE device_id = $1', [deviceId]);
+    if (rows[0]) return rows[0];
+  }
+  return null;
 }
 
-async function createUser(ip, name, color) {
-  await pool.query(
-    'INSERT INTO users (ip, name, color) VALUES ($1, $2, $3) ON CONFLICT (ip) DO UPDATE SET name = $2, color = $3',
-    [ip, name, color]
-  );
+async function createUser(ip, name, color, deviceId) {
+  if (deviceId) {
+    // Try to update existing device entry first
+    const { rowCount } = await pool.query(
+      'UPDATE users SET name = $1, color = $2 WHERE device_id = $3',
+      [name, color, deviceId]
+    );
+    if (rowCount === 0) {
+      // New device — insert with a unique key (use device_id as ip column to avoid PK conflicts)
+      await pool.query(
+        'INSERT INTO users (ip, name, color, device_id) VALUES ($1, $2, $3, $4) ON CONFLICT (ip) DO UPDATE SET name = $2, color = $3, device_id = $4',
+        [deviceId, name, color, deviceId]
+      );
+    }
+  } else {
+    // Fallback to IP-based (legacy)
+    await pool.query(
+      'INSERT INTO users (ip, name, color) VALUES ($1, $2, $3) ON CONFLICT (ip) DO UPDATE SET name = $2, color = $3',
+      [ip, name, color]
+    );
+  }
 }
 
 async function getUserCount() {

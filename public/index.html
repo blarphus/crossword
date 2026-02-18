@@ -933,14 +933,24 @@ function sfxFireBreak() {
   osc.stop(t + 0.3);
 }
 
-// ─── User identity (IP-based, server-managed) ──────────────────
+// ─── Device identity ────────────────────────────────────────────
+function getDeviceId() {
+  let id = localStorage.getItem('crossword-device-id');
+  if (!id) {
+    id = crypto.randomUUID();
+    localStorage.setItem('crossword-device-id', id);
+  }
+  return id;
+}
+const DEVICE_ID = getDeviceId();
+
 let myName = '';
 let myColor = '#90EE90';
 let socket = null;
 
 async function initIdentity() {
   try {
-    const res = await fetch('/api/me');
+    const res = await fetch('/api/me', { headers: { 'X-Device-Id': DEVICE_ID } });
     const data = await res.json();
     if (data.name) {
       myName = data.name;
@@ -1018,7 +1028,7 @@ function showNameModal(isChange) {
       if (selectedColor) body.color = selectedColor;
       const res = await fetch('/api/me', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'X-Device-Id': DEVICE_ID },
         body: JSON.stringify(body),
       });
       const data = await res.json();
@@ -1065,7 +1075,7 @@ document.getElementById('user-badge').addEventListener('click', () => {
 let appStarted = false;
 
 function connectSocket() {
-  socket = io({ query: { userId: myName } });
+  socket = io({ query: { userId: myName, deviceId: DEVICE_ID } });
 
   socket.on('connect', () => {
     if (currentDate) socket.emit('join-puzzle', currentDate);
