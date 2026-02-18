@@ -150,13 +150,14 @@ body {
 }
 
 /* ─── Puzzle View ────────────────────────────────────────────── */
-#puzzle-view { display: none; flex-direction: column; }
+#puzzle-view { display: none; flex-direction: column; height: 100vh; overflow: hidden; }
 
 .puzzle-header {
   text-align: center;
   padding: 16px;
   background: var(--white);
   border-bottom: 2px solid #ddd;
+  flex-shrink: 0;
 }
 .puzzle-header .back-btn {
   position: absolute;
@@ -185,6 +186,7 @@ body {
   background: var(--white);
   border-bottom: 1px solid #ddd;
   flex-wrap: wrap;
+  flex-shrink: 0;
 }
 .toolbar button {
   padding: 6px 16px;
@@ -207,6 +209,7 @@ body {
   border-bottom: 1px solid #eee;
   min-height: 28px;
   font-size: 0.78rem;
+  flex-shrink: 0;
 }
 .presence-user {
   display: flex;
@@ -244,6 +247,7 @@ body {
   font-size: 0.95rem;
   font-weight: 500;
   min-height: 36px;
+  flex-shrink: 0;
 }
 #clue-bar-text { flex: 1; text-align: center; }
 .clue-nav-btn {
@@ -258,10 +262,13 @@ body {
   padding: 16px;
   max-width: 1200px;
   margin: 0 auto;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
 }
 
 /* Grid */
-.grid-container { flex-shrink: 0; position: relative; }
+.grid-container { flex-shrink: 0; position: relative; align-self: flex-start; padding-top: 18px; }
 
 .grid {
   display: grid;
@@ -359,6 +366,7 @@ body {
   border: 1px solid #ddd;
   border-radius: 6px;
   overflow: hidden;
+  max-height: 100%;
 }
 
 .clue-section {
@@ -1757,8 +1765,11 @@ async function loadPuzzle(dateStr) {
     const availH = window.innerHeight - 260; // header + toolbar + clue bar + keyboard
     cellSize = Math.max(16, Math.min(40, Math.floor(Math.min(availW / COLS, availH / ROWS))));
   } else {
-    const maxGridPx = Math.min(window.innerWidth - 420, 650);
-    cellSize = Math.max(16, Math.min(40, Math.floor(maxGridPx / Math.max(ROWS, COLS))));
+    const maxGridW = Math.min(window.innerWidth - 420, 650);
+    // Account for header (~60px) + toolbar (~45px) + presence bar (~28px) + clue bar (~36px) + fire bar (~22px) + app padding (32px)
+    const headerEtc = 225;
+    const maxGridH = window.innerHeight - headerEtc;
+    cellSize = Math.max(16, Math.min(40, Math.floor(Math.min(maxGridW / COLS, maxGridH / ROWS))));
   }
   document.documentElement.style.setProperty('--cell-size', cellSize + 'px');
 
