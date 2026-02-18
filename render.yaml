@@ -9,7 +9,7 @@ services:
     plan: free
     name: crossword
     runtime: node
-    buildCommand: pip install -r requirements.txt && npm install
+    buildCommand: npm install
     startCommand: node server.js
     envVars:
       - key: DATABASE_URL
