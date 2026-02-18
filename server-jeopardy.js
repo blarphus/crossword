@@ -190,7 +190,7 @@ module.exports = function initJeopardy(io, db) {
         if (cb) cb({ error: 'Room not found' });
         return;
       }
-      if (room.players.size >= 8) {
+      if (room.players.size >= 4) {
         if (cb) cb({ error: 'Room is full' });
         return;
       }

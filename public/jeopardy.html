@@ -627,7 +627,14 @@ body {
   <div class="lobby-title">JEOPARDY!</div>
   <div class="lobby-subtitle">Multiplayer Trivia</div>
 
-  <!-- Initial: create or join -->
+  <!-- Join view (shown when arriving via room link) -->
+  <div id="lobby-join" class="lobby-card" style="display:none;">
+    <h2>Join Game</h2>
+    <input class="lobby-input" id="join-name" placeholder="Your name" maxlength="20" autocomplete="off">
+    <button class="lobby-btn btn-gold" id="btn-join-direct">Join Room</button>
+  </div>
+
+  <!-- Create or join (shown when no room code in URL) -->
   <div id="lobby-menu" class="lobby-card">
     <h2>Enter your name</h2>
     <input class="lobby-input" id="player-name" placeholder="Your name" maxlength="20" autocomplete="off">
@@ -785,10 +792,14 @@ body {
 
   connect();
 
-  // Check URL for room code
+  // Check URL for room code — if present, show join-focused view
   const urlPath = window.location.pathname.replace('/jeopardy', '').replace(/^\//, '');
-  if (urlPath && urlPath.length === 4) {
-    document.getElementById('room-code-input').value = urlPath.toUpperCase();
+  let pendingRoomCode = null;
+  if (urlPath && /^[A-Za-z0-9]{4}$/.test(urlPath)) {
+    pendingRoomCode = urlPath.toUpperCase();
+    document.getElementById('lobby-menu').style.display = 'none';
+    document.getElementById('lobby-join').style.display = 'block';
+    document.getElementById('join-name').focus();
   }
 
   // ─── Lobby handlers ────────────────────────────────────────
@@ -814,12 +825,27 @@ body {
     });
   };
 
+  // Direct join (from URL room code)
+  document.getElementById('btn-join-direct').onclick = () => {
+    const name = document.getElementById('join-name').value.trim() || 'Player';
+    if (!pendingRoomCode) return;
+    socket.emit('join-room', { roomId: pendingRoomCode, playerName: name, deviceId: getDeviceId() }, (res) => {
+      if (res.error) { alert(res.error); return; }
+      roomId = res.roomId;
+      isHost = false;
+      showRoom();
+    });
+  };
+
   // Enter key on inputs
   document.getElementById('player-name').onkeydown = (e) => {
     if (e.key === 'Enter') document.getElementById('btn-create').click();
   };
   document.getElementById('room-code-input').onkeydown = (e) => {
     if (e.key === 'Enter') document.getElementById('btn-join').click();
+  };
+  document.getElementById('join-name').onkeydown = (e) => {
+    if (e.key === 'Enter') document.getElementById('btn-join-direct').click();
   };
 
   document.getElementById('btn-start').onclick = () => {
