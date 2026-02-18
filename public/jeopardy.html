@@ -627,24 +627,29 @@ body {
   <div class="lobby-title">JEOPARDY!</div>
   <div class="lobby-subtitle">Multiplayer Trivia</div>
 
-  <!-- Join view (shown when arriving via room link) -->
-  <div id="lobby-join" class="lobby-card" style="display:none;">
-    <h2>Join Game</h2>
-    <input class="lobby-input" id="join-name" placeholder="Your name" maxlength="20" autocomplete="off">
-    <button class="lobby-btn btn-gold" id="btn-join-direct">Join Room</button>
-  </div>
-
-  <!-- Create or join (shown when no room code in URL) -->
-  <div id="lobby-menu" class="lobby-card">
-    <h2>Enter your name</h2>
-    <input class="lobby-input" id="player-name" placeholder="Your name" maxlength="20" autocomplete="off">
-    <button class="lobby-btn btn-gold" id="btn-create">Create Room</button>
+  <!-- Step 1: Host or Join -->
+  <div id="lobby-choice" class="lobby-card">
+    <button class="lobby-btn btn-gold" id="btn-choice-host">Host Game</button>
     <div class="lobby-or">- or -</div>
-    <input class="lobby-input" id="room-code-input" placeholder="Room code" maxlength="4" style="text-transform:uppercase; letter-spacing:4px; text-align:center;" autocomplete="off">
-    <button class="lobby-btn btn-blue" id="btn-join">Join Room</button>
+    <button class="lobby-btn btn-blue" id="btn-choice-join">Join Game</button>
   </div>
 
-  <!-- In-room waiting -->
+  <!-- Step 2a: Host — enter name -->
+  <div id="lobby-host-name" class="lobby-card" style="display:none;">
+    <h2>Your Name</h2>
+    <input class="lobby-input" id="host-name" placeholder="Your name" maxlength="20" autocomplete="off">
+    <button class="lobby-btn btn-gold" id="btn-host-go">Create Room</button>
+  </div>
+
+  <!-- Step 2b: Join — enter name + room code -->
+  <div id="lobby-join-form" class="lobby-card" style="display:none;">
+    <h2>Join a Room</h2>
+    <input class="lobby-input" id="join-name" placeholder="Your name" maxlength="20" autocomplete="off">
+    <input class="lobby-input" id="room-code-input" placeholder="Room code" maxlength="4" style="text-transform:uppercase; letter-spacing:4px; text-align:center;" autocomplete="off">
+    <button class="lobby-btn btn-gold" id="btn-join-go">Join</button>
+  </div>
+
+  <!-- Step 3: In-room waiting -->
   <div id="lobby-room" class="lobby-card" style="display:none;">
     <h2>Room</h2>
     <div class="room-code-display" id="room-code"></div>
@@ -755,7 +760,9 @@ body {
 
   // ─── DOM refs ───────────────────────────────────────────────
   const $lobby = document.getElementById('lobby');
-  const $lobbyMenu = document.getElementById('lobby-menu');
+  const $lobbyChoice = document.getElementById('lobby-choice');
+  const $lobbyHostName = document.getElementById('lobby-host-name');
+  const $lobbyJoinForm = document.getElementById('lobby-join-form');
   const $lobbyRoom = document.getElementById('lobby-room');
   const $game = document.getElementById('game');
   const $board = document.getElementById('board');
@@ -792,19 +799,42 @@ body {
 
   connect();
 
-  // Check URL for room code — if present, show join-focused view
+  // Check URL for room code — if present, skip to join form
   const urlPath = window.location.pathname.replace('/jeopardy', '').replace(/^\//, '');
   let pendingRoomCode = null;
   if (urlPath && /^[A-Za-z0-9]{4}$/.test(urlPath)) {
     pendingRoomCode = urlPath.toUpperCase();
-    document.getElementById('lobby-menu').style.display = 'none';
-    document.getElementById('lobby-join').style.display = 'block';
+    $lobbyChoice.style.display = 'none';
+    $lobbyJoinForm.style.display = 'block';
+    document.getElementById('room-code-input').value = pendingRoomCode;
     document.getElementById('join-name').focus();
   }
 
+  function hideAllLobbyCards() {
+    $lobbyChoice.style.display = 'none';
+    $lobbyHostName.style.display = 'none';
+    $lobbyJoinForm.style.display = 'none';
+    $lobbyRoom.style.display = 'none';
+  }
+
   // ─── Lobby handlers ────────────────────────────────────────
-  document.getElementById('btn-create').onclick = () => {
-    const name = document.getElementById('player-name').value.trim() || 'Player';
+
+  // Step 1: Host or Join choice
+  document.getElementById('btn-choice-host').onclick = () => {
+    hideAllLobbyCards();
+    $lobbyHostName.style.display = 'block';
+    document.getElementById('host-name').focus();
+  };
+
+  document.getElementById('btn-choice-join').onclick = () => {
+    hideAllLobbyCards();
+    $lobbyJoinForm.style.display = 'block';
+    document.getElementById('join-name').focus();
+  };
+
+  // Step 2a: Host enters name → create room
+  document.getElementById('btn-host-go').onclick = () => {
+    const name = document.getElementById('host-name').value.trim() || 'Player';
     socket.emit('create-room', { playerName: name, deviceId: getDeviceId() }, (res) => {
       if (res.error) { alert(res.error); return; }
       roomId = res.roomId;
@@ -812,9 +842,13 @@ body {
       showRoom();
     });
   };
+  document.getElementById('host-name').onkeydown = (e) => {
+    if (e.key === 'Enter') document.getElementById('btn-host-go').click();
+  };
 
-  document.getElementById('btn-join').onclick = () => {
-    const name = document.getElementById('player-name').value.trim() || 'Player';
+  // Step 2b: Joiner enters name + room code → join room
+  document.getElementById('btn-join-go').onclick = () => {
+    const name = document.getElementById('join-name').value.trim() || 'Player';
     const code = document.getElementById('room-code-input').value.trim().toUpperCase();
     if (!code || code.length !== 4) { alert('Enter a 4-letter room code'); return; }
     socket.emit('join-room', { roomId: code, playerName: name, deviceId: getDeviceId() }, (res) => {
@@ -824,28 +858,11 @@ body {
       showRoom();
     });
   };
-
-  // Direct join (from URL room code)
-  document.getElementById('btn-join-direct').onclick = () => {
-    const name = document.getElementById('join-name').value.trim() || 'Player';
-    if (!pendingRoomCode) return;
-    socket.emit('join-room', { roomId: pendingRoomCode, playerName: name, deviceId: getDeviceId() }, (res) => {
-      if (res.error) { alert(res.error); return; }
-      roomId = res.roomId;
-      isHost = false;
-      showRoom();
-    });
-  };
-
-  // Enter key on inputs
-  document.getElementById('player-name').onkeydown = (e) => {
-    if (e.key === 'Enter') document.getElementById('btn-create').click();
+  document.getElementById('join-name').onkeydown = (e) => {
+    if (e.key === 'Enter') document.getElementById('room-code-input').focus();
   };
   document.getElementById('room-code-input').onkeydown = (e) => {
-    if (e.key === 'Enter') document.getElementById('btn-join').click();
-  };
-  document.getElementById('join-name').onkeydown = (e) => {
-    if (e.key === 'Enter') document.getElementById('btn-join-direct').click();
+    if (e.key === 'Enter') document.getElementById('btn-join-go').click();
   };
 
   document.getElementById('btn-start').onclick = () => {
@@ -853,7 +870,7 @@ body {
   };
 
   function showRoom() {
-    $lobbyMenu.style.display = 'none';
+    hideAllLobbyCards();
     $lobbyRoom.style.display = 'block';
     document.getElementById('room-code').textContent = roomId;
     history.replaceState(null, '', `/jeopardy/${roomId}`);
@@ -1273,8 +1290,8 @@ body {
     $gameoverOverlay.classList.remove('active');
     $game.classList.remove('active');
     $lobby.style.display = 'flex';
-    $lobbyMenu.style.display = 'block';
-    $lobbyRoom.style.display = 'none';
+    hideAllLobbyCards();
+    $lobbyChoice.style.display = 'block';
     roomId = null;
     isHost = false;
     gameState = null;
