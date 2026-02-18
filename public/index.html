@@ -219,6 +219,11 @@ body {
   border-radius: 50%;
   display: inline-block;
 }
+.presence-filled {
+  color: #888;
+  font-size: 0.8em;
+  font-variant-numeric: tabular-nums;
+}
 .presence-pts {
   font-weight: 700;
   font-variant-numeric: tabular-nums;
@@ -931,6 +936,25 @@ function sfxFireBreak() {
   gain.gain.exponentialRampToValueAtTime(0.001, t + 0.3);
   osc.start(t);
   osc.stop(t + 0.3);
+}
+
+function sfxVictory() {
+  // Triumphant ascending arpeggio: C5 E5 G5 C6
+  const ctx = getAudioCtx();
+  const t = ctx.currentTime;
+  [523, 659, 784, 1047].forEach((freq, i) => {
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.type = 'sine';
+    osc.frequency.value = freq;
+    const start = t + i * 0.12;
+    gain.gain.setValueAtTime(0.12, start);
+    gain.gain.exponentialRampToValueAtTime(0.001, start + (i === 3 ? 0.6 : 0.25));
+    osc.start(start);
+    osc.stop(start + (i === 3 ? 0.6 : 0.25));
+  });
 }
 
 // ─── Device identity ────────────────────────────────────────────
@@ -1883,7 +1907,7 @@ function setupSocketHandlers() {
     if (PUZZLE) render();
   });
 
-  socket.on('cell-updated', ({ row, col, letter, userId: remoteUserId, userName: remoteName, color: remoteColor, pointDelta, wordBonus, fireEvent, guessCorrect }) => {
+  socket.on('cell-updated', ({ row, col, letter, userId: remoteUserId, userName: remoteName, color: remoteColor, pointDelta, wordBonus, fireEvent, guessCorrect, lastSquareBonus }) => {
     if (!PUZZLE) return;
     if (row >= 0 && row < ROWS && col >= 0 && col < COLS) {
       userGrid[row][col] = letter;
@@ -1918,6 +1942,11 @@ function setupSocketHandlers() {
         const isCombo = wordBonus >= (isFireDoubled ? 30 : 15);
         setTimeout(() => showPointFloat(row, col, wordBonus, isCombo ? 'combo' : 'word', isFireDoubled), 200);
         triggerWordWave(row, col);
+      }
+      // Apply remote last-square bonus
+      if (lastSquareBonus && remoteName) {
+        persistedPoints.set(remoteName, (persistedPoints.get(remoteName) || 0) + lastSquareBonus);
+        setTimeout(() => showPointFloat(row, col, lastSquareBonus, 'combo', false), 400);
       }
       // Handle remote fire events
       if (fireEvent) {
@@ -2098,13 +2127,21 @@ function renderPresenceBar() {
   }
   presenceBarEl.style.display = '';
 
+  // Count filled squares per player
+  const filledCounts = new Map();
+  for (const [, filler] of cellFillers) {
+    filledCounts.set(filler.userName, (filledCounts.get(filler.userName) || 0) + 1);
+  }
+
   for (const u of allUsers) {
     const data = points.get(u.name);
     const pts = data ? data.pts : 0;
+    const filled = filledCounts.get(u.name) || 0;
     const el = document.createElement('span');
     el.className = 'presence-user';
+    const filledStr = filled > 0 ? ` <span class="presence-filled">${filled}</span>` : '';
     const ptsStr = pts !== 0 ? ` <span class="presence-pts">${pts > 0 ? '+' : ''}${pts}</span>` : '';
-    el.innerHTML = `<span class="presence-dot" style="background:${u.color}"></span>${u.label}${ptsStr}`;
+    el.innerHTML = `<span class="presence-dot" style="background:${u.color}"></span>${u.label}${filledStr}${ptsStr}`;
     if (u.name === myName) {
       el.style.cursor = 'pointer';
       el.addEventListener('click', () => showNameModal(true));
@@ -2586,6 +2623,16 @@ function checkCompletion() {
     for (let c = 0; c < COLS; c++) {
       if (!isBlack(r, c) && userGrid[r][c] !== getCorrectAnswer(r, c)) return;
     }
+  }
+  if (!solved) {
+    // Award 25 point bonus to whoever filled the last square
+    const lastFiller = cellFillers.get(`${selectedRow},${selectedCol}`);
+    if (lastFiller) {
+      const bonus = 25;
+      persistedPoints.set(lastFiller.userName, (persistedPoints.get(lastFiller.userName) || 0) + bonus);
+      showPointFloat(selectedRow, selectedCol, bonus, 'combo', false);
+    }
+    sfxVictory();
   }
   solved = true;
   showLeaderboard();

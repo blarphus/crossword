@@ -522,7 +522,30 @@ io.on('connection', async (socket) => {
         }
       }
 
-      socket.to(`puzzle:${puzzleDate}`).emit('cell-updated', { row, col, letter, userId, userName, color: userColor, pointDelta, wordBonus, fireEvent, guessCorrect });
+      // Check if puzzle is now fully solved — award last-square bonus
+      let lastSquareBonus = 0;
+      if (letter && guessCorrect) {
+        const pData = await getPuzzleData(puzzleDate);
+        const state = await db.getState(puzzleDate);
+        if (pData && state) {
+          const grid = state.user_grid;
+          const rows = pData.dimensions.rows;
+          const cols = pData.dimensions.cols;
+          let complete = true;
+          for (let r = 0; r < rows && complete; r++) {
+            for (let c = 0; c < cols && complete; c++) {
+              if (pData.grid[r][c] === '.') continue;
+              if (grid[`${r},${c}`] !== getCorrectAnswer(pData, r, c)) complete = false;
+            }
+          }
+          if (complete) {
+            lastSquareBonus = 25;
+            await db.addPoints(puzzleDate, userName, lastSquareBonus);
+          }
+        }
+      }
+
+      socket.to(`puzzle:${puzzleDate}`).emit('cell-updated', { row, col, letter, userId, userName, color: userColor, pointDelta, wordBonus, fireEvent, guessCorrect, lastSquareBonus });
 
       // Send fire update back to originating socket
       if (fireEvent) {
