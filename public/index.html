@@ -1579,7 +1579,7 @@ function showPuzzle(dateStr, pushState = true, showEntry = false) {
 }
 
 // ─── Puzzle Entry Overlay ─────────────────────────────────────
-async function showPuzzleEntryOverlay(dateStr) {
+function showPuzzleEntryOverlay(dateStr) {
   const overlay = document.getElementById('puzzle-entry-overlay');
   const dateEl = document.getElementById('entry-date');
   const weekdayEl = document.getElementById('entry-weekday');
@@ -1597,6 +1597,7 @@ async function showPuzzleEntryOverlay(dateStr) {
 
   weekdayEl.textContent = weekday;
   dateEl.textContent = `${monthName} ${d}, ${y}`;
+  metaEl2.textContent = '';
 
   // Show user preview
   if (myName) {
@@ -1606,51 +1607,31 @@ async function showPuzzleEntryOverlay(dateStr) {
     userPreviewEl.style.display = 'none';
   }
 
-  // Fetch puzzle metadata for author/editor
-  try {
-    const res = await fetch('/api/puzzles');
-    const puzzles = await res.json();
+  // Show current players
+  playersEl.innerHTML = '';
+  const count = roomCounts.get(dateStr) || 0;
+  if (count > 0) {
+    const el = document.createElement('div');
+    el.className = 'entry-player';
+    el.innerHTML = `<span class="entry-player-dot" style="background:#2a6dd4"></span>${count} player${count > 1 ? 's' : ''} solving`;
+    playersEl.appendChild(el);
+  } else {
+    playersEl.innerHTML = '<div class="entry-no-players">No one here yet</div>';
+  }
+
+  // Show overlay immediately
+  overlay.classList.add('show');
+
+  // Fetch puzzle metadata in the background (non-blocking)
+  fetch('/api/puzzles').then(r => r.json()).then(puzzles => {
     const puzzle = puzzles.find(p => p.date === dateStr);
     if (puzzle) {
       const parts = [];
       if (puzzle.author) parts.push(`By ${puzzle.author}`);
       if (puzzle.editor) parts.push(`Edited by ${puzzle.editor}`);
       metaEl2.textContent = parts.join(' \u00B7 ');
-    } else {
-      metaEl2.textContent = '';
     }
-  } catch (e) {
-    metaEl2.textContent = '';
-  }
-
-  // Show current players from room counts / presence
-  function renderEntryPlayers() {
-    playersEl.innerHTML = '';
-    const count = roomCounts.get(dateStr) || 0;
-    if (count > 0) {
-      // We may not know exact names, but we can show the count
-      // If we have remote user data (from being in the room), show names
-      if (remoteUsers.size > 0) {
-        for (const [, user] of remoteUsers) {
-          const el = document.createElement('div');
-          el.className = 'entry-player';
-          el.innerHTML = `<span class="entry-player-dot" style="background:${user.color}"></span>${user.userName}`;
-          playersEl.appendChild(el);
-        }
-      } else {
-        const el = document.createElement('div');
-        el.className = 'entry-player';
-        el.innerHTML = `<span class="entry-player-dot" style="background:#2a6dd4"></span>${count} player${count > 1 ? 's' : ''} solving`;
-        playersEl.appendChild(el);
-      }
-    } else {
-      playersEl.innerHTML = '<div class="entry-no-players">No one here yet</div>';
-    }
-  }
-  renderEntryPlayers();
-
-  // Show overlay
-  overlay.classList.add('show');
+  }).catch(() => {});
 
   // Start button — puzzle is already loaded behind the overlay
   const handleStart = () => {
