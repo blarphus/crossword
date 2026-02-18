@@ -739,12 +739,55 @@ body {
   transition: width 0.3s;
 }
 
+/* ─── Mode Selector (side by side) ───────────────────────── */
+.mode-selector {
+  display: flex;
+  gap: 16px;
+  width: 100%;
+  max-width: 620px;
+}
+.mode-card {
+  flex: 1;
+  background: rgba(255,255,255,0.08);
+  border-radius: 16px;
+  padding: 28px 24px;
+  backdrop-filter: blur(10px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  cursor: pointer;
+  border: 2px solid transparent;
+  transition: border-color 0.2s, background 0.2s, transform 0.1s;
+}
+.mode-card:hover {
+  background: rgba(255,255,255,0.12);
+  transform: translateY(-2px);
+}
+.mode-card:active { transform: scale(0.98); }
+.mode-card .mode-icon { font-size: 2.2rem; margin-bottom: 12px; }
+.mode-card .mode-label {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.15rem;
+  font-weight: 900;
+  color: var(--gold);
+  margin-bottom: 6px;
+}
+.mode-card .mode-desc {
+  font-size: 0.8rem;
+  color: rgba(255,255,255,0.5);
+  line-height: 1.4;
+}
+
 @media (max-width: 600px) {
   .board-category { font-size: 0.55rem; padding: 4px 2px; min-height: 40px; }
   .board-cell { font-size: 1rem; min-height: 44px; }
   .clue-text { font-size: 1.2rem; }
   .buzz-btn { width: 140px; height: 140px; font-size: 1rem; }
   .lobby-title { font-size: 2rem; }
+  .mode-selector { flex-direction: column; gap: 10px; }
+  .mode-card { padding: 20px 18px; }
+  .mode-card .mode-icon { font-size: 1.6rem; margin-bottom: 8px; }
 }
 </style>
 </head>
@@ -757,12 +800,25 @@ body {
   <div class="lobby-title">JEOPARDY!</div>
   <div class="lobby-subtitle">Trivia</div>
 
-  <!-- Step 1: Single Player / Host / Join -->
-  <div id="lobby-choice" class="lobby-card">
-    <button class="lobby-btn btn-gold" id="btn-choice-single">Single Player</button>
+  <!-- Step 1: Single Player / Multiplayer -->
+  <div id="lobby-choice" class="mode-selector">
+    <div class="mode-card" id="btn-choice-single">
+      <div class="mode-icon">&#9733;</div>
+      <div class="mode-label">Single Player</div>
+      <div class="mode-desc">Play against CPU opponents</div>
+    </div>
+    <div class="mode-card" id="btn-choice-multi">
+      <div class="mode-icon">&#9775;</div>
+      <div class="mode-label">Multiplayer</div>
+      <div class="mode-desc">Host or join a game with friends</div>
+    </div>
+  </div>
+
+  <!-- Step 1b: Multiplayer — host or join -->
+  <div id="lobby-multi-choice" class="lobby-card" style="display:none;">
+    <button class="lobby-btn btn-gold" id="btn-choice-host">Host Game</button>
     <div class="lobby-or">- or -</div>
-    <button class="lobby-btn btn-blue" id="btn-choice-host">Host Multiplayer</button>
-    <button class="lobby-btn btn-outline" id="btn-choice-join" style="margin-top:4px;">Join Game</button>
+    <button class="lobby-btn btn-blue" id="btn-choice-join">Join Game</button>
   </div>
 
   <!-- Step 2s: Single player — enter name -->
@@ -938,6 +994,7 @@ body {
   // ─── DOM refs ───────────────────────────────────────────────
   const $lobby = document.getElementById('lobby');
   const $lobbyChoice = document.getElementById('lobby-choice');
+  const $lobbyMultiChoice = document.getElementById('lobby-multi-choice');
   const $lobbySingleName = document.getElementById('lobby-single-name');
   const $lobbyHostName = document.getElementById('lobby-host-name');
   const $lobbyJoinForm = document.getElementById('lobby-join-form');
@@ -984,6 +1041,7 @@ body {
 
   function hideAllLobbyCards() {
     $lobbyChoice.style.display = 'none';
+    $lobbyMultiChoice.style.display = 'none';
     $lobbySingleName.style.display = 'none';
     $lobbyHostName.style.display = 'none';
     $lobbyJoinForm.style.display = 'none';
@@ -992,13 +1050,19 @@ body {
 
   // ─── Lobby handlers ────────────────────────────────────────
 
-  // Step 1: Single Player / Host / Join choice
+  // Step 1: Single Player or Multiplayer
   document.getElementById('btn-choice-single').onclick = () => {
     hideAllLobbyCards();
     $lobbySingleName.style.display = 'block';
     document.getElementById('single-name').focus();
   };
 
+  document.getElementById('btn-choice-multi').onclick = () => {
+    hideAllLobbyCards();
+    $lobbyMultiChoice.style.display = 'block';
+  };
+
+  // Step 1b: Host or Join
   document.getElementById('btn-choice-host').onclick = () => {
     hideAllLobbyCards();
     $lobbyHostName.style.display = 'block';
@@ -1659,7 +1723,7 @@ body {
     $game.classList.remove('active');
     $lobby.style.display = 'flex';
     hideAllLobbyCards();
-    $lobbyChoice.style.display = 'block';
+    $lobbyChoice.style.display = 'flex';
     roomId = null;
     isHost = false;
     isSinglePlayer = false;
