@@ -667,7 +667,7 @@ body.mobile .grid-container {
 }
 body.mobile .grid { touch-action: none; }
 body.mobile .hint-btn { right: 4px; top: auto; bottom: 4px; transform: none; }
-body.mobile .hint-btn:hover { transform: scale(1.15); }
+body.mobile .hint-btn:hover { transform: scale(1.1); }
 body.mobile .clue-panel { display: none; }
 
 /* Keyboard at bottom of flex column */
@@ -782,41 +782,42 @@ body.mobile .mobile-keyboard { display: block; position: static; flex-shrink: 0;
 .hint-btn {
   display: none;
   position: absolute;
-  right: -54px;
+  right: -64px;
   top: 50%;
   transform: translateY(-50%);
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
+  width: 54px;
+  padding: 8px 4px;
+  border-radius: 12px;
   border: 2px solid #daa520;
   background: linear-gradient(135deg, #ffd700, #ffec80, #daa520);
   color: #5c3d00;
-  font-size: 1.3rem;
-  font-weight: 900;
+  font-size: 0.7rem;
+  font-weight: 800;
   cursor: pointer;
   animation: hint-glow 2s ease-in-out infinite;
   z-index: 5;
   transition: transform 0.2s;
+  text-align: center;
+  line-height: 1.3;
+  flex-direction: column;
 }
-.hint-btn:hover { transform: translateY(-50%) scale(1.15); }
+.hint-btn:hover { transform: translateY(-50%) scale(1.1); }
 .hint-btn.show { display: flex; align-items: center; justify-content: center; }
+.hint-btn.voted { opacity: 0.7; border-style: dashed; }
+.hint-btn .hint-icon { font-size: 1.2rem; }
+.hint-btn .hint-votes { font-size: 0.6rem; margin-top: 2px; }
 
-/* Hint (gold) cells */
-@keyframes shimmer {
-  0% { background-position: -200% center; }
-  100% { background-position: 200% center; }
+/* Hint (gold) cells — shiny gold outline */
+@keyframes shimmer-border {
+  0% { border-color: #daa520; box-shadow: inset 0 0 4px rgba(255,215,0,0.3), 0 0 4px rgba(255,215,0,0.2); }
+  50% { border-color: #ffd700; box-shadow: inset 0 0 8px rgba(255,215,0,0.6), 0 0 8px rgba(255,215,0,0.5); }
+  100% { border-color: #daa520; box-shadow: inset 0 0 4px rgba(255,215,0,0.3), 0 0 4px rgba(255,215,0,0.2); }
 }
 .cell.hint-cell {
-  background: linear-gradient(90deg, #fff8dc, #ffd700, #ffec80, #ffd700, #fff8dc) !important;
-  background-size: 200% 100%;
-  animation: shimmer 3s linear infinite;
-  color: #8b6914 !important;
+  border: 2px solid #ffd700 !important;
+  animation: shimmer-border 2s ease-in-out infinite;
+  color: #b8860b !important;
   font-weight: 900;
-}
-.cell.hint-cell.highlight-word,
-.cell.hint-cell.highlight-cell {
-  background: linear-gradient(90deg, #fff8dc, #ffd700, #ffec80, #ffd700, #fff8dc) !important;
-  background-size: 200% 100%;
 }
 
 /* ─── Puzzle Entry Overlay ──────────────────────────────────── */
@@ -999,7 +1000,7 @@ body.mobile .mobile-keyboard { display: block; position: static; flex-shrink: 0;
   <div class="app">
     <div class="grid-container">
       <div class="grid" id="grid" tabindex="0"></div>
-      <button class="hint-btn" id="hint-btn" title="Hint: reveal 5 letters">?</button>
+      <button class="hint-btn" id="hint-btn" title="Vote for a hint"><span class="hint-icon">💡</span><span class="hint-votes" id="hint-votes"></span></button>
       <input type="text" id="mobile-input" class="mobile-input" autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false">
     </div>
     <div class="clue-panel" id="clue-panel"></div>
@@ -1397,6 +1398,7 @@ const remoteFireStates = new Map(); // socketId → {userName, color, fireCells:
 const hintCells = new Set(); // "r,c" strings — cells revealed by hints (cannot be deleted)
 let lastWordCompletionTime = Date.now();
 let hintCheckInterval = null;
+let hintVoted = false; // whether this player has voted for current hint
 
 // ─── DOM refs ──────────────────────────────────────────────────
 const calendarView = document.getElementById('calendar-view');
@@ -1947,8 +1949,8 @@ function triggerWordWave(row, col) {
 function sendCellUpdate(row, col, letter) {
   if (!currentDate || !socket) return;
   const key = `${row},${col}`;
-  // Prevent deleting hint cells
-  if (!letter && hintCells.has(key)) return;
+  // Prevent modifying hint cells (cannot delete or overwrite)
+  if (hintCells.has(key)) return;
   if (letter) {
     cellColors.set(key, myColor);
     cellFillers.set(key, { userName: myName, color: myColor });
@@ -2040,62 +2042,69 @@ function sendCellUpdate(row, col, letter) {
 // ─── Hint system ─────────────────────────────────────────────────
 function startHintTimer() {
   lastWordCompletionTime = Date.now();
+  hintVoted = false;
   if (hintCheckInterval) clearInterval(hintCheckInterval);
   hintCheckInterval = setInterval(() => {
     if (solved) { hideHintBtn(); return; }
     const elapsed = Date.now() - lastWordCompletionTime;
     if (elapsed >= 60000) {
       showHintBtn();
+      // Notify server that hint is available (so all clients can see it)
+      if (socket && currentDate) socket.emit('hint-available', { puzzleDate: currentDate });
     }
   }, 5000);
 }
 
 function resetHintTimer() {
   lastWordCompletionTime = Date.now();
+  hintVoted = false;
   hideHintBtn();
 }
 
 function showHintBtn() {
   const btn = document.getElementById('hint-btn');
-  if (btn) btn.classList.add('show');
+  if (btn) {
+    btn.classList.add('show');
+    btn.classList.toggle('voted', hintVoted);
+    updateHintVoteText(0, 0);
+  }
 }
 
 function hideHintBtn() {
   const btn = document.getElementById('hint-btn');
-  if (btn) btn.classList.remove('show');
+  if (btn) {
+    btn.classList.remove('show');
+    btn.classList.remove('voted');
+  }
+  hintVoted = false;
 }
 
-function useHint() {
-  if (!PUZZLE) return;
-  hideHintBtn();
+function updateHintVoteText(votes, total) {
+  const el = document.getElementById('hint-votes');
+  if (!el) return;
+  if (votes > 0 || total > 0) {
+    el.textContent = `${votes}/${total}`;
+  } else {
+    el.textContent = 'Hint';
+  }
+}
+
+function voteForHint() {
+  if (!PUZZLE || !socket || !currentDate || hintVoted) return;
+  hintVoted = true;
+  const btn = document.getElementById('hint-btn');
+  if (btn) btn.classList.add('voted');
+  socket.emit('hint-vote', { puzzleDate: currentDate });
+}
+
+function applyHintReveal(cells) {
   lastWordCompletionTime = Date.now();
-  // Find all unfilled (empty or incorrect) non-black cells
-  const candidates = [];
-  for (let r = 0; r < ROWS; r++) {
-    for (let c = 0; c < COLS; c++) {
-      if (isBlack(r, c)) continue;
-      if (hintCells.has(`${r},${c}`)) continue; // already a hint cell
-      const correct = getCorrectAnswer(r, c);
-      if (userGrid[r][c] !== correct) {
-        candidates.push({ r, c, correct });
-      }
-    }
-  }
-  // Pick up to 5 random cells
-  for (let i = candidates.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [candidates[i], candidates[j]] = [candidates[j], candidates[i]];
-  }
-  const chosen = candidates.slice(0, 5);
-  for (const { r, c, correct } of chosen) {
+  hintVoted = false;
+  hideHintBtn();
+  for (const { row: r, col: c, letter } of cells) {
     const key = `${r},${c}`;
     hintCells.add(key);
-    userGrid[r][c] = correct;
-    if (cellEls[r]?.[c]) {
-      cellEls[r][c].classList.add('hint-cell');
-    }
-    // Send to server so other players see it too
-    socket.emit('cell-update', { puzzleDate: currentDate, row: r, col: c, letter: correct });
+    userGrid[r][c] = letter;
   }
   render();
   checkCompletion();
@@ -2365,6 +2374,8 @@ function setupSocketHandlers() {
     persistedPoints.clear();
     guessStats.clear();
     resetFireState();
+    hintCells.clear();
+    hideHintBtn();
     solved = false;
     congratsEl.classList.remove('show');
     render();
@@ -2440,6 +2451,25 @@ function setupSocketHandlers() {
       }
       remoteFireStates.delete(remoteSocketId);
     }
+  });
+
+  // ─── Hint system events ──────────────────────────────────────
+  socket.on('hint-available', () => {
+    if (!PUZZLE || solved) return;
+    showHintBtn();
+  });
+
+  socket.on('hint-vote-update', ({ votes, total }) => {
+    if (!PUZZLE) return;
+    updateHintVoteText(votes, total);
+    // Make sure button is visible
+    const btn = document.getElementById('hint-btn');
+    if (btn && !btn.classList.contains('show')) btn.classList.add('show');
+  });
+
+  socket.on('hint-reveal', ({ cells }) => {
+    if (!PUZZLE) return;
+    applyHintReveal(cells);
   });
 }
 
@@ -3231,7 +3261,7 @@ gridEl.addEventListener('keydown', (e) => {
 // ─── Toolbar ───────────────────────────────────────────────────
 btnBack.addEventListener('click', () => showCalendar());
 
-document.getElementById('hint-btn').addEventListener('click', useHint);
+document.getElementById('hint-btn').addEventListener('click', voteForHint);
 
 btnClear.addEventListener('click', () => {
   if (!PUZZLE || !confirm('Clear all entered letters?')) return;

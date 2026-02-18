@@ -324,6 +324,17 @@ function expireFire(socketId) {
   });
 }
 
+// Hint system state (ephemeral, in-memory)
+// puzzleDate → { votes: Set<socketId>, hintCells: Set<"r,c">, available: bool }
+const hintState = new Map();
+
+function getHintState(puzzleDate) {
+  if (!hintState.has(puzzleDate)) {
+    hintState.set(puzzleDate, { votes: new Set(), hintCells: new Set(), available: false });
+  }
+  return hintState.get(puzzleDate);
+}
+
 function getNextColor(room) {
   const usedColors = new Set();
   for (const user of room.values()) {
@@ -409,12 +420,22 @@ function leaveCurrentPuzzle(socket) {
   socket.leave(`puzzle:${puzzleDate}`);
   socketPuzzle.delete(socket.id);
 
+  // Clean up hint votes
+  const hs = hintState.get(puzzleDate);
+  if (hs) {
+    hs.votes.delete(socket.id);
+  }
+
   const room = puzzleRooms.get(puzzleDate);
   if (room) {
     room.delete(socket.id);
     if (room.size === 0) {
       puzzleRooms.delete(puzzleDate);
+      hintState.delete(puzzleDate);
       stopTimer(puzzleDate);
+    } else if (hs && hs.available && hs.votes.size > 0) {
+      // Re-broadcast hint vote count with updated total
+      io.to(`puzzle:${puzzleDate}`).emit('hint-vote-update', { votes: hs.votes.size, total: room.size });
     }
     socket.to(`puzzle:${puzzleDate}`).emit('user-left', {
       userId: socket.handshake.query.userId,
@@ -511,7 +532,11 @@ io.on('connection', async (socket) => {
         fireStreaks.set(socket.id, fs);
       }
 
-      if (letter) {
+      // Check if this cell is a hint cell (no scoring for hints)
+      const hs = getHintState(puzzleDate);
+      const isHintCell = hs.hintCells.has(`${row},${col}`);
+
+      if (letter && !isHintCell) {
         const pData = await getPuzzleData(puzzleDate);
         const correctAnswer = getCorrectAnswer(pData, row, col);
         if (correctAnswer) {
@@ -555,6 +580,10 @@ io.on('connection', async (socket) => {
 
             if (wordBonus) {
               await db.addPoints(puzzleDate, userName, wordBonus);
+              // Reset hint availability on word completion
+              const hintSt = getHintState(puzzleDate);
+              hintSt.available = false;
+              hintSt.votes.clear();
 
               // Get ALL cells this user has filled for fire display
               const fillers = await db.getCellFillers(puzzleDate);
@@ -654,9 +683,83 @@ io.on('connection', async (socket) => {
     });
   });
 
+  // ─── Hint voting ───────────────────────────────────────────────
+  socket.on('hint-vote', async ({ puzzleDate }) => {
+    try {
+      const room = puzzleRooms.get(puzzleDate);
+      if (!room) return;
+      const hs = getHintState(puzzleDate);
+      hs.votes.add(socket.id);
+      const totalPlayers = room.size;
+      const voteCount = hs.votes.size;
+
+      // Broadcast vote update to all players in room
+      io.to(`puzzle:${puzzleDate}`).emit('hint-vote-update', { votes: voteCount, total: totalPlayers });
+
+      // If all players voted, reveal hints
+      if (voteCount >= totalPlayers) {
+        const pData = await getPuzzleData(puzzleDate);
+        const state = await db.getState(puzzleDate);
+        if (!pData || !state) return;
+        const grid = state.user_grid || {};
+
+        // Find unfilled/incorrect cells that aren't already hints
+        const candidates = [];
+        for (let r = 0; r < pData.dimensions.rows; r++) {
+          for (let c = 0; c < pData.dimensions.cols; c++) {
+            if (pData.grid[r][c] === '.') continue;
+            const key = `${r},${c}`;
+            if (hs.hintCells.has(key)) continue;
+            const correct = getCorrectAnswer(pData, r, c);
+            if (grid[key] !== correct) {
+              candidates.push({ row: r, col: c, letter: correct });
+            }
+          }
+        }
+
+        // Shuffle and pick up to 5
+        for (let i = candidates.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [candidates[i], candidates[j]] = [candidates[j], candidates[i]];
+        }
+        const chosen = candidates.slice(0, 5);
+
+        // Apply hint cells to DB and track them
+        for (const { row: r, col: c, letter } of chosen) {
+          const key = `${r},${c}`;
+          hs.hintCells.add(key);
+          await db.upsertCell(puzzleDate, r, c, letter);
+          await db.upsertCellFiller(puzzleDate, r, c, '(hint)');
+        }
+
+        // Broadcast reveal to all players
+        io.to(`puzzle:${puzzleDate}`).emit('hint-reveal', { cells: chosen });
+
+        // Reset votes for next hint
+        hs.votes.clear();
+        hs.available = false;
+        debounceProgressBroadcast(puzzleDate);
+      }
+    } catch (err) {
+      console.error('[ws] hint-vote error:', err);
+    }
+  });
+
+  socket.on('hint-available', ({ puzzleDate }) => {
+    // Server acknowledges hint availability — broadcast to room
+    const hs = getHintState(puzzleDate);
+    if (!hs.available) {
+      hs.available = true;
+      hs.votes.clear();
+      io.to(`puzzle:${puzzleDate}`).emit('hint-available');
+    }
+  });
+
   socket.on('clear-puzzle', async ({ puzzleDate }) => {
     try {
       await db.clearState(puzzleDate);
+      // Reset hint state
+      hintState.delete(puzzleDate);
       // Reset timer
       puzzleTimerState.delete(puzzleDate);
       await startTimer(puzzleDate); // restart from 0 (clearState deleted the row)
