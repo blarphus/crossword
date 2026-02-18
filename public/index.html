@@ -666,6 +666,8 @@ body.mobile .grid-container {
   overflow: hidden;
 }
 body.mobile .grid { touch-action: none; }
+body.mobile .hint-btn { right: 4px; top: auto; bottom: 4px; transform: none; }
+body.mobile .hint-btn:hover { transform: scale(1.15); }
 body.mobile .clue-panel { display: none; }
 
 /* Keyboard at bottom of flex column */
@@ -766,10 +768,55 @@ body.mobile .mobile-keyboard { display: block; position: static; flex-shrink: 0;
   animation: combo-broken-anim 1.5s ease-out forwards;
 }
 
-/* Fire-doubled point floats */
+/* Fire-boosted point floats */
 .point-float.fire-points {
   color: #ff6a00;
   text-shadow: 0 0 6px rgba(255,106,0,0.5);
+}
+
+/* Hint button */
+@keyframes hint-glow {
+  0%, 100% { box-shadow: 0 0 8px rgba(255,215,0,0.4); }
+  50% { box-shadow: 0 0 18px rgba(255,215,0,0.8); }
+}
+.hint-btn {
+  display: none;
+  position: absolute;
+  right: -54px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 2px solid #daa520;
+  background: linear-gradient(135deg, #ffd700, #ffec80, #daa520);
+  color: #5c3d00;
+  font-size: 1.3rem;
+  font-weight: 900;
+  cursor: pointer;
+  animation: hint-glow 2s ease-in-out infinite;
+  z-index: 5;
+  transition: transform 0.2s;
+}
+.hint-btn:hover { transform: translateY(-50%) scale(1.15); }
+.hint-btn.show { display: flex; align-items: center; justify-content: center; }
+
+/* Hint (gold) cells */
+@keyframes shimmer {
+  0% { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+.cell.hint-cell {
+  background: linear-gradient(90deg, #fff8dc, #ffd700, #ffec80, #ffd700, #fff8dc) !important;
+  background-size: 200% 100%;
+  animation: shimmer 3s linear infinite;
+  color: #8b6914 !important;
+  font-weight: 900;
+}
+.cell.hint-cell.highlight-word,
+.cell.hint-cell.highlight-cell {
+  background: linear-gradient(90deg, #fff8dc, #ffd700, #ffec80, #ffd700, #fff8dc) !important;
+  background-size: 200% 100%;
 }
 
 /* ─── Puzzle Entry Overlay ──────────────────────────────────── */
@@ -952,6 +999,7 @@ body.mobile .mobile-keyboard { display: block; position: static; flex-shrink: 0;
   <div class="app">
     <div class="grid-container">
       <div class="grid" id="grid" tabindex="0"></div>
+      <button class="hint-btn" id="hint-btn" title="Hint: reveal 5 letters">?</button>
       <input type="text" id="mobile-input" class="mobile-input" autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false">
     </div>
     <div class="clue-panel" id="clue-panel"></div>
@@ -1341,7 +1389,14 @@ let myFireExpiresAt = 0;
 let myFireCells = new Set();    // "r,c" strings
 let myFireBarInterval = null;
 let myRecentWordCompletions = []; // [{timestamp,row,col},...] for tracking word completions toward fire
+let myFireMultiplier = 1.5;
+let myFireWordsCompleted = 0;
 const remoteFireStates = new Map(); // socketId → {userName, color, fireCells: Set, expiresAt}
+
+// Hint system state
+const hintCells = new Set(); // "r,c" strings — cells revealed by hints (cannot be deleted)
+let lastWordCompletionTime = Date.now();
+let hintCheckInterval = null;
 
 // ─── DOM refs ──────────────────────────────────────────────────
 const calendarView = document.getElementById('calendar-view');
@@ -1679,6 +1734,9 @@ async function loadPuzzle(dateStr) {
   guessStats.clear();
   lastCursorKey = '';
   resetFireState();
+  hintCells.clear();
+  hideHintBtn();
+  if (hintCheckInterval) clearInterval(hintCheckInterval);
 
   // Fetch puzzle data and shared state in parallel
   let data, stateData;
@@ -1791,6 +1849,9 @@ async function loadPuzzle(dateStr) {
 
   // Join puzzle room via Socket.IO
   if (socket) socket.emit('join-puzzle', dateStr);
+
+  // Start hint timer
+  startHintTimer();
 }
 
 // ─── Collaboration helpers ────────────────────────────────────
@@ -1825,21 +1886,21 @@ function applySharedState(gridMap, fillersMap, pointsMap, userColorsMap, guesses
   }
 }
 
-function showPointFloat(row, col, delta, type, isFireDoubled) {
+function showPointFloat(row, col, delta, type, isFireBoosted) {
   if (!delta || !cellEls[row]?.[col]) return;
   const el = cellEls[row][col];
   const float = document.createElement('span');
   if (type === 'combo') {
     float.className = 'point-float combo';
-    float.textContent = isFireDoubled ? `+${delta} COMBO` : '+15 COMBO';
+    float.textContent = `+${delta} COMBO`;
   } else if (type === 'word') {
     float.className = 'point-float word';
-    float.textContent = isFireDoubled ? `word complete +${delta}` : 'word complete +5';
+    float.textContent = `word complete +${delta}`;
   } else {
     float.className = `point-float ${delta > 0 ? 'plus' : 'minus'}`;
     float.textContent = delta > 0 ? `+${delta}` : `${delta}`;
   }
-  if (isFireDoubled && delta > 0) float.classList.add('fire-points');
+  if (isFireBoosted && delta > 0) float.classList.add('fire-points');
   el.appendChild(float);
   float.addEventListener('animationend', () => float.remove());
 }
@@ -1858,8 +1919,8 @@ function checkLocalWordBonus(row, col) {
     }
   }
   let bonus = 0;
-  if (completed >= 2) bonus = 15;
-  else if (completed === 1) bonus = 5;
+  if (completed >= 2) bonus = 150;
+  else if (completed === 1) bonus = 50;
   return { bonus, completed, wordCellKeys };
 }
 
@@ -1886,6 +1947,8 @@ function triggerWordWave(row, col) {
 function sendCellUpdate(row, col, letter) {
   if (!currentDate || !socket) return;
   const key = `${row},${col}`;
+  // Prevent deleting hint cells
+  if (!letter && hintCells.has(key)) return;
   if (letter) {
     cellColors.set(key, myColor);
     cellFillers.set(key, { userName: myName, color: myColor });
@@ -1905,40 +1968,50 @@ function sendCellUpdate(row, col, letter) {
       sfxType(isCorrect);
 
       if (isCorrect && myFireActive) {
-        // Correct + on fire: doubled points (extension happens on word completion only)
-        persistedPoints.set(myName, (persistedPoints.get(myName) || 0) + 2);
-        showPointFloat(row, col, 2, null, true);
+        // Correct + on fire: multiplied points
+        const firePts = Math.round(10 * myFireMultiplier);
+        persistedPoints.set(myName, (persistedPoints.get(myName) || 0) + firePts);
+        showPointFloat(row, col, firePts, null, true);
       } else if (isCorrect && !myFireActive) {
         // Correct + not on fire: normal point
-        persistedPoints.set(myName, (persistedPoints.get(myName) || 0) + 1);
-        showPointFloat(row, col, 1);
+        persistedPoints.set(myName, (persistedPoints.get(myName) || 0) + 10);
+        showPointFloat(row, col, 10);
       } else if (!isCorrect && myFireActive) {
         // Incorrect + on fire: break fire
-        persistedPoints.set(myName, (persistedPoints.get(myName) || 0) - 1);
-        showPointFloat(row, col, -1);
+        persistedPoints.set(myName, (persistedPoints.get(myName) || 0) - 30);
+        showPointFloat(row, col, -30);
         breakMyFire();
       } else {
         // Incorrect + not on fire: reset word completion streak
         myRecentWordCompletions = [];
-        persistedPoints.set(myName, (persistedPoints.get(myName) || 0) - 1);
-        showPointFloat(row, col, -1);
+        persistedPoints.set(myName, (persistedPoints.get(myName) || 0) - 30);
+        showPointFloat(row, col, -30);
       }
 
       // Word completion bonus (check after grid is updated)
       if (isCorrect) {
         const { bonus: rawWb, completed: wordsCompleted, wordCellKeys } = checkLocalWordBonus(row, col);
         if (rawWb > 0) {
-          // Double word bonus only if was already on fire (not if fire starts this turn)
+          resetHintTimer();
+          // Apply fire multiplier to word bonus if was already on fire (not if fire starts this turn)
           let wb = rawWb;
-          if (wasOnFire) wb *= 2;
+          if (wasOnFire) wb = Math.round(wb * myFireMultiplier);
           persistedPoints.set(myName, (persistedPoints.get(myName) || 0) + wb);
-          setTimeout(() => showPointFloat(row, col, wb, wb >= (wasOnFire ? 30 : 15) ? 'combo' : 'word', wasOnFire), 200);
+          setTimeout(() => showPointFloat(row, col, wb, wb >= (wasOnFire ? 75 : 150) ? 'combo' : 'word', wasOnFire), 200);
           sfxWordComplete();
           triggerWordWave(row, col);
 
+          // Get all cells this user has filled for fire display
+          const allUserCells = [];
+          for (const [key, filler] of cellFillers) {
+            if (filler.userName === myName) allUserCells.push(key);
+          }
+
           // Extend fire on word completion while on fire
           if (myFireActive && wasOnFire) {
-            extendMyFire(wordCellKeys, myFireExpiresAt + 5000);
+            myFireWordsCompleted += wordsCompleted;
+            myFireMultiplier = 1.5 + Math.floor(myFireWordsCompleted / 3) * 0.5;
+            extendMyFire(allUserCells, myFireExpiresAt + 5000);
           }
 
           // Track word completions toward fire trigger (only when not on fire)
@@ -1947,9 +2020,9 @@ function sendCellUpdate(row, col, letter) {
             myRecentWordCompletions = myRecentWordCompletions.filter(e => now - e.timestamp < 30000);
             const totalCompletions = myRecentWordCompletions.reduce((sum, e) => sum + e.count, 0);
             if (totalCompletions >= 3) {
-              // Collect all word cells from triggering completions (deduplicated)
-              const allFireCells = [...new Set(myRecentWordCompletions.flatMap(e => e.wordCells))];
-              startMyFire(allFireCells, now + 30000);
+              myFireMultiplier = 1.5;
+              myFireWordsCompleted = 0;
+              startMyFire(allUserCells, now + 30000);
               myRecentWordCompletions = [];
             }
           }
@@ -1964,12 +2037,78 @@ function sendCellUpdate(row, col, letter) {
   socket.emit('cell-update', { puzzleDate: currentDate, row, col, letter });
 }
 
+// ─── Hint system ─────────────────────────────────────────────────
+function startHintTimer() {
+  lastWordCompletionTime = Date.now();
+  if (hintCheckInterval) clearInterval(hintCheckInterval);
+  hintCheckInterval = setInterval(() => {
+    if (solved) { hideHintBtn(); return; }
+    const elapsed = Date.now() - lastWordCompletionTime;
+    if (elapsed >= 60000) {
+      showHintBtn();
+    }
+  }, 5000);
+}
+
+function resetHintTimer() {
+  lastWordCompletionTime = Date.now();
+  hideHintBtn();
+}
+
+function showHintBtn() {
+  const btn = document.getElementById('hint-btn');
+  if (btn) btn.classList.add('show');
+}
+
+function hideHintBtn() {
+  const btn = document.getElementById('hint-btn');
+  if (btn) btn.classList.remove('show');
+}
+
+function useHint() {
+  if (!PUZZLE) return;
+  hideHintBtn();
+  lastWordCompletionTime = Date.now();
+  // Find all unfilled (empty or incorrect) non-black cells
+  const candidates = [];
+  for (let r = 0; r < ROWS; r++) {
+    for (let c = 0; c < COLS; c++) {
+      if (isBlack(r, c)) continue;
+      if (hintCells.has(`${r},${c}`)) continue; // already a hint cell
+      const correct = getCorrectAnswer(r, c);
+      if (userGrid[r][c] !== correct) {
+        candidates.push({ r, c, correct });
+      }
+    }
+  }
+  // Pick up to 5 random cells
+  for (let i = candidates.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [candidates[i], candidates[j]] = [candidates[j], candidates[i]];
+  }
+  const chosen = candidates.slice(0, 5);
+  for (const { r, c, correct } of chosen) {
+    const key = `${r},${c}`;
+    hintCells.add(key);
+    userGrid[r][c] = correct;
+    if (cellEls[r]?.[c]) {
+      cellEls[r][c].classList.add('hint-cell');
+    }
+    // Send to server so other players see it too
+    socket.emit('cell-update', { puzzleDate: currentDate, row: r, col: c, letter: correct });
+  }
+  render();
+  checkCompletion();
+}
+
 // ─── Fire streak helpers ─────────────────────────────────────────
 function resetFireState() {
   myFireActive = false;
   myFireExpiresAt = 0;
   myFireCells.clear();
   myRecentWordCompletions = [];
+  myFireMultiplier = 1.5;
+  myFireWordsCompleted = 0;
   remoteFireStates.clear();
   hideFireBar();
 }
@@ -1985,7 +2124,8 @@ function startMyFire(fireCellKeys, expiresAt) {
 
 function extendMyFire(cellKeys, newExpiresAt) {
   myFireExpiresAt = newExpiresAt;
-  for (const key of cellKeys) myFireCells.add(key);
+  removeFireCellEffects();
+  myFireCells = new Set(cellKeys);
   applyFireCellEffects();
   // Fire bar is already running, it'll pick up the new expiry
 }
@@ -1999,6 +2139,8 @@ function breakMyFire() {
   myFireExpiresAt = 0;
   myFireCells.clear();
   myRecentWordCompletions = [];
+  myFireMultiplier = 1.5;
+  myFireWordsCompleted = 0;
 }
 
 function expireMyFire() {
@@ -2008,6 +2150,8 @@ function expireMyFire() {
   myFireExpiresAt = 0;
   myFireCells.clear();
   myRecentWordCompletions = [];
+  myFireMultiplier = 1.5;
+  myFireWordsCompleted = 0;
 }
 
 function applyFireCellEffects() {
@@ -2038,7 +2182,8 @@ function showFireBar() {
     const totalDuration = 30000; // base duration for percentage
     const pct = Math.min(100, (remaining / totalDuration) * 100);
     document.getElementById('fire-bar-fill').style.width = pct + '%';
-    document.getElementById('fire-bar-label').textContent = `ON FIRE ${(remaining / 1000).toFixed(1)}s`;
+    const multStr = myFireMultiplier % 1 === 0 ? myFireMultiplier.toFixed(0) : myFireMultiplier.toFixed(1);
+    document.getElementById('fire-bar-label').textContent = `ON FIRE ${multStr}x \u00B7 ${(remaining / 1000).toFixed(1)}s`;
   }, 50);
 }
 
@@ -2174,17 +2319,18 @@ function setupSocketHandlers() {
         cellColors.delete(key);
         cellFillers.delete(key);
       }
-      // Apply remote point delta (letter +1/-1, or +2 if fire-doubled)
-      const isFireDoubled = fireEvent && (fireEvent.type === 'started' || fireEvent.type === 'extended');
+      // Apply remote point delta
+      const isFireBoosted = fireEvent && (fireEvent.type === 'started' || fireEvent.type === 'extended');
       if (pointDelta && remoteName) {
         persistedPoints.set(remoteName, (persistedPoints.get(remoteName) || 0) + pointDelta);
-        showPointFloat(row, col, pointDelta, null, isFireDoubled);
+        showPointFloat(row, col, pointDelta, null, isFireBoosted);
       }
-      // Apply remote word bonus (+5/+10/+15/+30)
+      // Apply remote word bonus
       if (wordBonus && remoteName) {
+        resetHintTimer();
         persistedPoints.set(remoteName, (persistedPoints.get(remoteName) || 0) + wordBonus);
-        const isCombo = wordBonus >= (isFireDoubled ? 30 : 15);
-        setTimeout(() => showPointFloat(row, col, wordBonus, isCombo ? 'combo' : 'word', isFireDoubled), 200);
+        const isCombo = wordBonus >= 150;
+        setTimeout(() => showPointFloat(row, col, wordBonus, isCombo ? 'combo' : 'word', isFireBoosted), 200);
         triggerWordWave(row, col);
       }
       // Apply remote last-square bonus
@@ -2261,13 +2407,16 @@ function setupSocketHandlers() {
     if (!PUZZLE) return;
     if (fireEvent.type === 'started') {
       const cellKeys = fireEvent.fireCells.map(c => `${c.row},${c.col}`);
+      myFireMultiplier = fireEvent.fireMultiplier || 1.5;
       // Server is authoritative; sync up if needed
       if (!myFireActive) {
         startMyFire(cellKeys, Date.now() + fireEvent.remainingMs);
       }
     } else if (fireEvent.type === 'extended') {
       myFireExpiresAt = Date.now() + fireEvent.remainingMs;
-      // Add any new fire cells from server
+      if (fireEvent.fireMultiplier) myFireMultiplier = fireEvent.fireMultiplier;
+      // Sync fire cells from server (all user cells)
+      myFireCells.clear();
       for (const c of fireEvent.fireCells) {
         myFireCells.add(`${c.row},${c.col}`);
       }
@@ -2593,6 +2742,7 @@ function render() {
       // Rebus mode indicator on active cell
       el.classList.toggle('rebus-active', rebusMode && isMyCell);
 
+      el.classList.toggle('hint-cell', hintCells.has(key));
       el.classList.toggle('checked', checkedCells[r][c]);
       if (autoCheck && userGrid[r][c] && !checkedCells[r][c]) {
         el.classList.toggle('error', userGrid[r][c] !== getCorrectAnswer(r, c));
@@ -2869,10 +3019,10 @@ function checkCompletion() {
     }
   }
   if (!solved) {
-    // Award 25 point bonus to whoever filled the last square
+    // Award 250 point bonus to whoever filled the last square
     const lastFiller = cellFillers.get(`${selectedRow},${selectedCol}`);
     if (lastFiller) {
-      const bonus = 25;
+      const bonus = 250;
       persistedPoints.set(lastFiller.userName, (persistedPoints.get(lastFiller.userName) || 0) + bonus);
       showPointFloat(selectedRow, selectedCol, bonus, 'combo', false);
     }
@@ -3080,6 +3230,8 @@ gridEl.addEventListener('keydown', (e) => {
 
 // ─── Toolbar ───────────────────────────────────────────────────
 btnBack.addEventListener('click', () => showCalendar());
+
+document.getElementById('hint-btn').addEventListener('click', useHint);
 
 btnClear.addEventListener('click', () => {
   if (!PUZZLE || !confirm('Clear all entered letters?')) return;

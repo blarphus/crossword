@@ -312,6 +312,8 @@ function expireFire(socketId) {
   fs.fireCells = [];
   fs.fireTimer = null;
   fs.recentWordCompletions = [];
+  fs.fireMultiplier = 1.5;
+  fs.fireWordsCompleted = 0;
   // Broadcast to room
   const roomName = `puzzle:${fs.puzzleDate}`;
   io.to(roomName).emit('fire-expired', {
@@ -458,6 +460,7 @@ io.on('connection', async (socket) => {
       puzzleDate, userName, color,
       recentWordCompletions: [],
       onFire: false, fireExpiresAt: 0, fireCells: [], fireTimer: null,
+      fireMultiplier: 1.5, fireWordsCompleted: 0,
     });
 
     // Start timer when first user joins
@@ -504,7 +507,7 @@ io.on('connection', async (socket) => {
       // Get or create fire streak state
       let fs = fireStreaks.get(socket.id);
       if (!fs) {
-        fs = { puzzleDate, userName, color: userColor, recentWordCompletions: [], onFire: false, fireExpiresAt: 0, fireCells: [], fireTimer: null };
+        fs = { puzzleDate, userName, color: userColor, recentWordCompletions: [], onFire: false, fireExpiresAt: 0, fireCells: [], fireTimer: null, fireMultiplier: 1.5, fireWordsCompleted: 0 };
         fireStreaks.set(socket.id, fs);
       }
 
@@ -517,10 +520,10 @@ io.on('connection', async (socket) => {
           const wasOnFire = fs.onFire;
 
           if (isCorrect && fs.onFire) {
-            // Correct + on fire: double points (extension happens on word completion only)
-            pointDelta = 2;
+            // Correct + on fire: multiplied points
+            pointDelta = Math.round(10 * fs.fireMultiplier);
           } else if (isCorrect && !fs.onFire) {
-            pointDelta = 1;
+            pointDelta = 10;
           } else if (!isCorrect && fs.onFire) {
             // Incorrect + on fire: break fire
             if (fs.fireTimer) clearTimeout(fs.fireTimer);
@@ -530,11 +533,13 @@ io.on('connection', async (socket) => {
             fs.fireCells = [];
             fs.fireTimer = null;
             fs.recentWordCompletions = [];
-            pointDelta = -1;
+            fs.fireMultiplier = 1.5;
+            fs.fireWordsCompleted = 0;
+            pointDelta = -30;
           } else {
             // Incorrect + not on fire: reset word completion streak
             fs.recentWordCompletions = [];
-            pointDelta = -1;
+            pointDelta = -30;
           }
 
           await db.addPoints(puzzleDate, userName, pointDelta);
@@ -543,45 +548,50 @@ io.on('connection', async (socket) => {
           // Check word completions for bonus — all fire logic is gated on wordBonus > 0
           if (isCorrect) {
             const { completed, completedWordCells } = await checkWordCompletions(puzzleDate, row, col, pData);
-            if (completed >= 2) wordBonus = 15;
-            else if (completed === 1) wordBonus = 5;
-            // Double word bonus only if was already on fire (not if fire just started this turn)
-            if (wordBonus && wasOnFire) wordBonus *= 2;
+            if (completed >= 2) wordBonus = 150;
+            else if (completed === 1) wordBonus = 50;
+            // Apply fire multiplier to word bonus if was already on fire (not if fire just started this turn)
+            if (wordBonus && wasOnFire) wordBonus = Math.round(wordBonus * fs.fireMultiplier);
 
             if (wordBonus) {
               await db.addPoints(puzzleDate, userName, wordBonus);
 
+              // Get ALL cells this user has filled for fire display
+              const fillers = await db.getCellFillers(puzzleDate);
+              const userFireCells = [];
+              for (const [key, filler] of Object.entries(fillers)) {
+                const fillerName = typeof filler === 'object' ? filler.userName : filler;
+                if (fillerName === userName) {
+                  const [r, c] = key.split(',').map(Number);
+                  userFireCells.push({ row: r, col: c });
+                }
+              }
+
               if (fs.onFire && wasOnFire) {
+                // Track words completed while on fire for multiplier escalation
+                fs.fireWordsCompleted += completed;
+                // Every 3 words completed while on fire: +0.5x multiplier
+                fs.fireMultiplier = 1.5 + Math.floor(fs.fireWordsCompleted / 3) * 0.5;
                 // Extend fire on word completion while on fire
                 fs.fireExpiresAt += 5000;
-                const seen = new Set(fs.fireCells.map(c => `${c.row},${c.col}`));
-                for (const c of completedWordCells) {
-                  const k = `${c.row},${c.col}`;
-                  if (!seen.has(k)) { seen.add(k); fs.fireCells.push(c); }
-                }
+                fs.fireCells = userFireCells;
                 if (fs.fireTimer) clearTimeout(fs.fireTimer);
                 const remainingMs = fs.fireExpiresAt - now;
                 fs.fireTimer = setTimeout(() => expireFire(socket.id), remainingMs);
-                fireEvent = { type: 'extended', userName, color: userColor, fireCells: fs.fireCells.slice(), remainingMs };
+                fireEvent = { type: 'extended', userName, color: userColor, fireCells: userFireCells, remainingMs, fireMultiplier: fs.fireMultiplier };
               } else if (!fs.onFire) {
                 // Track word completions toward fire trigger
                 fs.recentWordCompletions.push({ timestamp: now, count: completed, wordCells: completedWordCells });
                 fs.recentWordCompletions = fs.recentWordCompletions.filter(e => now - e.timestamp < 30000);
                 const totalCompletions = fs.recentWordCompletions.reduce((sum, e) => sum + e.count, 0);
                 if (totalCompletions >= 3) {
-                  const seen = new Set();
-                  const allFireCells = [];
-                  for (const entry of fs.recentWordCompletions) {
-                    for (const c of entry.wordCells) {
-                      const k = `${c.row},${c.col}`;
-                      if (!seen.has(k)) { seen.add(k); allFireCells.push(c); }
-                    }
-                  }
                   fs.onFire = true;
                   fs.fireExpiresAt = now + 30000;
-                  fs.fireCells = allFireCells;
+                  fs.fireCells = userFireCells;
+                  fs.fireMultiplier = 1.5;
+                  fs.fireWordsCompleted = 0;
                   fs.fireTimer = setTimeout(() => expireFire(socket.id), 30000);
-                  fireEvent = { type: 'started', userName, color: userColor, fireCells: fs.fireCells.slice(), remainingMs: 30000 };
+                  fireEvent = { type: 'started', userName, color: userColor, fireCells: userFireCells, remainingMs: 30000, fireMultiplier: 1.5 };
                   fs.recentWordCompletions = [];
                 }
               }
@@ -607,7 +617,7 @@ io.on('connection', async (socket) => {
             }
           }
           if (complete) {
-            lastSquareBonus = 25;
+            lastSquareBonus = 250;
             await db.addPoints(puzzleDate, userName, lastSquareBonus);
           }
         }
