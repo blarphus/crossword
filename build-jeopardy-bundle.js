@@ -1,44 +1,38 @@
 #!/usr/bin/env node
 /**
- * One-time script to build jeopardy-bundle.json.gz from season JSON files.
+ * Build jeopardy-bundle.json.gz from scraped game data.
  * Usage: node build-jeopardy-bundle.js
  */
 const fs = require('fs');
 const path = require('path');
 const zlib = require('zlib');
 
-const SEASONS_DIR = '/Users/Patron/Desktop/Projects/Jeopardy/data/seasons';
+const INPUT_PATH = path.join(__dirname, 'jeopardy-scraped.json');
 const OUTPUT_PATH = path.join(__dirname, 'jeopardy-bundle.json.gz');
 
-const files = fs.readdirSync(SEASONS_DIR)
-  .filter(f => f.startsWith('season_') && f.endsWith('.json'))
-  .sort();
-
-console.log(`Found ${files.length} season files`);
-
-const bundle = {};
-let total = 0;
-
-for (const file of files) {
-  const season = parseInt(file.match(/season_(\d+)/)[1], 10);
-  const games = JSON.parse(fs.readFileSync(path.join(SEASONS_DIR, file), 'utf8'));
-  for (const game of games) {
-    const gameId = game.gameId;
-    bundle[gameId] = {
-      gameId,
-      showNumber: game.showNumber,
-      airDate: game.airDate,
-      season,
-      jRound: game.jRound,
-      djRound: game.djRound,
-      fj: game.fj || null,
-    };
-    total++;
-  }
-  console.log(`  ${file}: ${games.length} games (season ${season})`);
+if (!fs.existsSync(INPUT_PATH)) {
+  console.error(`Error: ${INPUT_PATH} not found. Run scrape-jeopardy.py first.`);
+  process.exit(1);
 }
 
-console.log(`Total games: ${total}`);
+const games = JSON.parse(fs.readFileSync(INPUT_PATH, 'utf8'));
+console.log(`Loaded ${games.length} games from ${INPUT_PATH}`);
+
+const bundle = {};
+for (const game of games) {
+  const gameId = game.gameId;
+  bundle[gameId] = {
+    gameId,
+    showNumber: game.showNumber,
+    airDate: game.airDate,
+    jRound: game.jRound,
+    djRound: game.djRound,
+    fj: game.fj || null,
+  };
+}
+
+const total = Object.keys(bundle).length;
+console.log(`Total games in bundle: ${total}`);
 console.log('Compressing...');
 
 const json = JSON.stringify(bundle);
