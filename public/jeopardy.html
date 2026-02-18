@@ -1116,7 +1116,7 @@ body {
     $resultDisplay.classList.add('active');
     $resultLabel.textContent = correct ? 'Correct!' : 'Incorrect';
     $resultLabel.className = `result-label ${correct ? 'correct' : 'incorrect'}`;
-    $resultAnswer.textContent = correct ? '' : `Answer: ${correctAnswer}`;
+    $resultAnswer.textContent = correct && correctAnswer ? '' : '';
     const sign = scoreChange >= 0 ? '+' : '';
     $resultScoreChange.textContent = `${esc(playerName)}: ${sign}$${Math.abs(scoreChange)}`;
     $resultScoreChange.style.color = correct ? 'var(--correct)' : 'var(--incorrect)';

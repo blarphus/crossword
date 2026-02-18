@@ -358,7 +358,8 @@ module.exports = function initJeopardy(io, db) {
         playerId: socketId,
         playerName: player.name,
         playerAnswer,
-        correctAnswer: room.currentClue.answer,
+        // Only reveal correct answer if they got it right
+        correctAnswer: correct ? room.currentClue.answer : null,
         correct,
         scoreChange,
         newScore: player.score,
@@ -369,29 +370,11 @@ module.exports = function initJeopardy(io, db) {
         room.controllingPlayer = socketId;
         room.timers.result = setTimeout(() => transitionToClueSelection(room), 2500);
       } else {
-        // Reopen buzzer for remaining players (who haven't buzzed)
-        const remainingPlayers = [...room.players.keys()].filter(sid => !room.buzzedPlayers.has(sid));
-        if (remainingPlayers.length > 0) {
-          room.timers.result = setTimeout(() => {
-            room.answeringPlayer = null;
-            room.phase = 'buzzerOpen';
-            nsp.to(room.roomId).emit('phase-change', { phase: 'buzzerOpen' });
-            broadcastState(room);
-
-            room.timers.buzzer = setTimeout(() => {
-              nsp.to(room.roomId).emit('buzzer-expired', {
-                correctAnswer: room.currentClue.answer,
-              });
-              room.timers.result = setTimeout(() => transitionToClueSelection(room), 3000);
-            }, 5000);
-          }, 1500);
-        } else {
-          // Everyone has buzzed — reveal and move on
-          nsp.to(room.roomId).emit('buzzer-expired', {
-            correctAnswer: room.currentClue.answer,
-          });
-          room.timers.result = setTimeout(() => transitionToClueSelection(room), 3000);
-        }
+        // One buzz per player — no reopening. Reveal answer and move on.
+        nsp.to(room.roomId).emit('buzzer-expired', {
+          correctAnswer: room.currentClue.answer,
+        });
+        room.timers.result = setTimeout(() => transitionToClueSelection(room), 3000);
       }
     }
 
