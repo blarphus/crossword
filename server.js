@@ -854,24 +854,21 @@ function distributeAiTiming(cellCount, finalSolveTime, wordCount) {
   return { thinkTimes, cellTimes };
 }
 
-// Generate semi-random cursor hops during think time.
-// Each hop jumps 2-5 squares in a random direction, staying in bounds.
-// The last hop lands on the target cell.
-function buildWanderPath(pData, fromR, fromC, toR, toC, hopCount) {
+// Chance of doing another random cursor hop before settling on the next word.
+// Higher = more wandering. Easy bots look around a lot, expert bots beeline.
+const AI_WANDER_CHANCE = [0.75, 0.65, 0.55, 0.40, 0.25];
+
+// Generate a single random cursor hop (2-5 squares in a random direction)
+function randomHop(pData, fromR, fromC) {
   const maxR = pData.dimensions.rows;
   const maxC = pData.dimensions.cols;
   const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
-  const steps = [];
-  let r = fromR, c = fromC;
-  for (let i = 0; i < hopCount; i++) {
-    // Jump 2-5 squares in a random direction
-    const dist = 2 + Math.floor(Math.random() * 4);
-    const angle = Math.random() * Math.PI * 2;
-    r = clamp(Math.round(r + Math.sin(angle) * dist), 0, maxR - 1);
-    c = clamp(Math.round(c + Math.cos(angle) * dist), 0, maxC - 1);
-    steps.push([r, c]);
-  }
-  return steps;
+  const dist = 2 + Math.floor(Math.random() * 4);
+  const angle = Math.random() * Math.PI * 2;
+  return [
+    clamp(Math.round(fromR + Math.sin(angle) * dist), 0, maxR - 1),
+    clamp(Math.round(fromC + Math.cos(angle) * dist), 0, maxC - 1),
+  ];
 }
 
 async function startAiSolving(puzzleDate) {
@@ -946,24 +943,27 @@ async function startAiSolving(puzzleDate) {
       const word = allWords[wi];
       const thinkTime = timing.thinkTimes[wi] || 200;
 
-      // Wander cursor during think time, then check if word needs filling
-      const hopCount = 2 + Math.floor(Math.random() * 4);
-      const wander = buildWanderPath(pData, cursorR, cursorC, word.cells[0].row, word.cells[0].col, hopCount);
-      const totalSteps = wander.length + 1;
-      const stepTime = thinkTime / totalSteps;
+      // Wander cursor with recursive coin-flip, then fill
+      const wanderChance = AI_WANDER_CHANCE[bot.difficultyIndex] || 0.55;
+      // Budget a base step time from the think time (at least 1 hop + landing)
+      const baseStepTime = thinkTime / 3;
+      let wanderR = cursorR, wanderC = cursorC;
 
-      let wanderIdx = 0;
       const doWander = () => {
         if (!isAlive()) return;
-        if (wanderIdx < wander.length) {
-          const [pr, pc] = wander[wanderIdx++];
-          emitCursor(pr, pc, Math.random() < 0.5 ? 'across' : 'down');
-          const t = setTimeout(doWander, stepTime);
+        if (Math.random() < wanderChance) {
+          // Do a random hop, then flip again
+          const [hr, hc] = randomHop(pData, wanderR, wanderC);
+          wanderR = hr; wanderC = hc;
+          emitCursor(hr, hc, Math.random() < 0.5 ? 'across' : 'down');
+          const hopDelay = baseStepTime * (0.4 + Math.random() * 1.2);
+          const t = setTimeout(doWander, hopDelay);
           bot.timers.push(t);
         } else {
           // Done wandering — land on target and start filling
           emitCursor(word.cells[0].row, word.cells[0].col, word.dir);
-          const t = setTimeout(() => startFillingWord(wi, 0), stepTime);
+          const landDelay = baseStepTime * (0.3 + Math.random() * 0.7);
+          const t = setTimeout(() => startFillingWord(wi, 0), landDelay);
           bot.timers.push(t);
         }
       };
