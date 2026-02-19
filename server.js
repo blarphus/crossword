@@ -258,13 +258,11 @@ function getCorrectAnswer(puzzleData, row, col) {
   return null;
 }
 
-// Accept either the full rebus string or the single display character
+// Check if cell value matches the correct answer (rebus requires full answer)
 function isCellCorrectServer(pData, row, col, val) {
   if (!val) return false;
-  const key = `${row},${col}`;
-  const rebusAnswer = pData.rebus[key];
-  if (rebusAnswer) return val === rebusAnswer || (pData.grid[row] && val === pData.grid[row][col]);
-  return pData.grid[row] && val === pData.grid[row][col];
+  const correct = getCorrectAnswer(pData, row, col);
+  return val === correct;
 }
 
 function getServerWordCells(pData, clue, dir) {

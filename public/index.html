@@ -664,6 +664,7 @@ body.mobile .toolbar-back {
 body.mobile .toolbar-spacer { display: block; flex: 1; }
 body.mobile .toolbar .solve-timer { font-size: 0.9rem; margin-right: 0; margin-left: 0; }
 body.mobile .toolbar .btn-label { display: none; }
+body.mobile .toolbar button#btn-pause,
 body.mobile .toolbar button#btn-clear,
 body.mobile .toolbar button#btn-reveal,
 body.mobile .toolbar button#btn-rebus {
@@ -671,6 +672,7 @@ body.mobile .toolbar button#btn-rebus {
   background: none; font-size: 1.1rem; color: #555; cursor: pointer;
   display: flex; align-items: center; justify-content: center;
 }
+body.mobile .toolbar button#btn-pause::before { content: '\275A\275A'; font-size: 0.85rem; letter-spacing: -2px; }
 body.mobile .toolbar button#btn-clear::before { content: '\2715'; }
 body.mobile .toolbar button#btn-reveal::before { content: '\2714'; }
 body.mobile .toolbar button#btn-rebus::before { content: 'R'; font-size: 0.85rem; font-weight: 700; }
@@ -1047,6 +1049,7 @@ body.mobile .mobile-keyboard { display: block; position: static; flex-shrink: 0;
     <button class="toolbar-back" id="btn-back-mobile" title="Back to calendar">&#x2304;</button>
     <span class="solve-timer" id="solve-timer">0:00</span>
     <div class="toolbar-spacer"></div>
+    <button id="btn-pause" title="Pause"><span class="btn-label">Pause</span></button>
     <button id="btn-clear" title="Clear Puzzle"><span class="btn-label">Clear Puzzle</span></button>
     <button id="btn-reveal" title="Reveal Puzzle"><span class="btn-label">Reveal Puzzle</span></button>
     <button id="btn-rebus" style="display:none"><span class="btn-label">Rebus</span></button>
@@ -1410,14 +1413,11 @@ function getCorrectAnswer(r, c) {
   return PUZZLE.rebus[key] || PUZZLE.grid[r]?.[c] || '';
 }
 
-// Accept either the full rebus string or the single display character
+// Check if cell value matches the correct answer (rebus requires full answer)
 function isCellCorrect(r, c, val) {
   const v = val !== undefined ? val : userGrid[r]?.[c];
   if (!v) return false;
-  const key = `${r},${c}`;
-  const rebusAnswer = PUZZLE.rebus[key];
-  if (rebusAnswer) return v === rebusAnswer || v === PUZZLE.grid[r]?.[c];
-  return v === (PUZZLE.grid[r]?.[c] || '');
+  return v === getCorrectAnswer(r, c);
 }
 
 function hasRebus() {
@@ -1733,7 +1733,7 @@ function showPuzzle(dateStr, pushState = true, showEntry = false) {
 }
 
 // ─── Puzzle Entry Overlay ─────────────────────────────────────
-function showPuzzleEntryOverlay(dateStr) {
+function showPuzzleEntryOverlay(dateStr, paused) {
   const overlay = document.getElementById('puzzle-entry-overlay');
   const dateEl = document.getElementById('entry-date');
   const weekdayEl = document.getElementById('entry-weekday');
@@ -1742,6 +1742,7 @@ function showPuzzleEntryOverlay(dateStr) {
   const userPreviewEl = document.getElementById('entry-user-preview');
   const startBtn = document.getElementById('entry-start-btn');
   const changeNameBtn = document.getElementById('entry-change-name');
+  startBtn.textContent = paused ? 'Resume' : 'Start Solving';
 
   // Parse date for display
   const [y, m, d] = dateStr.split('-').map(Number);
@@ -3520,6 +3521,21 @@ gridEl.addEventListener('keydown', (e) => {
 // ─── Toolbar ───────────────────────────────────────────────────
 btnBack.addEventListener('click', () => showCalendar());
 document.getElementById('btn-back-mobile').addEventListener('click', () => showCalendar());
+
+// Pause: show overlay
+function pausePuzzle() {
+  if (!currentDate || solved) return;
+  showPuzzleEntryOverlay(currentDate, true);
+}
+document.getElementById('btn-pause').addEventListener('click', pausePuzzle);
+
+// Auto-pause when tabbing away
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden && currentDate && !solved) {
+    const overlay = document.getElementById('puzzle-entry-overlay');
+    if (!overlay.classList.contains('show')) pausePuzzle();
+  }
+});
 
 document.getElementById('hint-btn').addEventListener('click', voteForHint);
 
