@@ -1661,6 +1661,7 @@ function drawThumbnail(canvas, info) {
 function showCalendar(pushState = true) {
   puzzleView.style.display = 'none';
   calendarView.style.display = 'block';
+  document.body.style.overflow = '';
   document.getElementById('puzzle-entry-overlay').classList.remove('show');
   document.title = 'NYT Crossword';
 
@@ -1683,6 +1684,7 @@ function showCalendar(pushState = true) {
 function showPuzzle(dateStr, pushState = true, showEntry = false) {
   calendarView.style.display = 'none';
   puzzleView.style.display = 'flex';
+  document.body.style.overflow = 'hidden';
   if (pushState) history.pushState({ view: 'puzzle', date: dateStr }, '', `/${dateStr}`);
 
   // Always load the puzzle first so grid renders behind overlay
@@ -1773,6 +1775,30 @@ function showPuzzleEntryOverlay(dateStr) {
 
   startBtn.addEventListener('click', handleStart);
   changeNameBtn.addEventListener('click', handleChangeName);
+}
+
+// ─── Compute cell size to fit viewport ────────────────────────
+function computeAndApplyCellSize() {
+  if (!PUZZLE) return;
+  let cellSize;
+  if (IS_MOBILE) {
+    const availW = window.innerWidth - 8;
+    const availH = window.innerHeight - 260;
+    cellSize = Math.max(16, Math.min(40, Math.floor(Math.min(availW / COLS, availH / ROWS))));
+  } else {
+    const maxGridW = Math.min(window.innerWidth - 420, 650);
+    // Dynamically measure height of fixed elements above .app
+    const appEl = document.querySelector('.app');
+    const appTop = appEl ? appEl.getBoundingClientRect().top : 200;
+    // Reserve space for fire bar (22px) even when hidden
+    const fireBar = document.getElementById('fire-bar');
+    const fireBarReserve = (fireBar && fireBar.classList.contains('active')) ? 0 : 22;
+    // Internal overhead: app padding (16+24) + grid-container padding-top (18) + margin-bottom (24) + grid border (4)
+    const internal = 86;
+    const maxGridH = window.innerHeight - appTop - fireBarReserve - internal;
+    cellSize = Math.max(16, Math.min(40, Math.floor(Math.min(maxGridW / COLS, maxGridH / ROWS))));
+  }
+  document.documentElement.style.setProperty('--cell-size', cellSize + 'px');
 }
 
 // ─── Load a puzzle (async) ────────────────────────────────────
@@ -1896,20 +1922,9 @@ async function loadPuzzle(dateStr) {
   document.getElementById('rebus-indicator').style.display = hasRebus() ? '' : 'none';
   document.title = `Crossword \u2014 ${prettyDate}`;
 
-  // Compute cell size based on grid dimensions
-  let cellSize;
-  if (IS_MOBILE) {
-    const availW = window.innerWidth - 8;
-    const availH = window.innerHeight - 260; // header + toolbar + clue bar + keyboard
-    cellSize = Math.max(16, Math.min(40, Math.floor(Math.min(availW / COLS, availH / ROWS))));
-  } else {
-    const maxGridW = Math.min(window.innerWidth - 420, 650);
-    // Account for header (~60px) + toolbar (~45px) + presence bar (~28px) + clue bar (~36px) + fire bar (~22px) + app padding (32px) + bottom gap (24px)
-    const headerEtc = 249;
-    const maxGridH = window.innerHeight - headerEtc;
-    cellSize = Math.max(16, Math.min(40, Math.floor(Math.min(maxGridW / COLS, maxGridH / ROWS))));
-  }
-  document.documentElement.style.setProperty('--cell-size', cellSize + 'px');
+  computeAndApplyCellSize();
+  window.removeEventListener('resize', computeAndApplyCellSize);
+  window.addEventListener('resize', computeAndApplyCellSize);
 
   buildGrid();
   buildCluePanel();
