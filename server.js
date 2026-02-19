@@ -854,20 +854,21 @@ function distributeAiTiming(cellCount, finalSolveTime, wordCount) {
   return { thinkTimes, cellTimes };
 }
 
-// Build a step-by-step cursor path from (fromR,fromC) to (toR,toC),
-// moving one cell at a time (up/down/left/right), skipping black squares.
-function buildCursorPath(pData, fromR, fromC, toR, toC) {
+// Generate semi-random cursor hops during think time.
+// Each hop jumps 2-5 squares in a random direction, staying in bounds.
+// The last hop lands on the target cell.
+function buildWanderPath(pData, fromR, fromC, toR, toC, hopCount) {
+  const maxR = pData.dimensions.rows;
+  const maxC = pData.dimensions.cols;
+  const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
   const steps = [];
   let r = fromR, c = fromC;
-  const maxIter = Math.abs(toR - r) + Math.abs(toC - c) + 20; // safety limit
-  let iter = 0;
-  while ((r !== toR || c !== toC) && iter++ < maxIter) {
-    // Move vertically first, then horizontally (or mix it up)
-    if (r !== toR && (c === toC || Math.random() < 0.5)) {
-      r += r < toR ? 1 : -1;
-    } else if (c !== toC) {
-      c += c < toC ? 1 : -1;
-    }
+  for (let i = 0; i < hopCount; i++) {
+    // Jump 2-5 squares in a random direction
+    const dist = 2 + Math.floor(Math.random() * 4);
+    const angle = Math.random() * Math.PI * 2;
+    r = clamp(Math.round(r + Math.sin(angle) * dist), 0, maxR - 1);
+    c = clamp(Math.round(c + Math.cos(angle) * dist), 0, maxC - 1);
     steps.push([r, c]);
   }
   return steps;
@@ -936,19 +937,20 @@ async function startAiSolving(puzzleDate) {
       const targetR = word.cells[0].row;
       const targetC = word.cells[0].col;
 
-      // Walk cursor from current position to the first cell of the next word
-      const path = buildCursorPath(pData, cursorR, cursorC, targetR, targetC);
-      if (path.length > 0) {
-        const stepTime = thinkTime / (path.length + 1);
-        for (const [pr, pc] of path) {
-          delay += stepTime;
-          scheduleCursorMove(pr, pc, word.dir, delay);
-        }
-        // Remaining think time after walking
+      // Wander cursor semi-randomly during think time, then land on target
+      const hopCount = 2 + Math.floor(Math.random() * 4); // 2-5 hops
+      const wander = buildWanderPath(pData, cursorR, cursorC, targetR, targetC, hopCount);
+      // Total steps = wander hops + final landing on target
+      const totalSteps = wander.length + 1;
+      const stepTime = thinkTime / totalSteps;
+      for (const [pr, pc] of wander) {
         delay += stepTime;
-      } else {
-        delay += thinkTime;
+        const wanderDir = Math.random() < 0.5 ? 'across' : 'down';
+        scheduleCursorMove(pr, pc, wanderDir, delay);
       }
+      // Final hop: land on the first cell of the word
+      delay += stepTime;
+      scheduleCursorMove(targetR, targetC, word.dir, delay);
 
       // Now fill each cell of this word
       for (const cell of word.cells) {
