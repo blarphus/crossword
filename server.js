@@ -968,7 +968,7 @@ async function startAiSolving(puzzleDate) {
         }
       };
 
-      const t = setTimeout(doWander, stepTime);
+      const t = setTimeout(doWander, baseStepTime * (0.3 + Math.random() * 0.7));
       bot.timers.push(t);
 
       const startFillingWord = async (wi, ci) => {
