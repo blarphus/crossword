@@ -881,9 +881,6 @@ async function startAiSolving(puzzleDate) {
   const pData = await getPuzzleData(puzzleDate);
   if (!pData) return;
 
-  const state = await db.getState(puzzleDate);
-  const userGrid = state?.user_grid || {};
-
   // Track starting words so every bot begins at a different one
   const usedStartWords = new Set();
 
@@ -905,94 +902,111 @@ async function startAiSolving(puzzleDate) {
         wordQueue.push(...head);
       }
     }
-    // Mark this bot's starting word
     if (wordQueue.length > 0) {
       usedStartWords.add(`${wordQueue[0].cells[0][0]},${wordQueue[0].cells[0][1]}`);
     }
 
-    // Collect words to fill (skip words that are already fully correct)
-    const wordsToFill = [];
-    let totalCells = 0;
-    for (const word of wordQueue) {
-      const wordCells = [];
-      for (const [r, c] of word.cells) {
-        const key = `${r},${c}`;
-        const correct = getCorrectAnswer(pData, r, c);
-        if (userGrid[key] === correct) continue;
-        wordCells.push({ row: r, col: c, letter: correct });
-      }
-      if (wordCells.length > 0) {
-        wordsToFill.push({ cells: wordCells, dir: word.dir });
-        totalCells += wordCells.length;
-      }
-    }
+    // Pre-build all word cells with correct answers
+    const allWords = wordQueue.map(word => ({
+      cells: word.cells.map(([r, c]) => ({ row: r, col: c, letter: getCorrectAnswer(pData, r, c) })),
+      dir: word.dir,
+    }));
 
-    if (totalCells === 0) continue;
+    // Estimate total cells for timing (used for initial timing budget)
+    let estCells = 0;
+    for (const w of allWords) estCells += w.cells.length;
+    const timing = distributeAiTiming(estCells, bot.finalSolveTime, allWords.length);
 
-    const { thinkTimes, cellTimes } = distributeAiTiming(totalCells, bot.finalSolveTime, wordsToFill.length);
-
-    let delay = 0;
-    let cellIdx = 0;
-    let cursorR = wordsToFill[0].cells[0].row;
-    let cursorC = wordsToFill[0].cells[0].col;
-
-    // Helper to schedule a cursor-only move
-    const scheduleCursorMove = (r, c, dir, atDelay) => {
-      const t = setTimeout(() => {
-        const room = puzzleRooms.get(puzzleDate);
-        if (!room || !room.has(bot.botId)) return;
-        const info = room.get(bot.botId);
-        info.row = r; info.col = c; info.direction = dir;
-        io.to(`puzzle:${puzzleDate}`).emit('cursor-moved', {
-          socketId: bot.botId, userId: bot.botId, userName: bot.name,
-          row: r, col: c, direction: dir,
-        });
-      }, atDelay);
-      bot.timers.push(t);
+    // Cursor emit helper
+    const emitCursor = (r, c, dir) => {
+      const room = puzzleRooms.get(puzzleDate);
+      if (!room || !room.has(bot.botId)) return;
+      const info = room.get(bot.botId);
+      info.row = r; info.col = c; info.direction = dir;
+      io.to(`puzzle:${puzzleDate}`).emit('cursor-moved', {
+        socketId: bot.botId, userId: bot.botId, userName: bot.name,
+        row: r, col: c, direction: dir,
+      });
     };
 
-    for (let wi = 0; wi < wordsToFill.length; wi++) {
-      const word = wordsToFill[wi];
-      const thinkTime = thinkTimes[wi] || 200;
-      const targetR = word.cells[0].row;
-      const targetC = word.cells[0].col;
+    // Alive check
+    const isAlive = () => {
+      const currentBots = aiBots.get(puzzleDate);
+      return currentBots && currentBots.has(bot.botId);
+    };
 
-      // Wander cursor semi-randomly during think time, then land on target
-      const hopCount = 2 + Math.floor(Math.random() * 4); // 2-5 hops
-      const wander = buildWanderPath(pData, cursorR, cursorC, targetR, targetC, hopCount);
-      // Total steps = wander hops + final landing on target
+    let cursorR = allWords[0].cells[0].row;
+    let cursorC = allWords[0].cells[0].col;
+    let cellIdx = 0; // index into timing.cellTimes
+
+    // Recursive chain: process one word at a time
+    const processWord = (wi) => {
+      if (!isAlive() || wi >= allWords.length) return;
+
+      const word = allWords[wi];
+      const thinkTime = timing.thinkTimes[wi] || 200;
+
+      // Wander cursor during think time, then check if word needs filling
+      const hopCount = 2 + Math.floor(Math.random() * 4);
+      const wander = buildWanderPath(pData, cursorR, cursorC, word.cells[0].row, word.cells[0].col, hopCount);
       const totalSteps = wander.length + 1;
       const stepTime = thinkTime / totalSteps;
-      for (const [pr, pc] of wander) {
-        delay += stepTime;
-        const wanderDir = Math.random() < 0.5 ? 'across' : 'down';
-        scheduleCursorMove(pr, pc, wanderDir, delay);
-      }
-      // Final hop: land on the first cell of the word
-      delay += stepTime;
-      scheduleCursorMove(targetR, targetC, word.dir, delay);
 
-      // Now fill each cell of this word
-      for (const cell of word.cells) {
-        delay += cellTimes[cellIdx] || 100;
+      let wanderIdx = 0;
+      const doWander = () => {
+        if (!isAlive()) return;
+        if (wanderIdx < wander.length) {
+          const [pr, pc] = wander[wanderIdx++];
+          emitCursor(pr, pc, Math.random() < 0.5 ? 'across' : 'down');
+          const t = setTimeout(doWander, stepTime);
+          bot.timers.push(t);
+        } else {
+          // Done wandering — land on target and start filling
+          emitCursor(word.cells[0].row, word.cells[0].col, word.dir);
+          const t = setTimeout(() => startFillingWord(wi, 0), stepTime);
+          bot.timers.push(t);
+        }
+      };
+
+      const t = setTimeout(doWander, stepTime);
+      bot.timers.push(t);
+
+      const startFillingWord = async (wi, ci) => {
+        if (!isAlive()) return;
+
+        // Get live grid state to check which cells still need filling
+        let currentGrid = {};
+        try {
+          const currentState = await db.getState(puzzleDate);
+          currentGrid = currentState?.user_grid || {};
+        } catch (e) { /* continue with empty grid */ }
+
+        // Find next unfilled cell in this word starting from ci
+        let nextCi = ci;
+        while (nextCi < word.cells.length) {
+          const cell = word.cells[nextCi];
+          if (currentGrid[`${cell.row},${cell.col}`] !== cell.letter) break;
+          nextCi++;
+          cellIdx++; // consume the timing slot
+        }
+
+        if (nextCi >= word.cells.length) {
+          // Word is fully filled — skip to next word immediately
+          cursorR = word.cells[word.cells.length - 1].row;
+          cursorC = word.cells[word.cells.length - 1].col;
+          processWord(wi + 1);
+          return;
+        }
+
+        // Fill this cell
+        const cell = word.cells[nextCi];
+        const fillTime = timing.cellTimes[cellIdx] || 100;
         cellIdx++;
 
-        const fillTimer = setTimeout(async () => {
+        const t = setTimeout(async () => {
+          if (!isAlive()) return;
           try {
-            // Skip if already correctly filled by someone else
-            const currentState = await db.getState(puzzleDate);
-            const currentGrid = currentState?.user_grid || {};
-            if (currentGrid[`${cell.row},${cell.col}`] === cell.letter) return;
-
-            const currentBots = aiBots.get(puzzleDate);
-            if (!currentBots || !currentBots.has(bot.botId)) return;
-
-            // Move cursor to this cell
-            io.to(`puzzle:${puzzleDate}`).emit('cursor-moved', {
-              socketId: bot.botId, userId: bot.botId, userName: bot.name,
-              row: cell.row, col: cell.col, direction: word.dir,
-            });
-
+            emitCursor(cell.row, cell.col, word.dir);
             await processCellUpdate({
               puzzleDate, row: cell.row, col: cell.col, letter: cell.letter,
               socketId: bot.botId, userName: bot.name, userColor: bot.color, isBot: true,
@@ -1000,15 +1014,15 @@ async function startAiSolving(puzzleDate) {
           } catch (err) {
             console.error('[ai] fill error:', err);
           }
-        }, delay);
-        bot.timers.push(fillTimer);
-      }
+          // Continue to next cell in this word
+          startFillingWord(wi, nextCi + 1);
+        }, fillTime);
+        bot.timers.push(t);
+      };
+    };
 
-      // Update cursor position to end of this word
-      const lastCell = word.cells[word.cells.length - 1];
-      cursorR = lastCell.row;
-      cursorC = lastCell.col;
-    }
+    // Kick off the chain
+    processWord(0);
   }
 }
 
