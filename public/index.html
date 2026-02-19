@@ -1094,23 +1094,29 @@ function getAudioCtx() {
   return audioCtx;
 }
 
-function sfxType(isCorrect) {
-  // Subtle key click — higher pitch for correct, lower for incorrect
+// remote = true → lower pitch (0.8x) and lower volume (0.4x)
+const REMOTE_PITCH = 0.8;
+const REMOTE_VOL = 0.4;
+
+function sfxType(isCorrect, remote) {
+  const p = remote ? REMOTE_PITCH : 1;
+  const v = remote ? REMOTE_VOL : 1;
   const ctx = getAudioCtx();
   const osc = ctx.createOscillator();
   const gain = ctx.createGain();
   osc.connect(gain);
   gain.connect(ctx.destination);
   osc.type = 'sine';
-  osc.frequency.value = isCorrect ? 880 : 340;
-  gain.gain.setValueAtTime(0.08, ctx.currentTime);
+  osc.frequency.value = (isCorrect ? 880 : 340) * p;
+  gain.gain.setValueAtTime(0.08 * v, ctx.currentTime);
   gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.08);
   osc.start(ctx.currentTime);
   osc.stop(ctx.currentTime + 0.08);
 }
 
-function sfxWordComplete() {
-  // Two-note rising chime
+function sfxWordComplete(remote) {
+  const p = remote ? REMOTE_PITCH : 1;
+  const v = remote ? REMOTE_VOL : 1;
   const ctx = getAudioCtx();
   const t = ctx.currentTime;
   [523, 659].forEach((freq, i) => {
@@ -1119,50 +1125,50 @@ function sfxWordComplete() {
     osc.connect(gain);
     gain.connect(ctx.destination);
     osc.type = 'sine';
-    osc.frequency.value = freq;
+    osc.frequency.value = freq * p;
     const start = t + i * 0.09;
-    gain.gain.setValueAtTime(0.1, start);
+    gain.gain.setValueAtTime(0.1 * v, start);
     gain.gain.exponentialRampToValueAtTime(0.001, start + 0.2);
     osc.start(start);
     osc.stop(start + 0.2);
   });
 }
 
-function sfxFireStart() {
-  // Rising whoosh with harmonic sweep
+function sfxFireStart(remote) {
+  const p = remote ? REMOTE_PITCH : 1;
+  const v = remote ? REMOTE_VOL : 1;
   const ctx = getAudioCtx();
   const t = ctx.currentTime;
-  // Noise-like whoosh via detuned oscillators
   [260, 330, 520, 780].forEach((freq) => {
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
     osc.connect(gain);
     gain.connect(ctx.destination);
     osc.type = 'sawtooth';
-    osc.frequency.setValueAtTime(freq * 0.5, t);
-    osc.frequency.exponentialRampToValueAtTime(freq * 1.5, t + 0.35);
-    gain.gain.setValueAtTime(0.04, t);
-    gain.gain.linearRampToValueAtTime(0.07, t + 0.15);
+    osc.frequency.setValueAtTime(freq * 0.5 * p, t);
+    osc.frequency.exponentialRampToValueAtTime(freq * 1.5 * p, t + 0.35);
+    gain.gain.setValueAtTime(0.04 * v, t);
+    gain.gain.linearRampToValueAtTime(0.07 * v, t + 0.15);
     gain.gain.exponentialRampToValueAtTime(0.001, t + 0.4);
     osc.start(t);
     osc.stop(t + 0.4);
   });
-  // Bright chime on top
   const osc = ctx.createOscillator();
   const gain = ctx.createGain();
   osc.connect(gain);
   gain.connect(ctx.destination);
   osc.type = 'sine';
-  osc.frequency.value = 1047;
+  osc.frequency.value = 1047 * p;
   gain.gain.setValueAtTime(0, t + 0.15);
-  gain.gain.linearRampToValueAtTime(0.12, t + 0.2);
+  gain.gain.linearRampToValueAtTime(0.12 * v, t + 0.2);
   gain.gain.exponentialRampToValueAtTime(0.001, t + 0.6);
   osc.start(t + 0.15);
   osc.stop(t + 0.6);
 }
 
-function sfxFireBreak() {
-  // Descending tone — subtle disappointment
+function sfxFireBreak(remote) {
+  const p = remote ? REMOTE_PITCH : 1;
+  const v = remote ? REMOTE_VOL : 1;
   const ctx = getAudioCtx();
   const t = ctx.currentTime;
   const osc = ctx.createOscillator();
@@ -1170,9 +1176,9 @@ function sfxFireBreak() {
   osc.connect(gain);
   gain.connect(ctx.destination);
   osc.type = 'sine';
-  osc.frequency.setValueAtTime(440, t);
-  osc.frequency.exponentialRampToValueAtTime(220, t + 0.3);
-  gain.gain.setValueAtTime(0.1, t);
+  osc.frequency.setValueAtTime(440 * p, t);
+  osc.frequency.exponentialRampToValueAtTime(220 * p, t + 0.3);
+  gain.gain.setValueAtTime(0.1 * v, t);
   gain.gain.exponentialRampToValueAtTime(0.001, t + 0.3);
   osc.start(t);
   osc.stop(t + 0.3);
@@ -2373,6 +2379,7 @@ function handleRemoteFireEvent(fireEvent, remoteUserId) {
   if (!remoteSocketId) return;
 
   if (fireEvent.type === 'started') {
+    sfxFireStart(true);
     const fireCellSet = new Set(fireEvent.fireCells.map(c => `${c.row},${c.col}`));
     remoteFireStates.set(remoteSocketId, {
       userName: fireEvent.userName, color: fireEvent.color,
@@ -2403,6 +2410,7 @@ function handleRemoteFireEvent(fireEvent, remoteUserId) {
       }
       remoteFireStates.delete(remoteSocketId);
     }
+    sfxFireBreak(true);
     showComboBroken();
   }
 }
@@ -2473,6 +2481,10 @@ function setupSocketHandlers() {
           if (!guessCorrect) gs.incorrect++;
           guessStats.set(remoteName, gs);
         }
+        // Remote typing sound (lower pitch + volume)
+        if (guessCorrect !== null && guessCorrect !== undefined) {
+          sfxType(guessCorrect, true);
+        }
       } else {
         cellColors.delete(key);
         cellFillers.delete(key);
@@ -2486,6 +2498,7 @@ function setupSocketHandlers() {
       // Apply remote word bonus
       if (wordBonus && remoteName) {
         resetHintTimer();
+        sfxWordComplete(true);
         persistedPoints.set(remoteName, (persistedPoints.get(remoteName) || 0) + wordBonus);
         const isCombo = wordBonus >= 150;
         setTimeout(() => showPointFloat(row, col, wordBonus, isCombo ? 'combo' : 'word', isFireBoosted), 200);
