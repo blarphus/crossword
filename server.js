@@ -884,11 +884,31 @@ async function startAiSolving(puzzleDate) {
   const state = await db.getState(puzzleDate);
   const userGrid = state?.user_grid || {};
 
+  // Track starting words so every bot begins at a different one
+  const usedStartWords = new Set();
+
   for (const [, bot] of roomBots) {
     if (bot.started) continue;
     bot.started = true;
 
     const wordQueue = buildAiWordQueue(pData);
+
+    // Rotate queue so this bot starts on a word no other bot is starting on
+    if (usedStartWords.size > 0 && wordQueue.length > 1) {
+      let rotateBy = 0;
+      for (let i = 0; i < wordQueue.length; i++) {
+        const key = `${wordQueue[i].cells[0][0]},${wordQueue[i].cells[0][1]}`;
+        if (!usedStartWords.has(key)) { rotateBy = i; break; }
+      }
+      if (rotateBy > 0) {
+        const head = wordQueue.splice(0, rotateBy);
+        wordQueue.push(...head);
+      }
+    }
+    // Mark this bot's starting word
+    if (wordQueue.length > 0) {
+      usedStartWords.add(`${wordQueue[0].cells[0][0]},${wordQueue[0].cells[0][1]}`);
+    }
 
     // Collect words to fill (skip words that are already fully correct)
     const wordsToFill = [];
