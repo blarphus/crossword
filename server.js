@@ -308,6 +308,34 @@ const COLOR_POOL = ['#4CAF50','#222222','#FF9800','#E91E63','#9C27B0','#FF00FF']
 //              onFire, fireExpiresAt, fireCells: [{row,col},...], fireTimer }
 const fireStreaks = new Map();
 
+// ─── AI Bot state ─────────────────────────────────────────────
+const aiBots = new Map();   // puzzleDate → Map<botId, botState>
+let aiBotCounter = 0;
+
+// Target solve times in seconds: [dayOfWeek][difficultyIndex]
+const AI_TARGET_TIMES = [
+  [2940, 2390, 1835, 1560, 1195], // Sun
+  [630,  510,  395,  335,  255],   // Mon
+  [770,  625,  480,  410,  310],   // Tue
+  [1320, 1075, 825,  700,  535],   // Wed
+  [1680, 1365, 1050, 890,  680],   // Thu
+  [2000, 1625, 1250, 1065, 810],   // Fri
+  [2400, 1950, 1500, 1275, 975],   // Sat
+];
+
+// Multiplier ranges per difficulty
+const AI_MULTIPLIER_RANGES = [
+  [0.85, 1.25], // Easy
+  [0.90, 1.18], // Standard-
+  [0.92, 1.15], // Standard
+  [0.94, 1.12], // Standard+
+  [0.96, 1.08], // Expert
+];
+
+const AI_NAMES = ['Cleo', 'Atlas', 'Mira', 'Rex', 'Nova', 'Sage', 'Orion', 'Luna'];
+const AI_COLORS = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7', '#DDA0DD', '#F0E68C', '#87CEEB'];
+const AI_DIFFICULTY_LABELS = ['Easy', 'Standard-', 'Standard', 'Standard+', 'Expert'];
+
 function expireFire(socketId) {
   const fs = fireStreaks.get(socketId);
   if (!fs || !fs.onFire) return;
@@ -373,7 +401,9 @@ function areAllPaused(puzzleDate) {
   const room = puzzleRooms.get(puzzleDate);
   const paused = pausedSockets.get(puzzleDate);
   if (!room || room.size === 0) return false;
-  return paused && paused.size >= room.size;
+  const realCount = getRealPlayerCount(puzzleDate);
+  if (realCount === 0) return false;
+  return paused && paused.size >= realCount;
 }
 
 // ─── Puzzle solve timers (only tick when someone is in the room) ──
@@ -427,7 +457,8 @@ function debounceProgressBroadcast(puzzleDate) {
 function broadcastRoomCount(puzzleDate) {
   const room = puzzleRooms.get(puzzleDate);
   const count = room ? room.size : 0;
-  io.to('calendar').emit('room-count', { puzzleDate, count });
+  const botCount = (aiBots.get(puzzleDate) || new Map()).size;
+  io.to('calendar').emit('room-count', { puzzleDate, count, botCount });
 }
 
 function leaveCurrentPuzzle(socket) {
@@ -461,17 +492,27 @@ function leaveCurrentPuzzle(socket) {
   const room = puzzleRooms.get(puzzleDate);
   if (room) {
     room.delete(socket.id);
-    if (room.size === 0) {
+    // Check if only bots remain
+    if (getRealPlayerCount(puzzleDate) === 0) {
+      removeAllAiBots(puzzleDate);
+      // Re-check room after bot cleanup
+      if (room.size === 0) {
+        puzzleRooms.delete(puzzleDate);
+        hintState.delete(puzzleDate);
+        pausedSockets.delete(puzzleDate);
+        stopTimer(puzzleDate);
+      }
+    } else if (room.size === 0) {
       puzzleRooms.delete(puzzleDate);
       hintState.delete(puzzleDate);
       pausedSockets.delete(puzzleDate);
       stopTimer(puzzleDate);
     } else {
-      // If remaining players are all paused, stop timer
+      // If remaining real players are all paused, stop timer
       if (areAllPaused(puzzleDate)) stopTimer(puzzleDate);
       if (hs && hs.available && hs.votes.size > 0) {
-        // Re-broadcast hint vote count with updated total
-        io.to(`puzzle:${puzzleDate}`).emit('hint-vote-update', { votes: hs.votes.size, total: room.size });
+        const realCount = getRealPlayerCount(puzzleDate);
+        io.to(`puzzle:${puzzleDate}`).emit('hint-vote-update', { votes: hs.votes.size, total: realCount });
       }
     }
     socket.to(`puzzle:${puzzleDate}`).emit('user-left', {
@@ -480,6 +521,415 @@ function leaveCurrentPuzzle(socket) {
       socketId: socket.id,
     });
     broadcastRoomCount(puzzleDate);
+  }
+}
+
+// ─── Extracted cell-update logic (shared by real players and AI bots) ────
+async function processCellUpdate({ puzzleDate, row, col, letter, socketId, userName, userColor, isBot }) {
+  const room = `puzzle:${puzzleDate}`;
+  let pointDelta = 0;
+  let wordBonus = 0;
+  let fireEvent = null;
+  let guessCorrect = null;
+  const now = Date.now();
+
+  await db.upsertCell(puzzleDate, row, col, letter);
+  await db.upsertCellFiller(puzzleDate, row, col, letter ? userName : '');
+
+  // Get or create fire streak state
+  let fs = fireStreaks.get(socketId);
+  if (!fs) {
+    fs = { puzzleDate, userName, color: userColor, recentWordCompletions: [], onFire: false, fireExpiresAt: 0, fireCells: [], fireTimer: null, fireMultiplier: 1.5, fireWordsCompleted: 0 };
+    fireStreaks.set(socketId, fs);
+  }
+
+  // Check if this cell is a hint cell (no scoring for hints)
+  const hs = await loadHintCellsFromDb(puzzleDate);
+  const isHintCell = hs.hintCells.has(`${row},${col}`);
+
+  if (letter && !isHintCell) {
+    const pData = await getPuzzleData(puzzleDate);
+    const correctAnswer = getCorrectAnswer(pData, row, col);
+    if (correctAnswer) {
+      const isCorrect = isCellCorrectServer(pData, row, col, letter);
+      const isRebus = !!pData.rebus[`${row},${col}`] && letter.length > 1;
+      const basePts = isRebus ? 50 : 10;
+      guessCorrect = isCorrect;
+      const wasOnFire = fs.onFire;
+
+      if (isCorrect && fs.onFire) {
+        pointDelta = Math.round(basePts * fs.fireMultiplier);
+      } else if (isCorrect && !fs.onFire) {
+        pointDelta = basePts;
+      } else if (!isCorrect && fs.onFire) {
+        if (fs.fireTimer) clearTimeout(fs.fireTimer);
+        fireEvent = { type: 'broken', userName, color: userColor, fireCells: fs.fireCells.slice() };
+        fs.onFire = false;
+        fs.fireExpiresAt = 0;
+        fs.fireCells = [];
+        fs.fireTimer = null;
+        fs.recentWordCompletions = [];
+        fs.fireMultiplier = 1.5;
+        fs.fireWordsCompleted = 0;
+        pointDelta = -30;
+      } else {
+        fs.recentWordCompletions = [];
+        pointDelta = -30;
+      }
+
+      await db.addPoints(puzzleDate, userName, pointDelta);
+      await db.addGuess(puzzleDate, userName, isCorrect);
+
+      if (isCorrect) {
+        const { completed, completedWordCells } = await checkWordCompletions(puzzleDate, row, col, pData);
+        if (completed >= 2) wordBonus = 250;
+        else if (completed === 1) wordBonus = 50;
+        if (wordBonus && wasOnFire) wordBonus = Math.round(wordBonus * fs.fireMultiplier);
+
+        if (wordBonus) {
+          await db.addPoints(puzzleDate, userName, wordBonus);
+          const hintSt = getHintState(puzzleDate);
+          hintSt.available = false;
+          hintSt.votes.clear();
+
+          const fillers = await db.getCellFillers(puzzleDate);
+          const userFireCells = [];
+          for (const [key, filler] of Object.entries(fillers)) {
+            const fillerName = typeof filler === 'object' ? filler.userName : filler;
+            if (fillerName === userName) {
+              const [r, c] = key.split(',').map(Number);
+              userFireCells.push({ row: r, col: c });
+            }
+          }
+
+          if (fs.onFire && wasOnFire) {
+            fs.fireWordsCompleted += completed;
+            fs.fireMultiplier = 1.5 + Math.floor(fs.fireWordsCompleted / 3) * 0.5;
+            fs.fireExpiresAt += 5000;
+            fs.fireCells = userFireCells;
+            if (fs.fireTimer) clearTimeout(fs.fireTimer);
+            const remainingMs = fs.fireExpiresAt - now;
+            fs.fireTimer = setTimeout(() => expireFire(socketId), remainingMs);
+            fireEvent = { type: 'extended', userName, color: userColor, fireCells: userFireCells, remainingMs, fireMultiplier: fs.fireMultiplier };
+          } else if (!fs.onFire) {
+            fs.recentWordCompletions.push({ timestamp: now, count: completed, wordCells: completedWordCells });
+            fs.recentWordCompletions = fs.recentWordCompletions.filter(e => now - e.timestamp < 30000);
+            const totalCompletions = fs.recentWordCompletions.reduce((sum, e) => sum + e.count, 0);
+            if (totalCompletions >= 3) {
+              fs.onFire = true;
+              fs.fireExpiresAt = now + 30000;
+              fs.fireCells = userFireCells;
+              fs.fireMultiplier = 1.5;
+              fs.fireWordsCompleted = 0;
+              fs.fireTimer = setTimeout(() => expireFire(socketId), 30000);
+              fireEvent = { type: 'started', userName, color: userColor, fireCells: userFireCells, remainingMs: 30000, fireMultiplier: 1.5 };
+              fs.recentWordCompletions = [];
+            }
+          }
+        }
+      }
+    }
+  }
+
+  // Check if puzzle is now fully solved
+  let lastSquareBonus = 0;
+  if (letter && guessCorrect) {
+    const pData = await getPuzzleData(puzzleDate);
+    const state = await db.getState(puzzleDate);
+    if (pData && state) {
+      const grid = state.user_grid;
+      const rows = pData.dimensions.rows;
+      const cols = pData.dimensions.cols;
+      let complete = true;
+      for (let r = 0; r < rows && complete; r++) {
+        for (let c = 0; c < cols && complete; c++) {
+          if (pData.grid[r][c] === '.') continue;
+          if (grid[`${r},${c}`] !== getCorrectAnswer(pData, r, c)) complete = false;
+        }
+      }
+      if (complete) {
+        lastSquareBonus = 250;
+        await db.addPoints(puzzleDate, userName, lastSquareBonus);
+        // Clean up all AI bots on puzzle completion
+        removeAllAiBots(puzzleDate);
+      }
+    }
+  }
+
+  // Broadcast to room
+  const payload = { row, col, letter, userId: socketId, userName, color: userColor, pointDelta, wordBonus, fireEvent, guessCorrect, lastSquareBonus };
+  if (isBot) {
+    // Bots have no real socket — broadcast to entire room
+    io.to(room).emit('cell-updated', payload);
+  }
+  // For real players, the caller handles emit
+
+  debounceProgressBroadcast(puzzleDate);
+
+  return { pointDelta, wordBonus, fireEvent, guessCorrect, lastSquareBonus, payload };
+}
+
+// ─── AI Bot lifecycle and solving ─────────────────────────────────
+
+function getRealPlayerCount(puzzleDate) {
+  const room = puzzleRooms.get(puzzleDate);
+  if (!room) return 0;
+  let count = 0;
+  for (const [, info] of room) {
+    if (!info.isBot) count++;
+  }
+  return count;
+}
+
+function addAiBot(puzzleDate, difficultyIndex) {
+  const botId = `ai-bot-${++aiBotCounter}`;
+  const roomBots = aiBots.get(puzzleDate) || new Map();
+
+  // Pick available name
+  const usedNames = new Set();
+  for (const [, b] of roomBots) usedNames.add(b.name);
+  const name = AI_NAMES.find(n => !usedNames.has(n)) || `Bot-${aiBotCounter}`;
+  const colorIdx = roomBots.size % AI_COLORS.length;
+  const color = AI_COLORS[colorIdx];
+
+  // Calculate final solve time
+  const dateObj = new Date(puzzleDate + 'T12:00:00');
+  const dow = dateObj.getDay();
+  const baseTime = AI_TARGET_TIMES[dow][difficultyIndex];
+  const [lo, hi] = AI_MULTIPLIER_RANGES[difficultyIndex];
+  const mult = lo + Math.random() * (hi - lo);
+  const finalSolveTime = baseTime * mult;
+
+  const bot = {
+    botId, name, color, difficultyIndex,
+    puzzleDate, finalSolveTime,
+    timers: [], started: false,
+  };
+
+  roomBots.set(botId, bot);
+  aiBots.set(puzzleDate, roomBots);
+
+  // Register in puzzleRooms
+  if (!puzzleRooms.has(puzzleDate)) puzzleRooms.set(puzzleDate, new Map());
+  puzzleRooms.get(puzzleDate).set(botId, {
+    userId: botId, userName: name, color, row: 0, col: 0, direction: 'across', isBot: true,
+  });
+
+  // Initialize fire streak entry
+  fireStreaks.set(botId, {
+    puzzleDate, userName: name, color,
+    recentWordCompletions: [],
+    onFire: false, fireExpiresAt: 0, fireCells: [], fireTimer: null,
+    fireMultiplier: 1.5, fireWordsCompleted: 0,
+  });
+
+  // Broadcast join
+  io.to(`puzzle:${puzzleDate}`).emit('user-joined', {
+    socketId: botId, userId: botId, userName: name, color,
+    row: 0, col: 0, direction: 'across', isBot: true,
+  });
+
+  broadcastRoomCount(puzzleDate);
+  return bot;
+}
+
+function removeAiBot(puzzleDate, botId) {
+  const roomBots = aiBots.get(puzzleDate);
+  if (!roomBots) return;
+  const bot = roomBots.get(botId);
+  if (!bot) return;
+
+  // Cancel all pending timers
+  for (const t of bot.timers) clearTimeout(t);
+  bot.timers = [];
+
+  // Clean up fire state
+  const fs = fireStreaks.get(botId);
+  if (fs && fs.onFire) {
+    if (fs.fireTimer) clearTimeout(fs.fireTimer);
+    io.to(`puzzle:${puzzleDate}`).emit('fire-expired', {
+      socketId: botId, userName: bot.name, color: bot.color, fireCells: fs.fireCells,
+    });
+  }
+  fireStreaks.delete(botId);
+
+  // Remove from puzzleRooms
+  const room = puzzleRooms.get(puzzleDate);
+  if (room) room.delete(botId);
+
+  // Remove from bot map
+  roomBots.delete(botId);
+  if (roomBots.size === 0) aiBots.delete(puzzleDate);
+
+  // Broadcast leave
+  io.to(`puzzle:${puzzleDate}`).emit('user-left', {
+    userId: botId, userName: bot.name, socketId: botId,
+  });
+
+  broadcastRoomCount(puzzleDate);
+}
+
+function removeAllAiBots(puzzleDate) {
+  const roomBots = aiBots.get(puzzleDate);
+  if (!roomBots) return;
+  const botIds = [...roomBots.keys()];
+  for (const botId of botIds) removeAiBot(puzzleDate, botId);
+}
+
+function getAiBotList(puzzleDate) {
+  const roomBots = aiBots.get(puzzleDate);
+  if (!roomBots) return [];
+  return [...roomBots.values()].map(b => ({
+    botId: b.botId, name: b.name, color: b.color,
+    difficultyIndex: b.difficultyIndex,
+    difficultyLabel: AI_DIFFICULTY_LABELS[b.difficultyIndex],
+    started: b.started,
+  }));
+}
+
+function buildAiWordQueue(pData) {
+  const words = [];
+  for (const dir of ['across', 'down']) {
+    for (const clue of pData.clues[dir]) {
+      const cells = getServerWordCells(pData, clue, dir);
+      words.push({ dir, clue, cells });
+    }
+  }
+  // Sort by position (top-to-bottom, left-to-right)
+  words.sort((a, b) => {
+    if (a.cells[0][0] !== b.cells[0][0]) return a.cells[0][0] - b.cells[0][0];
+    return a.cells[0][1] - b.cells[0][1];
+  });
+  // Shuffle within chunks of 5 for variation
+  const shuffled = [];
+  for (let i = 0; i < words.length; i += 5) {
+    const chunk = words.slice(i, i + 5);
+    for (let j = chunk.length - 1; j > 0; j--) {
+      const k = Math.floor(Math.random() * (j + 1));
+      [chunk[j], chunk[k]] = [chunk[k], chunk[j]];
+    }
+    shuffled.push(...chunk);
+  }
+  return shuffled;
+}
+
+function distributeAiTiming(cellCount, finalSolveTime, wordCount) {
+  if (cellCount === 0) return { thinkTimes: [], cellTimes: [] };
+  const totalMs = finalSolveTime * 1000;
+  const thinkShare = 0.3;
+  const typeShare = 0.7;
+
+  // Generate raw think times (one per word)
+  const rawThink = [];
+  for (let i = 0; i < wordCount; i++) {
+    rawThink.push(0.3 + Math.random() * 2.2);
+  }
+  const thinkSum = rawThink.reduce((s, v) => s + v, 0);
+  const thinkTimes = rawThink.map(v => Math.max(50, (v / thinkSum) * totalMs * thinkShare));
+
+  // Generate raw cell times
+  const rawCell = [];
+  for (let i = 0; i < cellCount; i++) {
+    rawCell.push(0.5 + Math.random());
+  }
+  const cellSum = rawCell.reduce((s, v) => s + v, 0);
+  const cellTimes = rawCell.map(v => Math.max(50, (v / cellSum) * totalMs * typeShare));
+
+  return { thinkTimes, cellTimes };
+}
+
+async function startAiSolving(puzzleDate) {
+  const roomBots = aiBots.get(puzzleDate);
+  if (!roomBots) return;
+
+  const pData = await getPuzzleData(puzzleDate);
+  if (!pData) return;
+
+  const state = await db.getState(puzzleDate);
+  const userGrid = state?.user_grid || {};
+
+  for (const [, bot] of roomBots) {
+    if (bot.started) continue;
+    bot.started = true;
+
+    const wordQueue = buildAiWordQueue(pData);
+
+    // Collect cells to fill (skip already correctly filled)
+    const cellsToFill = [];
+    const wordsToFill = [];
+    for (const word of wordQueue) {
+      const wordCells = [];
+      for (const [r, c] of word.cells) {
+        const key = `${r},${c}`;
+        const correct = getCorrectAnswer(pData, r, c);
+        if (userGrid[key] === correct) continue; // already filled correctly
+        wordCells.push({ row: r, col: c, letter: correct });
+      }
+      if (wordCells.length > 0) {
+        wordsToFill.push({ cells: wordCells, dir: word.dir });
+        cellsToFill.push(...wordCells);
+      }
+    }
+
+    if (cellsToFill.length === 0) continue;
+
+    const { thinkTimes, cellTimes } = distributeAiTiming(cellsToFill.length, bot.finalSolveTime, wordsToFill.length);
+
+    let delay = 0;
+    let cellIdx = 0;
+
+    for (let wi = 0; wi < wordsToFill.length; wi++) {
+      const word = wordsToFill[wi];
+      delay += thinkTimes[wi] || 200;
+
+      // Cursor move to first cell of word
+      const firstCell = word.cells[0];
+      const cursorTimer = setTimeout(() => {
+        const room = puzzleRooms.get(puzzleDate);
+        if (!room || !room.has(bot.botId)) return;
+        const info = room.get(bot.botId);
+        info.row = firstCell.row;
+        info.col = firstCell.col;
+        info.direction = word.dir;
+        io.to(`puzzle:${puzzleDate}`).emit('cursor-moved', {
+          socketId: bot.botId, userId: bot.botId, userName: bot.name,
+          row: firstCell.row, col: firstCell.col, direction: word.dir,
+        });
+      }, delay);
+      bot.timers.push(cursorTimer);
+
+      for (const cell of word.cells) {
+        delay += cellTimes[cellIdx] || 100;
+        cellIdx++;
+
+        const fillTimer = setTimeout(async () => {
+          try {
+            // Re-check: skip if already correctly filled by someone else
+            const currentState = await db.getState(puzzleDate);
+            const currentGrid = currentState?.user_grid || {};
+            if (currentGrid[`${cell.row},${cell.col}`] === cell.letter) return;
+
+            // Check bot is still active
+            const currentBots = aiBots.get(puzzleDate);
+            if (!currentBots || !currentBots.has(bot.botId)) return;
+
+            // Move cursor to this cell
+            io.to(`puzzle:${puzzleDate}`).emit('cursor-moved', {
+              socketId: bot.botId, userId: bot.botId, userName: bot.name,
+              row: cell.row, col: cell.col, direction: word.dir,
+            });
+
+            await processCellUpdate({
+              puzzleDate, row: cell.row, col: cell.col, letter: cell.letter,
+              socketId: bot.botId, userName: bot.name, userColor: bot.color, isBot: true,
+            });
+          } catch (err) {
+            console.error('[ai] fill error:', err);
+          }
+        }, delay);
+        bot.timers.push(fillTimer);
+      }
+    }
   }
 }
 
@@ -552,153 +1002,15 @@ io.on('connection', async (socket) => {
 
   socket.on('cell-update', async ({ puzzleDate, row, col, letter }) => {
     try {
-      await db.upsertCell(puzzleDate, row, col, letter);
-      await db.upsertCellFiller(puzzleDate, row, col, letter ? userName : '');
-
-      // Score points on letter placement (not on delete)
-      let pointDelta = 0;
-      let wordBonus = 0;
-      let fireEvent = null;
-      let guessCorrect = null; // null = no guess (delete), true/false = correct/incorrect
-      const now = Date.now();
-
-      // Get or create fire streak state
-      let fs = fireStreaks.get(socket.id);
-      if (!fs) {
-        fs = { puzzleDate, userName, color: userColor, recentWordCompletions: [], onFire: false, fireExpiresAt: 0, fireCells: [], fireTimer: null, fireMultiplier: 1.5, fireWordsCompleted: 0 };
-        fireStreaks.set(socket.id, fs);
+      const result = await processCellUpdate({
+        puzzleDate, row, col, letter,
+        socketId: socket.id, userName, userColor, isBot: false,
+      });
+      // For real players: broadcast to others (not self) and send fire update to self
+      socket.to(`puzzle:${puzzleDate}`).emit('cell-updated', result.payload);
+      if (result.fireEvent) {
+        socket.emit('fire-update', result.fireEvent);
       }
-
-      // Check if this cell is a hint cell (no scoring for hints)
-      const hs = await loadHintCellsFromDb(puzzleDate);
-      const isHintCell = hs.hintCells.has(`${row},${col}`);
-
-      if (letter && !isHintCell) {
-        const pData = await getPuzzleData(puzzleDate);
-        const correctAnswer = getCorrectAnswer(pData, row, col);
-        if (correctAnswer) {
-          const isCorrect = isCellCorrectServer(pData, row, col, letter);
-          const isRebus = !!pData.rebus[`${row},${col}`] && letter.length > 1;
-          const basePts = isRebus ? 50 : 10;
-          guessCorrect = isCorrect;
-          const wasOnFire = fs.onFire;
-
-          if (isCorrect && fs.onFire) {
-            // Correct + on fire: multiplied points
-            pointDelta = Math.round(basePts * fs.fireMultiplier);
-          } else if (isCorrect && !fs.onFire) {
-            pointDelta = basePts;
-          } else if (!isCorrect && fs.onFire) {
-            // Incorrect + on fire: break fire
-            if (fs.fireTimer) clearTimeout(fs.fireTimer);
-            fireEvent = { type: 'broken', userName, color: userColor, fireCells: fs.fireCells.slice() };
-            fs.onFire = false;
-            fs.fireExpiresAt = 0;
-            fs.fireCells = [];
-            fs.fireTimer = null;
-            fs.recentWordCompletions = [];
-            fs.fireMultiplier = 1.5;
-            fs.fireWordsCompleted = 0;
-            pointDelta = -30;
-          } else {
-            // Incorrect + not on fire: reset word completion streak
-            fs.recentWordCompletions = [];
-            pointDelta = -30;
-          }
-
-          await db.addPoints(puzzleDate, userName, pointDelta);
-          await db.addGuess(puzzleDate, userName, isCorrect);
-
-          // Check word completions for bonus — all fire logic is gated on wordBonus > 0
-          if (isCorrect) {
-            const { completed, completedWordCells } = await checkWordCompletions(puzzleDate, row, col, pData);
-            if (completed >= 2) wordBonus = 250;
-            else if (completed === 1) wordBonus = 50;
-            // Apply fire multiplier to word bonus if was already on fire (not if fire just started this turn)
-            if (wordBonus && wasOnFire) wordBonus = Math.round(wordBonus * fs.fireMultiplier);
-
-            if (wordBonus) {
-              await db.addPoints(puzzleDate, userName, wordBonus);
-              // Reset hint availability on word completion
-              const hintSt = getHintState(puzzleDate);
-              hintSt.available = false;
-              hintSt.votes.clear();
-
-              // Get ALL cells this user has filled for fire display
-              const fillers = await db.getCellFillers(puzzleDate);
-              const userFireCells = [];
-              for (const [key, filler] of Object.entries(fillers)) {
-                const fillerName = typeof filler === 'object' ? filler.userName : filler;
-                if (fillerName === userName) {
-                  const [r, c] = key.split(',').map(Number);
-                  userFireCells.push({ row: r, col: c });
-                }
-              }
-
-              if (fs.onFire && wasOnFire) {
-                // Track words completed while on fire for multiplier escalation
-                fs.fireWordsCompleted += completed;
-                // Every 3 words completed while on fire: +0.5x multiplier
-                fs.fireMultiplier = 1.5 + Math.floor(fs.fireWordsCompleted / 3) * 0.5;
-                // Extend fire on word completion while on fire
-                fs.fireExpiresAt += 5000;
-                fs.fireCells = userFireCells;
-                if (fs.fireTimer) clearTimeout(fs.fireTimer);
-                const remainingMs = fs.fireExpiresAt - now;
-                fs.fireTimer = setTimeout(() => expireFire(socket.id), remainingMs);
-                fireEvent = { type: 'extended', userName, color: userColor, fireCells: userFireCells, remainingMs, fireMultiplier: fs.fireMultiplier };
-              } else if (!fs.onFire) {
-                // Track word completions toward fire trigger
-                fs.recentWordCompletions.push({ timestamp: now, count: completed, wordCells: completedWordCells });
-                fs.recentWordCompletions = fs.recentWordCompletions.filter(e => now - e.timestamp < 30000);
-                const totalCompletions = fs.recentWordCompletions.reduce((sum, e) => sum + e.count, 0);
-                if (totalCompletions >= 3) {
-                  fs.onFire = true;
-                  fs.fireExpiresAt = now + 30000;
-                  fs.fireCells = userFireCells;
-                  fs.fireMultiplier = 1.5;
-                  fs.fireWordsCompleted = 0;
-                  fs.fireTimer = setTimeout(() => expireFire(socket.id), 30000);
-                  fireEvent = { type: 'started', userName, color: userColor, fireCells: userFireCells, remainingMs: 30000, fireMultiplier: 1.5 };
-                  fs.recentWordCompletions = [];
-                }
-              }
-            }
-          }
-        }
-      }
-
-      // Check if puzzle is now fully solved — award last-square bonus
-      let lastSquareBonus = 0;
-      if (letter && guessCorrect) {
-        const pData = await getPuzzleData(puzzleDate);
-        const state = await db.getState(puzzleDate);
-        if (pData && state) {
-          const grid = state.user_grid;
-          const rows = pData.dimensions.rows;
-          const cols = pData.dimensions.cols;
-          let complete = true;
-          for (let r = 0; r < rows && complete; r++) {
-            for (let c = 0; c < cols && complete; c++) {
-              if (pData.grid[r][c] === '.') continue;
-              if (grid[`${r},${c}`] !== getCorrectAnswer(pData, r, c)) complete = false;
-            }
-          }
-          if (complete) {
-            lastSquareBonus = 250;
-            await db.addPoints(puzzleDate, userName, lastSquareBonus);
-          }
-        }
-      }
-
-      socket.to(`puzzle:${puzzleDate}`).emit('cell-updated', { row, col, letter, userId, userName, color: userColor, pointDelta, wordBonus, fireEvent, guessCorrect, lastSquareBonus });
-
-      // Send fire update back to originating socket
-      if (fireEvent) {
-        socket.emit('fire-update', fireEvent);
-      }
-
-      debounceProgressBroadcast(puzzleDate);
     } catch (err) {
       console.error('[ws] cell-update error:', err);
     }
@@ -749,13 +1061,13 @@ io.on('connection', async (socket) => {
       if (!room) return;
       const hs = getHintState(puzzleDate);
       hs.votes.add(socket.id);
-      const totalPlayers = room.size;
+      const totalPlayers = getRealPlayerCount(puzzleDate);
       const voteCount = hs.votes.size;
 
       // Broadcast vote update to all players in room
       io.to(`puzzle:${puzzleDate}`).emit('hint-vote-update', { votes: voteCount, total: totalPlayers });
 
-      // If all players voted, reveal hints
+      // If all real players voted, reveal hints
       if (voteCount >= totalPlayers) {
         const pData = await getPuzzleData(puzzleDate);
         const state = await db.getState(puzzleDate);
@@ -816,6 +1128,7 @@ io.on('connection', async (socket) => {
 
   socket.on('clear-puzzle', async ({ puzzleDate }) => {
     try {
+      removeAllAiBots(puzzleDate);
       await db.clearState(puzzleDate);
       // Reset hint state
       hintState.delete(puzzleDate);
@@ -828,6 +1141,28 @@ io.on('connection', async (socket) => {
     } catch (err) {
       console.error('[ws] clear-puzzle error:', err);
     }
+  });
+
+  // ─── AI bot handlers ──────────────────────────────────────────
+  socket.on('add-ai', ({ puzzleDate, difficultyIndex }) => {
+    const roomBots = aiBots.get(puzzleDate);
+    if (roomBots && roomBots.size >= 5) return; // max 5 bots
+    const di = Math.max(0, Math.min(4, difficultyIndex || 2));
+    addAiBot(puzzleDate, di);
+    io.to(`puzzle:${puzzleDate}`).emit('ai-bot-list', getAiBotList(puzzleDate));
+  });
+
+  socket.on('remove-ai', ({ puzzleDate, botId }) => {
+    removeAiBot(puzzleDate, botId);
+    io.to(`puzzle:${puzzleDate}`).emit('ai-bot-list', getAiBotList(puzzleDate));
+  });
+
+  socket.on('start-ai', ({ puzzleDate }) => {
+    startAiSolving(puzzleDate);
+  });
+
+  socket.on('get-ai-bots', ({ puzzleDate }) => {
+    socket.emit('ai-bot-list', getAiBotList(puzzleDate));
   });
 
   socket.on('leave-puzzle', () => {

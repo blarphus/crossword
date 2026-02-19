@@ -994,6 +994,109 @@ body.mobile .mobile-keyboard { display: block; position: static; flex-shrink: 0;
   height: 8px;
   border-radius: 50%;
 }
+
+/* ─── AI Opponents Section ──────────────────────────────────── */
+.entry-ai-section {
+  margin: 16px 0;
+  text-align: left;
+}
+.entry-ai-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: #aaa;
+  margin-bottom: 8px;
+  text-align: center;
+}
+.entry-ai-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+.entry-ai-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  background: #f5f5f5;
+  border-radius: 8px;
+  font-size: 0.82rem;
+}
+.entry-ai-item .ai-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.entry-ai-item .ai-name {
+  font-weight: 600;
+  color: #333;
+}
+.entry-ai-item .ai-badge {
+  font-size: 0.65rem;
+  font-weight: 700;
+  background: #e0e0e0;
+  color: #666;
+  padding: 1px 5px;
+  border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.entry-ai-item .ai-difficulty {
+  font-size: 0.75rem;
+  color: #999;
+  margin-left: auto;
+}
+.entry-ai-item .ai-remove {
+  background: none;
+  border: none;
+  color: #ccc;
+  font-size: 1rem;
+  cursor: pointer;
+  padding: 0 4px;
+  line-height: 1;
+}
+.entry-ai-item .ai-remove:hover { color: #e53935; }
+.entry-ai-add {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+}
+.entry-ai-add select {
+  padding: 6px 10px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 0.82rem;
+  background: #fff;
+  color: #333;
+}
+.entry-ai-add button {
+  padding: 6px 14px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  background: #fff;
+  color: #2a6dd4;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.entry-ai-add button:hover { background: #eef3f8; }
+
+/* ─── Bot badge in presence bar ─────────────────────────────── */
+.presence-bot-badge {
+  font-size: 0.6rem;
+  font-weight: 700;
+  background: #e0e0e0;
+  color: #666;
+  padding: 1px 4px;
+  border-radius: 3px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  margin-left: 2px;
+}
 </style>
 </head>
 <body>
@@ -1089,6 +1192,20 @@ body.mobile .mobile-keyboard { display: block; position: static; flex-shrink: 0;
     <div class="entry-user-preview" id="entry-user-preview"></div>
     <div class="entry-players-label">PLAYERS SOLVING</div>
     <div class="entry-players" id="entry-players"></div>
+    <div class="entry-ai-section" id="entry-ai-section">
+      <div class="entry-ai-label">AI OPPONENTS</div>
+      <div class="entry-ai-list" id="entry-ai-list"></div>
+      <div class="entry-ai-add">
+        <select id="entry-ai-difficulty">
+          <option value="0">Easy</option>
+          <option value="1">Standard-</option>
+          <option value="2" selected>Standard</option>
+          <option value="3">Standard+</option>
+          <option value="4">Expert</option>
+        </select>
+        <button id="entry-ai-add-btn">+ Add Bot</button>
+      </div>
+    </div>
     <button class="entry-start-btn" id="entry-start-btn">Start Solving</button>
     <button class="entry-change-name" id="entry-change-name">Change Name / Color</button>
   </div>
@@ -1482,6 +1599,7 @@ const cellFillers = new Map(); // "r,c" → {userName, color} (who filled this c
 const guessStats = new Map(); // userName → { total, incorrect }
 const persistedPoints = new Map(); // userName → number (base points from DB, excludes word bonuses)
 const roomCounts = new Map();  // puzzleDate → player count
+let aiBotList = [];  // synced from server via ai-bot-list events
 let lastCursorKey = '';
 
 // Fire streak state
@@ -1729,6 +1847,7 @@ function showCalendar(pushState = true) {
   localStorage.removeItem('crossword-current-puzzle');
   PUZZLE = null;
   remoteUsers.clear();
+  aiBotList = [];
   lastCursorKey = '';
   if (pushState) history.pushState({ view: 'calendar' }, '', '/');
   fetchAndRenderCalendar();
@@ -1746,6 +1865,27 @@ function showPuzzle(dateStr, pushState = true, showEntry = false) {
   if (showEntry) {
     showPuzzleEntryOverlay(dateStr);
   }
+}
+
+// ─── AI Bot List Rendering ────────────────────────────────────
+function renderAiBotList() {
+  const listEl = document.getElementById('entry-ai-list');
+  if (!listEl) return;
+  listEl.innerHTML = '';
+  for (const bot of aiBotList) {
+    const item = document.createElement('div');
+    item.className = 'entry-ai-item';
+    item.innerHTML = `<span class="ai-dot" style="background:${bot.color}"></span><span class="ai-name">${bot.name}</span><span class="ai-badge">BOT</span><span class="ai-difficulty">${bot.difficultyLabel}</span><button class="ai-remove" data-bot-id="${bot.botId}">&times;</button>`;
+    listEl.appendChild(item);
+  }
+  // Wire up remove buttons
+  listEl.querySelectorAll('.ai-remove').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if (socket && currentDate) {
+        socket.emit('remove-ai', { puzzleDate: currentDate, botId: btn.dataset.botId });
+      }
+    });
+  });
 }
 
 // ─── Puzzle Entry Overlay ─────────────────────────────────────
@@ -1793,6 +1933,21 @@ function showPuzzleEntryOverlay(dateStr, paused) {
   // Show overlay immediately
   overlay.classList.add('show');
 
+  // Sync AI bot list from server
+  if (socket && dateStr) {
+    socket.emit('get-ai-bots', { puzzleDate: dateStr });
+  }
+
+  // Wire up Add Bot button
+  const addBotBtn = document.getElementById('entry-ai-add-btn');
+  const diffSelect = document.getElementById('entry-ai-difficulty');
+  const handleAddBot = () => {
+    if (socket && dateStr) {
+      socket.emit('add-ai', { puzzleDate: dateStr, difficultyIndex: parseInt(diffSelect.value, 10) });
+    }
+  };
+  addBotBtn.addEventListener('click', handleAddBot);
+
   // Fetch puzzle metadata in the background (non-blocking)
   fetch('/api/puzzles').then(r => r.json()).then(puzzles => {
     const puzzle = puzzles.find(p => p.date === dateStr);
@@ -1809,6 +1964,11 @@ function showPuzzleEntryOverlay(dateStr, paused) {
     overlay.classList.remove('show');
     startBtn.removeEventListener('click', handleStart);
     changeNameBtn.removeEventListener('click', handleChangeName);
+    addBotBtn.removeEventListener('click', handleAddBot);
+    // Start AI solving for all bots
+    if (socket && dateStr && aiBotList.length > 0) {
+      socket.emit('start-ai', { puzzleDate: dateStr });
+    }
     // Resume timer if this was a pause
     if (paused && socket && currentDate) {
       socket.emit('resume-puzzle', { puzzleDate: currentDate });
@@ -2512,7 +2672,7 @@ function setupSocketHandlers() {
     if (yourName) myName = yourName;
     remoteUsers.clear();
     for (const u of users) {
-      remoteUsers.set(u.socketId, { userId: u.userId, userName: u.userName || 'User', color: u.color, row: u.row, col: u.col, direction: u.direction });
+      remoteUsers.set(u.socketId, { userId: u.userId, userName: u.userName || 'User', color: u.color, row: u.row, col: u.col, direction: u.direction, isBot: !!u.isBot });
     }
     // Update filler colors from room users
     updateFillerColorsFromRoom();
@@ -2520,10 +2680,15 @@ function setupSocketHandlers() {
     if (PUZZLE) render();
   });
 
-  socket.on('user-joined', ({ socketId, userId, userName: uName, color, row, col, direction: dir }) => {
-    remoteUsers.set(socketId, { userId, userName: uName || 'User', color, row, col, direction: dir });
+  socket.on('user-joined', ({ socketId, userId, userName: uName, color, row, col, direction: dir, isBot }) => {
+    remoteUsers.set(socketId, { userId, userName: uName || 'User', color, row, col, direction: dir, isBot: !!isBot });
     renderPresenceBar();
     if (PUZZLE) render();
+  });
+
+  socket.on('ai-bot-list', (list) => {
+    aiBotList = list;
+    renderAiBotList();
   });
 
   socket.on('user-left', ({ socketId }) => {
@@ -2768,11 +2933,12 @@ function renderPresenceBar() {
   const points = computeUserPoints();
 
   // Build list: current user + online remote users
-  const allUsers = [{ name: myName, color: myColor, label: myName || 'You' }];
+  const allUsers = [{ name: myName, color: myColor, label: myName || 'You', isBot: false }];
   const seenNames = new Set([myName]);
-  for (const [, user] of remoteUsers) {
+  for (const [sid, user] of remoteUsers) {
     if (!seenNames.has(user.userName)) {
-      allUsers.push({ name: user.userName, color: user.color, label: user.userName });
+      const isBotUser = user.isBot || sid.startsWith('ai-bot-');
+      allUsers.push({ name: user.userName, color: user.color, label: user.userName, isBot: isBotUser });
       seenNames.add(user.userName);
     }
   }
@@ -2804,7 +2970,8 @@ function renderPresenceBar() {
     el.className = 'presence-user';
     const filledStr = filled > 0 ? ` <span class="presence-filled">${filled}</span>` : '';
     const ptsStr = pts !== 0 ? ` <span class="presence-pts">${pts > 0 ? '+' : ''}${pts}</span>` : '';
-    el.innerHTML = `<span class="presence-dot" style="background:${u.color}"></span>${u.label}${filledStr}${ptsStr}`;
+    const botBadge = u.isBot ? ' <span class="presence-bot-badge">BOT</span>' : '';
+    el.innerHTML = `<span class="presence-dot" style="background:${u.color}"></span>${u.label}${botBadge}${filledStr}${ptsStr}`;
     if (u.name === myName) {
       el.style.cursor = 'pointer';
       el.addEventListener('click', () => showNameModal(true));
