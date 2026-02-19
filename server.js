@@ -258,6 +258,15 @@ function getCorrectAnswer(puzzleData, row, col) {
   return null;
 }
 
+// Accept either the full rebus string or the single display character
+function isCellCorrectServer(pData, row, col, val) {
+  if (!val) return false;
+  const key = `${row},${col}`;
+  const rebusAnswer = pData.rebus[key];
+  if (rebusAnswer) return val === rebusAnswer || (pData.grid[row] && val === pData.grid[row][col]);
+  return pData.grid[row] && val === pData.grid[row][col];
+}
+
 function getServerWordCells(pData, clue, dir) {
   const cells = [];
   let r = clue.row, c = clue.col;
@@ -281,8 +290,7 @@ async function checkWordCompletions(puzzleDate, row, col, pData) {
       if (!cells.some(([r, c]) => r === row && c === col)) continue;
       const allCorrect = cells.every(([r, c]) => {
         const key = `${r},${c}`;
-        const correct = getCorrectAnswer(pData, r, c);
-        return userGrid[key] === correct;
+        return isCellCorrectServer(pData, r, c, userGrid[key]);
       });
       if (allCorrect) {
         completed++;
@@ -554,15 +562,17 @@ io.on('connection', async (socket) => {
         const pData = await getPuzzleData(puzzleDate);
         const correctAnswer = getCorrectAnswer(pData, row, col);
         if (correctAnswer) {
-          const isCorrect = (letter === correctAnswer);
+          const isCorrect = isCellCorrectServer(pData, row, col, letter);
+          const isRebus = !!pData.rebus[`${row},${col}`] && letter.length > 1;
+          const basePts = isRebus ? 50 : 10;
           guessCorrect = isCorrect;
           const wasOnFire = fs.onFire;
 
           if (isCorrect && fs.onFire) {
             // Correct + on fire: multiplied points
-            pointDelta = Math.round(10 * fs.fireMultiplier);
+            pointDelta = Math.round(basePts * fs.fireMultiplier);
           } else if (isCorrect && !fs.onFire) {
-            pointDelta = 10;
+            pointDelta = basePts;
           } else if (!isCorrect && fs.onFire) {
             // Incorrect + on fire: break fire
             if (fs.fireTimer) clearTimeout(fs.fireTimer);

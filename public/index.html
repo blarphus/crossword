@@ -1410,6 +1410,16 @@ function getCorrectAnswer(r, c) {
   return PUZZLE.rebus[key] || PUZZLE.grid[r]?.[c] || '';
 }
 
+// Accept either the full rebus string or the single display character
+function isCellCorrect(r, c, val) {
+  const v = val !== undefined ? val : userGrid[r]?.[c];
+  if (!v) return false;
+  const key = `${r},${c}`;
+  const rebusAnswer = PUZZLE.rebus[key];
+  if (rebusAnswer) return v === rebusAnswer || v === PUZZLE.grid[r]?.[c];
+  return v === (PUZZLE.grid[r]?.[c] || '');
+}
+
 function hasRebus() {
   return PUZZLE && Object.keys(PUZZLE.rebus).length > 0;
 }
@@ -1919,7 +1929,7 @@ async function loadPuzzle(dateStr) {
   // Mark all correct letters as checked (auto-check is always on)
   for (let r = 0; r < ROWS; r++)
     for (let c = 0; c < COLS; c++)
-      if (userGrid[r][c] && userGrid[r][c] === getCorrectAnswer(r, c))
+      if (isCellCorrect(r, c))
         checkedCells[r][c] = true;
 
   // Scan for already-completed words and assign filler colors
@@ -1928,7 +1938,7 @@ async function loadPuzzle(dateStr) {
     if (!PUZZLE.clues[dir]) continue;
     for (const clue of PUZZLE.clues[dir]) {
       const cells = getWordCells(clue, dir);
-      if (cells.every(([r, c]) => userGrid[r][c] && userGrid[r][c] === getCorrectAnswer(r, c))) {
+      if (cells.every(([r, c]) => isCellCorrect(r, c))) {
         // Find majority filler color for this word
         const colorCounts = {};
         for (const [r, c] of cells) {
@@ -2048,7 +2058,7 @@ function checkLocalWordBonus(row, col) {
     const clue = getClueForCell(row, col, dir);
     if (!clue) continue;
     const cells = getWordCells(clue, dir);
-    if (cells.every(([r, c]) => userGrid[r][c] && userGrid[r][c] === getCorrectAnswer(r, c))) {
+    if (cells.every(([r, c]) => isCellCorrect(r, c))) {
       completed++;
       for (const [r, c] of cells) wordCellKeys.push(`${r},${c}`);
     }
@@ -2066,7 +2076,7 @@ function triggerWordWave(row, col, completerColor) {
     const clue = getClueForCell(row, col, dir);
     if (!clue) continue;
     const cells = getWordCells(clue, dir);
-    if (!cells.every(([r, c]) => userGrid[r][c] && userGrid[r][c] === getCorrectAnswer(r, c))) continue;
+    if (!cells.every(([r, c]) => isCellCorrect(r, c))) continue;
     cells.forEach(([r, c], i) => {
       const key = `${r},${c}`;
       completedWordCells.set(key, color);
@@ -2093,8 +2103,9 @@ function sendCellUpdate(row, col, letter) {
     cellFillers.set(key, { userName: myName, color: myColor });
     // Immediate local point scoring with fire mechanic
     if (PUZZLE) {
-      const correct = getCorrectAnswer(row, col);
-      const isCorrect = (letter === correct);
+      const isCorrect = isCellCorrect(row, col, letter);
+      const isRebus = !!PUZZLE.rebus[`${row},${col}`] && letter.length > 1;
+      const basePts = isRebus ? 50 : 10;
       const now = Date.now();
       const wasOnFire = myFireActive;
 
@@ -2108,13 +2119,13 @@ function sendCellUpdate(row, col, letter) {
 
       if (isCorrect && myFireActive) {
         // Correct + on fire: multiplied points
-        const firePts = Math.round(10 * myFireMultiplier);
+        const firePts = Math.round(basePts * myFireMultiplier);
         persistedPoints.set(myName, (persistedPoints.get(myName) || 0) + firePts);
         showPointFloat(row, col, firePts, null, true);
       } else if (isCorrect && !myFireActive) {
-        // Correct + not on fire: normal point
-        persistedPoints.set(myName, (persistedPoints.get(myName) || 0) + 10);
-        showPointFloat(row, col, 10);
+        // Correct + not on fire: normal points (50 for rebus, 10 for regular)
+        persistedPoints.set(myName, (persistedPoints.get(myName) || 0) + basePts);
+        showPointFloat(row, col, basePts);
       } else if (!isCorrect && myFireActive) {
         // Incorrect + on fire: break fire
         persistedPoints.set(myName, (persistedPoints.get(myName) || 0) - 30);
@@ -2520,7 +2531,7 @@ function setupSocketHandlers() {
         const color = remoteColor || findColorForUser(remoteUserId);
         cellColors.set(key, color);
         cellFillers.set(key, { userName: remoteName || 'User', color });
-        if (autoCheck && letter === getCorrectAnswer(row, col)) {
+        if (autoCheck && isCellCorrect(row, col, letter)) {
           checkedCells[row][col] = true;
         }
         // Track remote guess stats
@@ -3012,7 +3023,7 @@ function render() {
       }
       el.classList.toggle('checked', checkedCells[r][c]);
       if (autoCheck && userGrid[r][c] && !checkedCells[r][c]) {
-        el.classList.toggle('error', userGrid[r][c] !== getCorrectAnswer(r, c));
+        el.classList.toggle('error', !isCellCorrect(r, c));
       } else {
         el.classList.remove('error');
       }
@@ -3104,9 +3115,7 @@ function render() {
       const el = clueItemEls[k];
       if (!el) continue;
       const wCells = getWordCells(clue, dir);
-      const isSolved = wCells.length > 0 && wCells.every(([wr, wc]) =>
-        userGrid[wr][wc] && userGrid[wr][wc] === getCorrectAnswer(wr, wc)
-      );
+      const isSolved = wCells.length > 0 && wCells.every(([wr, wc]) => isCellCorrect(wr, wc));
       el.classList.toggle('solved', isSolved);
     }
   }
@@ -3164,13 +3173,13 @@ function retreatCursor() {
 
 function isWordSolved(clue, dir) {
   const cells = getWordCells(clue, dir);
-  return cells.every(([r, c]) => userGrid[r][c] && userGrid[r][c] === getCorrectAnswer(r, c));
+  return cells.every(([r, c]) => isCellCorrect(r, c));
 }
 
 function firstUnsolvedCell(clue, dir) {
   const cells = getWordCells(clue, dir);
   for (const [r, c] of cells) {
-    if (!userGrid[r][c] || userGrid[r][c] !== getCorrectAnswer(r, c)) return [r, c];
+    if (!isCellCorrect(r, c)) return [r, c];
   }
   return [clue.row, clue.col]; // fallback to start
 }
@@ -3295,7 +3304,7 @@ function showLeaderboard() {
 function checkCompletion() {
   for (let r = 0; r < ROWS; r++) {
     for (let c = 0; c < COLS; c++) {
-      if (!isBlack(r, c) && userGrid[r][c] !== getCorrectAnswer(r, c)) return;
+      if (!isBlack(r, c) && !isCellCorrect(r, c)) return;
     }
   }
   if (!solved) {
@@ -3339,7 +3348,7 @@ mobileInput.addEventListener('input', (e) => {
       const letter = char.toUpperCase();
       userGrid[selectedRow][selectedCol] = letter;
       sendCellUpdate(selectedRow, selectedCol, letter);
-      if (autoCheck && letter === getCorrectAnswer(selectedRow, selectedCol)) {
+      if (autoCheck && isCellCorrect(selectedRow, selectedCol, letter)) {
         checkedCells[selectedRow][selectedCol] = true;
       }
     }
@@ -3377,7 +3386,7 @@ function commitRebus() {
   if (rebusBuffer && !checkedCells[selectedRow][selectedCol]) {
     userGrid[selectedRow][selectedCol] = rebusBuffer;
     sendCellUpdate(selectedRow, selectedCol, rebusBuffer);
-    if (autoCheck && rebusBuffer === getCorrectAnswer(selectedRow, selectedCol)) {
+    if (autoCheck && isCellCorrect(selectedRow, selectedCol, rebusBuffer)) {
       checkedCells[selectedRow][selectedCol] = true;
     }
   }
@@ -3497,7 +3506,7 @@ gridEl.addEventListener('keydown', (e) => {
       const letter = key.toUpperCase();
       userGrid[selectedRow][selectedCol] = letter;
       sendCellUpdate(selectedRow, selectedCol, letter);
-      if (autoCheck && letter === getCorrectAnswer(selectedRow, selectedCol)) {
+      if (autoCheck && isCellCorrect(selectedRow, selectedCol, letter)) {
         checkedCells[selectedRow][selectedCol] = true;
       }
     }
@@ -3602,7 +3611,7 @@ function handleLetterInput(letter) {
   if (!checkedCells[selectedRow][selectedCol]) {
     userGrid[selectedRow][selectedCol] = letter;
     sendCellUpdate(selectedRow, selectedCol, letter);
-    if (autoCheck && letter === getCorrectAnswer(selectedRow, selectedCol)) {
+    if (autoCheck && isCellCorrect(selectedRow, selectedCol, letter)) {
       checkedCells[selectedRow][selectedCol] = true;
     }
   }
