@@ -2379,7 +2379,6 @@ function handleRemoteFireEvent(fireEvent, remoteUserId) {
   if (!remoteSocketId) return;
 
   if (fireEvent.type === 'started') {
-    sfxFireStart(true);
     const fireCellSet = new Set(fireEvent.fireCells.map(c => `${c.row},${c.col}`));
     remoteFireStates.set(remoteSocketId, {
       userName: fireEvent.userName, color: fireEvent.color,
@@ -2410,7 +2409,6 @@ function handleRemoteFireEvent(fireEvent, remoteUserId) {
       }
       remoteFireStates.delete(remoteSocketId);
     }
-    sfxFireBreak(true);
     showComboBroken();
   }
 }
@@ -2481,10 +2479,6 @@ function setupSocketHandlers() {
           if (!guessCorrect) gs.incorrect++;
           guessStats.set(remoteName, gs);
         }
-        // Remote typing sound (lower pitch + volume)
-        if (guessCorrect !== null && guessCorrect !== undefined) {
-          sfxType(guessCorrect, true);
-        }
       } else {
         cellColors.delete(key);
         cellFillers.delete(key);
@@ -2498,7 +2492,6 @@ function setupSocketHandlers() {
       // Apply remote word bonus
       if (wordBonus && remoteName) {
         resetHintTimer();
-        sfxWordComplete(true);
         persistedPoints.set(remoteName, (persistedPoints.get(remoteName) || 0) + wordBonus);
         const isCombo = wordBonus >= 150;
         setTimeout(() => showPointFloat(row, col, wordBonus, isCombo ? 'combo' : 'word', isFireBoosted), 200);
