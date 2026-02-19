@@ -315,6 +315,7 @@ body {
 }
 
 .cell.highlight-word { background: var(--highlight-word); }
+.cell.highlight-ref { background: #fff3b0; }
 .cell.highlight-cell { background: var(--highlight-cell); }
 .cell.error .letter { color: var(--error); }
 .cell.checked .letter { color: var(--checked); }
@@ -346,6 +347,7 @@ body {
 /* Shaded cells */
 .cell.shaded { background: var(--shade-color, #c0c0c0); }
 .cell.shaded.highlight-word { background: color-mix(in srgb, var(--shade-color, #c0c0c0) 50%, var(--highlight-word)); }
+.cell.shaded.highlight-ref { background: color-mix(in srgb, var(--shade-color, #c0c0c0) 50%, #fff3b0); }
 .cell.shaded.highlight-cell { background: color-mix(in srgb, var(--shade-color, #c0c0c0) 40%, var(--highlight-cell)); }
 
 /* Circled cells */
@@ -2811,6 +2813,16 @@ function getWordLen(clue, dir) {
   return len;
 }
 
+function parseReferencedClues(clueText) {
+  const refs = [];
+  const regex = /(\d+)[-\s]?([Aa]cross|[Dd]own)/g;
+  let m;
+  while ((m = regex.exec(clueText)) !== null) {
+    refs.push({ n: parseInt(m[1]), dir: m[2].toLowerCase() });
+  }
+  return refs;
+}
+
 function getWordCells(clue, dir) {
   const cells = [];
   const len = getWordLen(clue, dir);
@@ -2937,6 +2949,20 @@ function render() {
   const wordCells = currentClue ? getWordCells(currentClue, direction) : [];
   const wordSet = new Set(wordCells.map(([r,c]) => `${r},${c}`));
 
+  // Build referenced clue cell set (e.g. "See 9-Across")
+  const refCellSet = new Set();
+  if (currentClue) {
+    for (const ref of parseReferencedClues(currentClue.clue)) {
+      const clues = PUZZLE.clues[ref.dir];
+      if (clues) {
+        const refClue = clues.find(c => c.n === ref.n);
+        if (refClue) {
+          for (const [rr, cc] of getWordCells(refClue, ref.dir)) refCellSet.add(`${rr},${cc}`);
+        }
+      }
+    }
+  }
+
   // Build remote user highlight maps
   const remoteCursorCells = new Map(); // "r,c" → color (selected cell)
   const remoteWordCells = new Map();   // "r,c" → color (word highlight)
@@ -2963,6 +2989,7 @@ function render() {
       const isMyCell = r === selectedRow && c === selectedCol;
 
       el.classList.toggle('highlight-word', isMyWord);
+      el.classList.toggle('highlight-ref', refCellSet.has(key) && !isMyWord && !isMyCell);
       el.classList.toggle('highlight-cell', isMyCell);
 
       const letterEl = el.querySelector('.letter');
@@ -2990,8 +3017,9 @@ function render() {
         el.classList.remove('error');
       }
 
-      // Background color priority: hint > my cell/word > remote cursor > remote word > none
+      // Background color priority: hint > my cell/word > ref clue > remote cursor > remote word > none
       const isHint = hintCells.has(key);
+      const isRefHighlight = refCellSet.has(key) && !isMyWord && !isMyCell;
       const remoteCursorColor = remoteCursorCells.get(key);
       const remoteWordColor = remoteWordCells.get(key);
 
@@ -3001,6 +3029,10 @@ function render() {
         el.style.background = '';
       } else if (isMyCell || isMyWord) {
         // Let CSS classes (highlight-cell / highlight-word) handle it
+        el.style.backgroundColor = '';
+        el.style.background = '';
+      } else if (isRefHighlight) {
+        // Let CSS class (highlight-ref) handle it
         el.style.backgroundColor = '';
         el.style.background = '';
       } else if (remoteCursorColor) {
