@@ -130,6 +130,15 @@ app.get('/api/state/:date', async (req, res) => {
     const fillers = state.cell_fillers || {};
     const uniqueNames = [...new Set(Object.values(fillers).filter(Boolean))];
     const userColors = await db.getUserColors(uniqueNames);
+    // Include colors from any bots currently in the room
+    const room = puzzleRooms.get(req.params.date);
+    if (room) {
+      for (const [, info] of room) {
+        if (info.isBot && info.userName && !userColors[info.userName]) {
+          userColors[info.userName] = info.color;
+        }
+      }
+    }
     res.json({
       userGrid: state.user_grid,
       cellFillers: fillers,
