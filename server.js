@@ -333,7 +333,6 @@ const AI_MULTIPLIER_RANGES = [
 ];
 
 const AI_NAMES = ['Cleo', 'Atlas', 'Mira', 'Rex', 'Nova', 'Sage', 'Orion', 'Luna'];
-const AI_COLORS = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7', '#DDA0DD', '#F0E68C', '#87CEEB'];
 const AI_DIFFICULTY_LABELS = ['Easy', 'Standard-', 'Standard', 'Standard+', 'Expert'];
 
 function expireFire(socketId) {
@@ -689,8 +688,9 @@ function addAiBot(puzzleDate, difficultyIndex) {
   const usedNames = new Set();
   for (const [, b] of roomBots) usedNames.add(b.name);
   const name = AI_NAMES.find(n => !usedNames.has(n)) || `Bot-${aiBotCounter}`;
-  const colorIdx = roomBots.size % AI_COLORS.length;
-  const color = AI_COLORS[colorIdx];
+  if (!puzzleRooms.has(puzzleDate)) puzzleRooms.set(puzzleDate, new Map());
+  const room = puzzleRooms.get(puzzleDate);
+  const color = getNextColor(room);
 
   // Calculate final solve time
   const dateObj = new Date(puzzleDate + 'T12:00:00');
@@ -710,8 +710,7 @@ function addAiBot(puzzleDate, difficultyIndex) {
   aiBots.set(puzzleDate, roomBots);
 
   // Register in puzzleRooms
-  if (!puzzleRooms.has(puzzleDate)) puzzleRooms.set(puzzleDate, new Map());
-  puzzleRooms.get(puzzleDate).set(botId, {
+  room.set(botId, {
     userId: botId, userName: name, color, row: 0, col: 0, direction: 'across', isBot: true,
   });
 
