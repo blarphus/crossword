@@ -856,9 +856,9 @@ body.mobile .mobile-keyboard { display: block; position: static; flex-shrink: 0;
   animation: hint-shimmer 2s ease-in-out infinite;
 }
 
-/* Completed word cells — gradient fill in player color */
-.cell.word-complete {
-  border-color: var(--wc-color, #4CAF50) !important;
+/* Completed word cells — letter color in player color */
+.cell.word-complete .letter {
+  color: var(--wc-color, #4CAF50);
 }
 
 /* ─── Puzzle Entry Overlay ──────────────────────────────────── */
@@ -2956,7 +2956,7 @@ function render() {
         el.classList.remove('error');
       }
 
-      // Background color priority: hint > my cell/word > completed word gradient > remote cursor > remote word > none
+      // Background color priority: hint > my cell/word > remote cursor > remote word > none
       const isHint = hintCells.has(key);
       const remoteCursorColor = remoteCursorCells.get(key);
       const remoteWordColor = remoteWordCells.get(key);
@@ -2969,13 +2969,6 @@ function render() {
         // Let CSS classes (highlight-cell / highlight-word) handle it
         el.style.backgroundColor = '';
         el.style.background = '';
-      } else if (wcColor) {
-        // Completed word: gradient fill in player color
-        const hex = wcColor.replace('#', '');
-        const rr = parseInt(hex.substring(0, 2), 16);
-        const gg = parseInt(hex.substring(2, 4), 16);
-        const bb = parseInt(hex.substring(4, 6), 16);
-        el.style.background = `linear-gradient(135deg, rgba(${rr},${gg},${bb},0.15), rgba(${rr},${gg},${bb},0.35))`;
       } else if (remoteCursorColor) {
         el.style.background = '';
         el.style.backgroundColor = '#FFA500';
