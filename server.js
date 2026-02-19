@@ -1238,7 +1238,8 @@ io.on('connection', async (socket) => {
   // ─── AI bot handlers ──────────────────────────────────────────
   socket.on('add-ai', ({ puzzleDate, difficultyIndex }) => {
     const roomBots = aiBots.get(puzzleDate);
-    if (roomBots && roomBots.size >= 5) return; // max 5 bots
+    const room = puzzleRooms.get(puzzleDate);
+    if (room && room.size >= 6) return; // max 6 players including bots
     const di = Math.max(0, Math.min(4, difficultyIndex || 2));
     addAiBot(puzzleDate, di);
     io.to(`puzzle:${puzzleDate}`).emit('ai-bot-list', getAiBotList(puzzleDate));
