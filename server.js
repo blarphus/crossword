@@ -962,21 +962,21 @@ async function startAiSolving(puzzleDate) {
           const [hr, hc] = randomHop(pData, wanderR, wanderC);
           wanderR = hr; wanderC = hc;
           emitCursor(hr, hc, Math.random() < 0.5 ? 'across' : 'down');
-          // Each hop takes 800-2500ms — real thinking time
-          const hopDelay = 800 + Math.random() * 1700;
+          // Each hop takes 400-1200ms
+          const hopDelay = 400 + Math.random() * 800;
           const t = setTimeout(doWander, hopDelay);
           bot.timers.push(t);
         } else {
           // Done wandering — land on target and start filling
           emitCursor(word.cells[0].row, word.cells[0].col, word.dir);
-          const landDelay = 400 + Math.random() * 800;
+          const landDelay = 200 + Math.random() * 400;
           const t = setTimeout(() => startFillingWord(wi, 0), landDelay);
           bot.timers.push(t);
         }
       };
 
       // Initial delay before first wander hop
-      const t = setTimeout(doWander, 500 + Math.random() * 1000);
+      const t = setTimeout(doWander, 300 + Math.random() * 500);
       bot.timers.push(t);
 
       const startFillingWord = async (wi, ci) => {

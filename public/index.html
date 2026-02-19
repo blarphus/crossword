@@ -2706,7 +2706,14 @@ function setupSocketHandlers() {
     } else {
       remoteUsers.set(socketId, { userId, userName: uName || 'User', color: '#ccc', row, col, direction: dir });
     }
-    if (PUZZLE) render();
+    if (PUZZLE) {
+      render();
+      // Scroll bot cursor cells into view
+      const isBot = (user && user.isBot) || socketId.startsWith('ai-bot-');
+      if (isBot && cellEls[row]?.[col]) {
+        cellEls[row][col].scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
+      }
+    }
   });
 
   socket.on('cell-updated', ({ row, col, letter, userId: remoteUserId, userName: remoteName, color: remoteColor, pointDelta, wordBonus, fireEvent, guessCorrect, lastSquareBonus }) => {
