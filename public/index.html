@@ -681,12 +681,13 @@ body.mobile .current-clue-bar { font-size: 0.82rem; padding: 5px 8px; background
 body.mobile .clue-nav-btn { color: #fff; }
 
 /* Grid area fills remaining space */
-body.mobile .app { flex: 1; min-height: 0; overflow: hidden; padding: 0; gap: 0; order: 5; }
+body.mobile .app { flex: 0 1 auto; min-height: 0; overflow: hidden; padding: 0; gap: 0; order: 5; }
 body.mobile .grid-container {
-  width: 100%; height: 100%;
-  display: flex; align-items: center; justify-content: center;
+  width: 100%;
+  display: flex; align-items: flex-start; justify-content: center;
   overflow: hidden;
-  padding-left: 0;
+  padding-left: 0; padding-top: 2px;
+  flex-shrink: 1;
 }
 body.mobile .grid { touch-action: none; }
 body.mobile .hint-btn { left: auto; right: 4px; top: auto; bottom: 4px; transform: none; }
@@ -1807,16 +1808,15 @@ function computeAndApplyCellSize() {
   let cellSize;
   if (IS_MOBILE) {
     const availW = window.innerWidth - 4;
-    // Measure actual toolbar + presence + fire bar heights, plus clue bar + keyboard + safe area below grid
-    const toolbar = document.querySelector('.toolbar');
-    const presence = document.querySelector('.presence-bar');
-    const toolbarH = toolbar ? toolbar.offsetHeight : 40;
-    const presenceH = (presence && presence.style.display !== 'none') ? presence.offsetHeight : 0;
-    const fireBarH = 22; // always reserve for fire bar
-    const clueBarH = 32;
-    const keyboardH = 128; // 3 rows × 38px + gaps + padding
-    const safeArea = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--sab') || '0') || 34;
-    const overhead = toolbarH + presenceH + fireBarH + clueBarH + keyboardH + safeArea + 4;
+    // Dynamically measure all non-grid elements
+    const measure = (sel) => { const el = document.querySelector(sel); return (el && el.offsetParent !== null) ? el.offsetHeight : 0; };
+    const toolbarH = measure('.toolbar');
+    const presenceH = measure('.presence-bar');
+    const fireBarH = 22; // always reserve even when hidden
+    const clueBarH = measure('.current-clue-bar') || 32;
+    const keyboardH = measure('.mobile-keyboard') || 120;
+    const gridBorder = 4;
+    const overhead = toolbarH + presenceH + fireBarH + clueBarH + keyboardH + gridBorder + 4;
     const availH = window.innerHeight - overhead;
     cellSize = Math.max(14, Math.min(40, Math.floor(Math.min(availW / COLS, availH / ROWS))));
   } else {
