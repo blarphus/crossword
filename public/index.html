@@ -856,6 +856,11 @@ body.mobile .mobile-keyboard { display: block; position: static; flex-shrink: 0;
   animation: hint-shimmer 2s ease-in-out infinite;
 }
 
+/* Completed word cells — gradient fill in player color */
+.cell.word-complete {
+  border-color: var(--wc-color, #4CAF50) !important;
+}
+
 /* ─── Puzzle Entry Overlay ──────────────────────────────────── */
 .puzzle-entry-overlay {
   display: none;
@@ -1224,7 +1229,7 @@ async function initIdentity() {
   showNameModal();
 }
 
-const CLIENT_COLOR_POOL = ['#4CAF50','#2196F3','#FF9800','#E91E63','#9C27B0','#00BCD4','#FF5722','#8BC34A'];
+const CLIENT_COLOR_POOL = ['#4CAF50','#2196F3','#FF9800','#E91E63','#9C27B0','#00BCD4'];
 
 function showNameModal(isChange) {
   const modal = document.getElementById('name-modal');
@@ -1429,6 +1434,9 @@ let myRecentWordCompletions = []; // [{timestamp,row,col},...] for tracking word
 let myFireMultiplier = 1.5;
 let myFireWordsCompleted = 0;
 const remoteFireStates = new Map(); // socketId → {userName, color, fireCells: Set, expiresAt}
+
+// Completed word cells: "r,c" → color of the player who completed the word
+const completedWordCells = new Map();
 
 // Hint system state
 const hintCells = new Set(); // "r,c" strings — cells revealed by hints (cannot be deleted)
@@ -1770,6 +1778,7 @@ async function loadPuzzle(dateStr) {
   cellFillers.clear();
   persistedPoints.clear();
   guessStats.clear();
+  completedWordCells.clear();
   lastCursorKey = '';
   resetFireState();
   hintCells.clear();
@@ -1844,6 +1853,33 @@ async function loadPuzzle(dateStr) {
     for (let c = 0; c < COLS; c++)
       if (userGrid[r][c] && userGrid[r][c] === getCorrectAnswer(r, c))
         checkedCells[r][c] = true;
+
+  // Scan for already-completed words and assign filler colors
+  completedWordCells.clear();
+  for (const dir of ['across', 'down']) {
+    if (!PUZZLE.clues[dir]) continue;
+    for (const clue of PUZZLE.clues[dir]) {
+      const cells = getWordCells(clue, dir);
+      if (cells.every(([r, c]) => userGrid[r][c] && userGrid[r][c] === getCorrectAnswer(r, c))) {
+        // Find majority filler color for this word
+        const colorCounts = {};
+        for (const [r, c] of cells) {
+          const filler = cellFillers.get(`${r},${c}`);
+          if (filler && filler.color) {
+            colorCounts[filler.color] = (colorCounts[filler.color] || 0) + 1;
+          }
+        }
+        let bestColor = myColor;
+        let bestCount = 0;
+        for (const [col, cnt] of Object.entries(colorCounts)) {
+          if (cnt > bestCount) { bestCount = cnt; bestColor = col; }
+        }
+        for (const [r, c] of cells) {
+          completedWordCells.set(`${r},${c}`, bestColor);
+        }
+      }
+    }
+  }
 
   // Update header
   const d = new Date(dateStr + 'T12:00:00');
@@ -1966,24 +2002,28 @@ function checkLocalWordBonus(row, col) {
   return { bonus, completed, wordCellKeys };
 }
 
-function triggerWordWave(row, col) {
+function triggerWordWave(row, col, completerColor) {
   if (!PUZZLE) return;
+  const color = completerColor || myColor;
   for (const dir of ['across', 'down']) {
     const clue = getClueForCell(row, col, dir);
     if (!clue) continue;
     const cells = getWordCells(clue, dir);
     if (!cells.every(([r, c]) => userGrid[r][c] && userGrid[r][c] === getCorrectAnswer(r, c))) continue;
     cells.forEach(([r, c], i) => {
+      const key = `${r},${c}`;
+      completedWordCells.set(key, color);
       const el = cellEls[r]?.[c];
       if (!el) return;
       setTimeout(() => {
         el.classList.remove('wave');
-        void el.offsetWidth; // reflow to restart animation
+        void el.offsetWidth;
         el.classList.add('wave');
         el.addEventListener('animationend', () => el.classList.remove('wave'), { once: true });
       }, i * 50);
     });
   }
+  render();
 }
 
 function sendCellUpdate(row, col, letter) {
@@ -2449,7 +2489,7 @@ function setupSocketHandlers() {
         persistedPoints.set(remoteName, (persistedPoints.get(remoteName) || 0) + wordBonus);
         const isCombo = wordBonus >= 150;
         setTimeout(() => showPointFloat(row, col, wordBonus, isCombo ? 'combo' : 'word', isFireBoosted), 200);
-        triggerWordWave(row, col);
+        triggerWordWave(row, col, remoteColor);
       }
       // Apply remote last-square bonus
       if (lastSquareBonus && remoteName) {
@@ -2482,6 +2522,7 @@ function setupSocketHandlers() {
     cellFillers.clear();
     persistedPoints.clear();
     guessStats.clear();
+    completedWordCells.clear();
     resetFireState();
     hintCells.clear();
     hideHintBtn();
@@ -2882,6 +2923,11 @@ function render() {
       el.classList.toggle('rebus-active', rebusMode && isMyCell);
 
       el.classList.toggle('hint-cell', hintCells.has(key));
+      const wcColor = completedWordCells.get(key);
+      el.classList.toggle('word-complete', !!wcColor && !hintCells.has(key));
+      if (wcColor && !hintCells.has(key)) {
+        el.style.setProperty('--wc-color', wcColor);
+      }
       el.classList.toggle('checked', checkedCells[r][c]);
       if (autoCheck && userGrid[r][c] && !checkedCells[r][c]) {
         el.classList.toggle('error', userGrid[r][c] !== getCorrectAnswer(r, c));
@@ -2889,7 +2935,7 @@ function render() {
         el.classList.remove('error');
       }
 
-      // Background color priority: hint cells (CSS handles) > my cell/word > remote cursor > remote word > none
+      // Background color priority: hint > my cell/word > completed word gradient > remote cursor > remote word > none
       const isHint = hintCells.has(key);
       const remoteCursorColor = remoteCursorCells.get(key);
       const remoteWordColor = remoteWordCells.get(key);
@@ -2901,16 +2947,27 @@ function render() {
       } else if (isMyCell || isMyWord) {
         // Let CSS classes (highlight-cell / highlight-word) handle it
         el.style.backgroundColor = '';
+        el.style.background = '';
+      } else if (wcColor) {
+        // Completed word: gradient fill in player color
+        const hex = wcColor.replace('#', '');
+        const rr = parseInt(hex.substring(0, 2), 16);
+        const gg = parseInt(hex.substring(2, 4), 16);
+        const bb = parseInt(hex.substring(4, 6), 16);
+        el.style.background = `linear-gradient(135deg, rgba(${rr},${gg},${bb},0.15), rgba(${rr},${gg},${bb},0.35))`;
       } else if (remoteCursorColor) {
+        el.style.background = '';
         el.style.backgroundColor = '#FFA500';
       } else if (remoteWordColor) {
         const hex = remoteWordColor.replace('#', '');
         const rr = parseInt(hex.substring(0, 2), 16);
         const gg = parseInt(hex.substring(2, 4), 16);
         const bb = parseInt(hex.substring(4, 6), 16);
+        el.style.background = '';
         el.style.backgroundColor = `rgba(${rr},${gg},${bb},0.25)`;
       } else {
         el.style.backgroundColor = '';
+        el.style.background = '';
       }
 
       // Cell filler color: colored inset box-shadow showing who typed the letter

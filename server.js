@@ -295,7 +295,7 @@ async function checkWordCompletions(puzzleDate, row, col, pData) {
 
 const puzzleRooms = new Map(); // puzzleDate → Map<socketId, {userId, userName, color, row, col, direction}>
 const socketPuzzle = new Map(); // socketId → puzzleDate (which puzzle they're in)
-const COLOR_POOL = ['#4CAF50','#2196F3','#FF9800','#E91E63','#9C27B0','#00BCD4','#FF5722','#8BC34A'];
+const COLOR_POOL = ['#4CAF50','#2196F3','#FF9800','#E91E63','#9C27B0','#00BCD4'];
 
 // Fire streak state (ephemeral, in-memory only)
 // socketId → { puzzleDate, userName, color, recentWordCompletions: [{timestamp,row,col},...],
