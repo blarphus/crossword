@@ -795,45 +795,134 @@ function buildAiWordQueue(pData) {
       words.push({ dir, clue, cells });
     }
   }
-  // Sort by position (top-to-bottom, left-to-right)
-  words.sort((a, b) => {
-    if (a.cells[0][0] !== b.cells[0][0]) return a.cells[0][0] - b.cells[0][0];
-    return a.cells[0][1] - b.cells[0][1];
-  });
-  // Shuffle within chunks of 5 for variation
-  const shuffled = [];
-  for (let i = 0; i < words.length; i += 5) {
-    const chunk = words.slice(i, i + 5);
-    for (let j = chunk.length - 1; j > 0; j--) {
-      const k = Math.floor(Math.random() * (j + 1));
-      [chunk[j], chunk[k]] = [chunk[k], chunk[j]];
+
+  // Simulate a human-like solve: start from a random seed word, then
+  // pick nearby crossing words with some probability, occasionally
+  // jump to a completely different area of the grid.
+  const queue = [];
+  const used = new Set();
+  const rows = pData.dimensions.rows;
+  const cols = pData.dimensions.cols;
+
+  // Build a lookup: cell "r,c" → list of word indices that pass through it
+  const cellToWords = new Map();
+  for (let i = 0; i < words.length; i++) {
+    for (const [r, c] of words[i].cells) {
+      const key = `${r},${c}`;
+      if (!cellToWords.has(key)) cellToWords.set(key, []);
+      cellToWords.get(key).push(i);
     }
-    shuffled.push(...chunk);
   }
-  return shuffled;
+
+  // Pick a random starting word
+  let current = Math.floor(Math.random() * words.length);
+  used.add(current);
+  queue.push(words[current]);
+
+  while (queue.length < words.length) {
+    // 30% chance: jump to a random unused word (simulates scanning the clue list)
+    if (Math.random() < 0.3) {
+      const unused = [];
+      for (let i = 0; i < words.length; i++) {
+        if (!used.has(i)) unused.push(i);
+      }
+      if (unused.length === 0) break;
+      current = unused[Math.floor(Math.random() * unused.length)];
+      used.add(current);
+      queue.push(words[current]);
+      continue;
+    }
+
+    // 70% chance: pick a crossing/nearby word
+    // Collect all words that share a cell with the current word
+    const neighbors = new Set();
+    for (const [r, c] of words[current].cells) {
+      const key = `${r},${c}`;
+      for (const wi of (cellToWords.get(key) || [])) {
+        if (!used.has(wi)) neighbors.add(wi);
+      }
+    }
+
+    // If no direct neighbors, look in a wider radius
+    if (neighbors.size === 0) {
+      const cr = words[current].cells[0][0];
+      const cc = words[current].cells[0][1];
+      let bestDist = Infinity;
+      let bestIdx = -1;
+      for (let i = 0; i < words.length; i++) {
+        if (used.has(i)) continue;
+        const dr = words[i].cells[0][0] - cr;
+        const dc = words[i].cells[0][1] - cc;
+        const dist = dr * dr + dc * dc;
+        // Add jitter so it's not always the absolute nearest
+        const jitteredDist = dist * (0.5 + Math.random());
+        if (jitteredDist < bestDist) {
+          bestDist = jitteredDist;
+          bestIdx = i;
+        }
+      }
+      if (bestIdx === -1) break;
+      current = bestIdx;
+    } else {
+      // Pick a random neighbor
+      const arr = [...neighbors];
+      current = arr[Math.floor(Math.random() * arr.length)];
+    }
+
+    used.add(current);
+    queue.push(words[current]);
+  }
+
+  return queue;
 }
 
 function distributeAiTiming(cellCount, finalSolveTime, wordCount) {
   if (cellCount === 0) return { thinkTimes: [], cellTimes: [] };
   const totalMs = finalSolveTime * 1000;
-  const thinkShare = 0.3;
-  const typeShare = 0.7;
 
-  // Generate raw think times (one per word)
+  // Split into bursts: some words solved quickly in succession (hot streak),
+  // others with long pauses (thinking / reading clues / scanning grid).
+  // ~25% of time is think pauses, ~75% is typing, but with high variance.
+
   const rawThink = [];
   for (let i = 0; i < wordCount; i++) {
-    rawThink.push(0.3 + Math.random() * 2.2);
+    // Mix of short pauses (quick succession) and long pauses (stuck/scanning)
+    const r = Math.random();
+    if (r < 0.25) {
+      // Long pause: reading a clue, scanning grid (3-10x base)
+      rawThink.push(3 + Math.random() * 7);
+    } else if (r < 0.55) {
+      // Medium pause: moving to next word (0.8-3x base)
+      rawThink.push(0.8 + Math.random() * 2.2);
+    } else {
+      // Quick succession: barely any pause (0.1-0.8x base)
+      rawThink.push(0.1 + Math.random() * 0.7);
+    }
   }
   const thinkSum = rawThink.reduce((s, v) => s + v, 0);
-  const thinkTimes = rawThink.map(v => Math.max(50, (v / thinkSum) * totalMs * thinkShare));
+  const thinkTimes = rawThink.map(v => Math.max(40, (v / thinkSum) * totalMs * 0.25));
 
-  // Generate raw cell times
+  // Cell times: burst typing with variable speed
+  // Group cells into "streaks" — fast bursts followed by hesitations
   const rawCell = [];
+  let streakLen = 0;
+  let streakSpeed = 1;
   for (let i = 0; i < cellCount; i++) {
-    rawCell.push(0.5 + Math.random());
+    if (streakLen <= 0) {
+      // Start a new streak: 2-8 cells at a particular speed
+      streakLen = 2 + Math.floor(Math.random() * 7);
+      // Speed varies widely: 0.3 (fast) to 4.0 (slow/hesitant)
+      const r = Math.random();
+      if (r < 0.3) streakSpeed = 0.2 + Math.random() * 0.4;    // fast burst
+      else if (r < 0.7) streakSpeed = 0.5 + Math.random() * 1;  // normal
+      else streakSpeed = 1.5 + Math.random() * 2.5;              // slow/careful
+    }
+    // Add per-cell jitter within the streak
+    rawCell.push(streakSpeed * (0.6 + Math.random() * 0.8));
+    streakLen--;
   }
   const cellSum = rawCell.reduce((s, v) => s + v, 0);
-  const cellTimes = rawCell.map(v => Math.max(50, (v / cellSum) * totalMs * typeShare));
+  const cellTimes = rawCell.map(v => Math.max(40, (v / cellSum) * totalMs * 0.75));
 
   return { thinkTimes, cellTimes };
 }
@@ -878,25 +967,48 @@ async function startAiSolving(puzzleDate) {
     let delay = 0;
     let cellIdx = 0;
 
-    for (let wi = 0; wi < wordsToFill.length; wi++) {
-      const word = wordsToFill[wi];
-      delay += thinkTimes[wi] || 200;
-
-      // Cursor move to first cell of word
-      const firstCell = word.cells[0];
-      const cursorTimer = setTimeout(() => {
+    // Helper to schedule a cursor-only move (no fill)
+    const scheduleCursorMove = (r, c, dir, atDelay) => {
+      const t = setTimeout(() => {
         const room = puzzleRooms.get(puzzleDate);
         if (!room || !room.has(bot.botId)) return;
         const info = room.get(bot.botId);
-        info.row = firstCell.row;
-        info.col = firstCell.col;
-        info.direction = word.dir;
+        info.row = r; info.col = c; info.direction = dir;
         io.to(`puzzle:${puzzleDate}`).emit('cursor-moved', {
           socketId: bot.botId, userId: bot.botId, userName: bot.name,
-          row: firstCell.row, col: firstCell.col, direction: word.dir,
+          row: r, col: c, direction: dir,
         });
-      }, delay);
-      bot.timers.push(cursorTimer);
+      }, atDelay);
+      bot.timers.push(t);
+    };
+
+    const maxR = pData.dimensions.rows;
+    const maxC = pData.dimensions.cols;
+
+    for (let wi = 0; wi < wordsToFill.length; wi++) {
+      const word = wordsToFill[wi];
+      const thinkTime = thinkTimes[wi] || 200;
+      delay += thinkTime;
+
+      // During longer think pauses, wander the cursor around (reading clues, scanning)
+      if (thinkTime > 800) {
+        const wanderCount = 1 + Math.floor(Math.random() * 3);
+        const wanderSlice = thinkTime * 0.6; // use 60% of think time for wandering
+        for (let w = 0; w < wanderCount; w++) {
+          const wanderAt = delay - thinkTime + (thinkTime * 0.2) + (wanderSlice / wanderCount) * w;
+          // Pick a random non-black cell
+          const wr = Math.floor(Math.random() * maxR);
+          const wc = Math.floor(Math.random() * maxC);
+          if (pData.grid[wr] && pData.grid[wr][wc] !== '.') {
+            const wDir = Math.random() < 0.5 ? 'across' : 'down';
+            scheduleCursorMove(wr, wc, wDir, wanderAt);
+          }
+        }
+      }
+
+      // Move cursor to first cell of the word we're about to fill
+      const firstCell = word.cells[0];
+      scheduleCursorMove(firstCell.row, firstCell.col, word.dir, delay);
 
       for (const cell of word.cells) {
         delay += cellTimes[cellIdx] || 100;
