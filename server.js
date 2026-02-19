@@ -795,85 +795,12 @@ function buildAiWordQueue(pData) {
       words.push({ dir, clue, cells });
     }
   }
-
-  // Simulate a human-like solve: start from a random seed word, then
-  // pick nearby crossing words with some probability, occasionally
-  // jump to a completely different area of the grid.
-  const queue = [];
-  const used = new Set();
-  const rows = pData.dimensions.rows;
-  const cols = pData.dimensions.cols;
-
-  // Build a lookup: cell "r,c" → list of word indices that pass through it
-  const cellToWords = new Map();
-  for (let i = 0; i < words.length; i++) {
-    for (const [r, c] of words[i].cells) {
-      const key = `${r},${c}`;
-      if (!cellToWords.has(key)) cellToWords.set(key, []);
-      cellToWords.get(key).push(i);
-    }
+  // Fisher-Yates shuffle — fully random order
+  for (let i = words.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [words[i], words[j]] = [words[j], words[i]];
   }
-
-  // Pick a random starting word
-  let current = Math.floor(Math.random() * words.length);
-  used.add(current);
-  queue.push(words[current]);
-
-  while (queue.length < words.length) {
-    // 30% chance: jump to a random unused word (simulates scanning the clue list)
-    if (Math.random() < 0.3) {
-      const unused = [];
-      for (let i = 0; i < words.length; i++) {
-        if (!used.has(i)) unused.push(i);
-      }
-      if (unused.length === 0) break;
-      current = unused[Math.floor(Math.random() * unused.length)];
-      used.add(current);
-      queue.push(words[current]);
-      continue;
-    }
-
-    // 70% chance: pick a crossing/nearby word
-    // Collect all words that share a cell with the current word
-    const neighbors = new Set();
-    for (const [r, c] of words[current].cells) {
-      const key = `${r},${c}`;
-      for (const wi of (cellToWords.get(key) || [])) {
-        if (!used.has(wi)) neighbors.add(wi);
-      }
-    }
-
-    // If no direct neighbors, look in a wider radius
-    if (neighbors.size === 0) {
-      const cr = words[current].cells[0][0];
-      const cc = words[current].cells[0][1];
-      let bestDist = Infinity;
-      let bestIdx = -1;
-      for (let i = 0; i < words.length; i++) {
-        if (used.has(i)) continue;
-        const dr = words[i].cells[0][0] - cr;
-        const dc = words[i].cells[0][1] - cc;
-        const dist = dr * dr + dc * dc;
-        // Add jitter so it's not always the absolute nearest
-        const jitteredDist = dist * (0.5 + Math.random());
-        if (jitteredDist < bestDist) {
-          bestDist = jitteredDist;
-          bestIdx = i;
-        }
-      }
-      if (bestIdx === -1) break;
-      current = bestIdx;
-    } else {
-      // Pick a random neighbor
-      const arr = [...neighbors];
-      current = arr[Math.floor(Math.random() * arr.length)];
-    }
-
-    used.add(current);
-    queue.push(words[current]);
-  }
-
-  return queue;
+  return words;
 }
 
 function distributeAiTiming(cellCount, finalSolveTime, wordCount) {
@@ -927,6 +854,25 @@ function distributeAiTiming(cellCount, finalSolveTime, wordCount) {
   return { thinkTimes, cellTimes };
 }
 
+// Build a step-by-step cursor path from (fromR,fromC) to (toR,toC),
+// moving one cell at a time (up/down/left/right), skipping black squares.
+function buildCursorPath(pData, fromR, fromC, toR, toC) {
+  const steps = [];
+  let r = fromR, c = fromC;
+  const maxIter = Math.abs(toR - r) + Math.abs(toC - c) + 20; // safety limit
+  let iter = 0;
+  while ((r !== toR || c !== toC) && iter++ < maxIter) {
+    // Move vertically first, then horizontally (or mix it up)
+    if (r !== toR && (c === toC || Math.random() < 0.5)) {
+      r += r < toR ? 1 : -1;
+    } else if (c !== toC) {
+      c += c < toC ? 1 : -1;
+    }
+    steps.push([r, c]);
+  }
+  return steps;
+}
+
 async function startAiSolving(puzzleDate) {
   const roomBots = aiBots.get(puzzleDate);
   if (!roomBots) return;
@@ -943,31 +889,33 @@ async function startAiSolving(puzzleDate) {
 
     const wordQueue = buildAiWordQueue(pData);
 
-    // Collect cells to fill (skip already correctly filled)
-    const cellsToFill = [];
+    // Collect words to fill (skip words that are already fully correct)
     const wordsToFill = [];
+    let totalCells = 0;
     for (const word of wordQueue) {
       const wordCells = [];
       for (const [r, c] of word.cells) {
         const key = `${r},${c}`;
         const correct = getCorrectAnswer(pData, r, c);
-        if (userGrid[key] === correct) continue; // already filled correctly
+        if (userGrid[key] === correct) continue;
         wordCells.push({ row: r, col: c, letter: correct });
       }
       if (wordCells.length > 0) {
         wordsToFill.push({ cells: wordCells, dir: word.dir });
-        cellsToFill.push(...wordCells);
+        totalCells += wordCells.length;
       }
     }
 
-    if (cellsToFill.length === 0) continue;
+    if (totalCells === 0) continue;
 
-    const { thinkTimes, cellTimes } = distributeAiTiming(cellsToFill.length, bot.finalSolveTime, wordsToFill.length);
+    const { thinkTimes, cellTimes } = distributeAiTiming(totalCells, bot.finalSolveTime, wordsToFill.length);
 
     let delay = 0;
     let cellIdx = 0;
+    let cursorR = wordsToFill[0].cells[0].row;
+    let cursorC = wordsToFill[0].cells[0].col;
 
-    // Helper to schedule a cursor-only move (no fill)
+    // Helper to schedule a cursor-only move
     const scheduleCursorMove = (r, c, dir, atDelay) => {
       const t = setTimeout(() => {
         const room = puzzleRooms.get(puzzleDate);
@@ -982,46 +930,38 @@ async function startAiSolving(puzzleDate) {
       bot.timers.push(t);
     };
 
-    const maxR = pData.dimensions.rows;
-    const maxC = pData.dimensions.cols;
-
     for (let wi = 0; wi < wordsToFill.length; wi++) {
       const word = wordsToFill[wi];
       const thinkTime = thinkTimes[wi] || 200;
-      delay += thinkTime;
+      const targetR = word.cells[0].row;
+      const targetC = word.cells[0].col;
 
-      // During longer think pauses, wander the cursor around (reading clues, scanning)
-      if (thinkTime > 800) {
-        const wanderCount = 1 + Math.floor(Math.random() * 3);
-        const wanderSlice = thinkTime * 0.6; // use 60% of think time for wandering
-        for (let w = 0; w < wanderCount; w++) {
-          const wanderAt = delay - thinkTime + (thinkTime * 0.2) + (wanderSlice / wanderCount) * w;
-          // Pick a random non-black cell
-          const wr = Math.floor(Math.random() * maxR);
-          const wc = Math.floor(Math.random() * maxC);
-          if (pData.grid[wr] && pData.grid[wr][wc] !== '.') {
-            const wDir = Math.random() < 0.5 ? 'across' : 'down';
-            scheduleCursorMove(wr, wc, wDir, wanderAt);
-          }
+      // Walk cursor from current position to the first cell of the next word
+      const path = buildCursorPath(pData, cursorR, cursorC, targetR, targetC);
+      if (path.length > 0) {
+        const stepTime = thinkTime / (path.length + 1);
+        for (const [pr, pc] of path) {
+          delay += stepTime;
+          scheduleCursorMove(pr, pc, word.dir, delay);
         }
+        // Remaining think time after walking
+        delay += stepTime;
+      } else {
+        delay += thinkTime;
       }
 
-      // Move cursor to first cell of the word we're about to fill
-      const firstCell = word.cells[0];
-      scheduleCursorMove(firstCell.row, firstCell.col, word.dir, delay);
-
+      // Now fill each cell of this word
       for (const cell of word.cells) {
         delay += cellTimes[cellIdx] || 100;
         cellIdx++;
 
         const fillTimer = setTimeout(async () => {
           try {
-            // Re-check: skip if already correctly filled by someone else
+            // Skip if already correctly filled by someone else
             const currentState = await db.getState(puzzleDate);
             const currentGrid = currentState?.user_grid || {};
             if (currentGrid[`${cell.row},${cell.col}`] === cell.letter) return;
 
-            // Check bot is still active
             const currentBots = aiBots.get(puzzleDate);
             if (!currentBots || !currentBots.has(bot.botId)) return;
 
@@ -1041,6 +981,11 @@ async function startAiSolving(puzzleDate) {
         }, delay);
         bot.timers.push(fillTimer);
       }
+
+      // Update cursor position to end of this word
+      const lastCell = word.cells[word.cells.length - 1];
+      cursorR = lastCell.row;
+      cursorC = lastCell.col;
     }
   }
 }
