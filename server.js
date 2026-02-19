@@ -366,6 +366,16 @@ function getNextColor(room) {
   return COLOR_POOL[room.size % COLOR_POOL.length];
 }
 
+// ─── Pause tracking (per puzzle room) ────────────────────────────
+const pausedSockets = new Map(); // puzzleDate → Set<socketId>
+
+function areAllPaused(puzzleDate) {
+  const room = puzzleRooms.get(puzzleDate);
+  const paused = pausedSockets.get(puzzleDate);
+  if (!room || room.size === 0) return false;
+  return paused && paused.size >= room.size;
+}
+
 // ─── Puzzle solve timers (only tick when someone is in the room) ──
 const puzzleTimerState = new Map(); // puzzleDate → { accumulated, startedAt }
 
@@ -440,11 +450,13 @@ function leaveCurrentPuzzle(socket) {
   socket.leave(`puzzle:${puzzleDate}`);
   socketPuzzle.delete(socket.id);
 
-  // Clean up hint votes
+  // Clean up hint votes and pause state
   const hs = hintState.get(puzzleDate);
   if (hs) {
     hs.votes.delete(socket.id);
   }
+  const paused = pausedSockets.get(puzzleDate);
+  if (paused) paused.delete(socket.id);
 
   const room = puzzleRooms.get(puzzleDate);
   if (room) {
@@ -452,10 +464,15 @@ function leaveCurrentPuzzle(socket) {
     if (room.size === 0) {
       puzzleRooms.delete(puzzleDate);
       hintState.delete(puzzleDate);
+      pausedSockets.delete(puzzleDate);
       stopTimer(puzzleDate);
-    } else if (hs && hs.available && hs.votes.size > 0) {
-      // Re-broadcast hint vote count with updated total
-      io.to(`puzzle:${puzzleDate}`).emit('hint-vote-update', { votes: hs.votes.size, total: room.size });
+    } else {
+      // If remaining players are all paused, stop timer
+      if (areAllPaused(puzzleDate)) stopTimer(puzzleDate);
+      if (hs && hs.available && hs.votes.size > 0) {
+        // Re-broadcast hint vote count with updated total
+        io.to(`puzzle:${puzzleDate}`).emit('hint-vote-update', { votes: hs.votes.size, total: room.size });
+      }
     }
     socket.to(`puzzle:${puzzleDate}`).emit('user-left', {
       userId: socket.handshake.query.userId,
@@ -595,7 +612,7 @@ io.on('connection', async (socket) => {
           // Check word completions for bonus — all fire logic is gated on wordBonus > 0
           if (isCorrect) {
             const { completed, completedWordCells } = await checkWordCompletions(puzzleDate, row, col, pData);
-            if (completed >= 2) wordBonus = 150;
+            if (completed >= 2) wordBonus = 250;
             else if (completed === 1) wordBonus = 50;
             // Apply fire multiplier to word bonus if was already on fire (not if fire just started this turn)
             if (wordBonus && wasOnFire) wordBonus = Math.round(wordBonus * fs.fireMultiplier);
@@ -703,6 +720,26 @@ io.on('connection', async (socket) => {
       col,
       direction,
     });
+  });
+
+  // ─── Pause / Resume ──────────────────────────────────────────────
+  socket.on('pause-puzzle', async ({ puzzleDate }) => {
+    if (!pausedSockets.has(puzzleDate)) pausedSockets.set(puzzleDate, new Set());
+    pausedSockets.get(puzzleDate).add(socket.id);
+    // If all players are now paused, stop the timer
+    if (areAllPaused(puzzleDate)) {
+      await stopTimer(puzzleDate);
+    }
+  });
+
+  socket.on('resume-puzzle', async ({ puzzleDate }) => {
+    const paused = pausedSockets.get(puzzleDate);
+    if (paused) paused.delete(socket.id);
+    // If timer was stopped (all were paused), restart it
+    if (!puzzleTimerState.has(puzzleDate)) {
+      await startTimer(puzzleDate);
+      io.to(`puzzle:${puzzleDate}`).emit('timer-sync', { seconds: getElapsedSeconds(puzzleDate) });
+    }
   });
 
   // ─── Hint voting ───────────────────────────────────────────────

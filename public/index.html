@@ -1793,6 +1793,11 @@ function showPuzzleEntryOverlay(dateStr, paused) {
     overlay.classList.remove('show');
     startBtn.removeEventListener('click', handleStart);
     changeNameBtn.removeEventListener('click', handleChangeName);
+    // Resume timer if this was a pause
+    if (paused && socket && currentDate) {
+      socket.emit('resume-puzzle', { puzzleDate: currentDate });
+      startTimerTick();
+    }
   };
 
   // Change name button
@@ -2065,7 +2070,7 @@ function checkLocalWordBonus(row, col) {
     }
   }
   let bonus = 0;
-  if (completed >= 2) bonus = 150;
+  if (completed >= 2) bonus = 250;
   else if (completed === 1) bonus = 50;
   return { bonus, completed, wordCellKeys };
 }
@@ -2148,7 +2153,7 @@ function sendCellUpdate(row, col, letter) {
           let wb = rawWb;
           if (wasOnFire) wb = Math.round(wb * myFireMultiplier);
           persistedPoints.set(myName, (persistedPoints.get(myName) || 0) + wb);
-          setTimeout(() => showPointFloat(row, col, wb, wb >= (wasOnFire ? 75 : 150) ? 'combo' : 'word', wasOnFire), 200);
+          setTimeout(() => showPointFloat(row, col, wb, wb >= (wasOnFire ? 125 : 250) ? 'combo' : 'word', wasOnFire), 200);
           sfxWordComplete();
           triggerWordWave(row, col);
 
@@ -2556,7 +2561,7 @@ function setupSocketHandlers() {
       if (wordBonus && remoteName) {
         resetHintTimer();
         persistedPoints.set(remoteName, (persistedPoints.get(remoteName) || 0) + wordBonus);
-        const isCombo = wordBonus >= 150;
+        const isCombo = wordBonus >= 250;
         setTimeout(() => showPointFloat(row, col, wordBonus, isCombo ? 'combo' : 'word', isFireBoosted), 200);
         triggerWordWave(row, col, remoteColor);
       }
@@ -3522,9 +3527,11 @@ gridEl.addEventListener('keydown', (e) => {
 btnBack.addEventListener('click', () => showCalendar());
 document.getElementById('btn-back-mobile').addEventListener('click', () => showCalendar());
 
-// Pause: show overlay
+// Pause: show overlay and notify server
 function pausePuzzle() {
   if (!currentDate || solved) return;
+  if (socket) socket.emit('pause-puzzle', { puzzleDate: currentDate });
+  stopTimerTick();
   showPuzzleEntryOverlay(currentDate, true);
 }
 document.getElementById('btn-pause').addEventListener('click', pausePuzzle);
