@@ -188,6 +188,8 @@ body {
   flex-wrap: wrap;
   flex-shrink: 0;
 }
+.toolbar-back { display: none; }
+.toolbar-spacer { display: none; }
 .toolbar button {
   padding: 6px 16px;
   border: 1px solid #ccc;
@@ -527,22 +529,22 @@ body {
   bottom: 0; left: 0; right: 0;
   z-index: 50;
 }
-.kb-row { display: flex; justify-content: center; gap: 4px; margin-bottom: 4px; }
+.kb-row { display: flex; justify-content: center; gap: 3px; margin-bottom: 3px; }
 .kb-key {
   background: #5a5a5c;
   color: #fff;
   border: none;
   border-radius: 5px;
-  font-size: 1.1rem;
+  font-size: 1rem;
   font-weight: 600;
-  min-width: 32px;
-  height: 42px;
+  min-width: 30px;
+  height: 38px;
   cursor: pointer;
   flex: 1;
-  max-width: 38px;
+  max-width: 36px;
 }
 .kb-key:active { background: #7a7a7c; }
-.kb-more, .kb-backspace { flex: 1.4; max-width: 54px; font-size: 0.8rem; }
+.kb-more, .kb-backspace { flex: 1.4; max-width: 52px; font-size: 0.78rem; }
 
 /* User badge in calendar nav */
 .user-badge {
@@ -644,22 +646,42 @@ body.mobile .star-overlay { font-size: 1.1rem; }
 /* Puzzle view fills screen as flex column */
 body.mobile #puzzle-view { position: fixed; inset: 0; overflow: hidden; }
 
-body.mobile .puzzle-header { padding: 6px 10px; flex-shrink: 0; }
-body.mobile .puzzle-header h1 { font-size: 0.95rem; }
-body.mobile .puzzle-header .meta { display: none; }
-body.mobile .puzzle-header .back-btn { left: 6px; padding: 5px 8px; font-size: 0.78rem; }
+/* Mobile: hide puzzle-header entirely, use compact toolbar */
+body.mobile .puzzle-header { display: none; }
 
-body.mobile .toolbar { gap: 6px; padding: 4px 8px; flex-shrink: 0; }
-body.mobile .toolbar button { padding: 4px 10px; font-size: 0.78rem; }
+body.mobile .toolbar {
+  gap: 0; padding: 6px 10px; flex-shrink: 0; flex-wrap: nowrap;
+  justify-content: flex-start; border-bottom: 1px solid #ddd;
+}
+body.mobile .toolbar-back {
+  display: flex; align-items: center; justify-content: center;
+  width: 32px; height: 32px; border: none; background: none;
+  font-size: 1.5rem; font-weight: 700; color: #333; cursor: pointer;
+  padding: 0; margin-right: 4px;
+}
+body.mobile .toolbar-spacer { display: block; flex: 1; }
+body.mobile .toolbar .solve-timer { font-size: 0.9rem; margin-right: 0; margin-left: 0; }
+body.mobile .toolbar .btn-label { display: none; }
+body.mobile .toolbar button#btn-clear,
+body.mobile .toolbar button#btn-reveal,
+body.mobile .toolbar button#btn-rebus {
+  width: 32px; height: 32px; padding: 0; border: none;
+  background: none; font-size: 1.1rem; color: #555; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+}
+body.mobile .toolbar button#btn-clear::before { content: '\2715'; }
+body.mobile .toolbar button#btn-reveal::before { content: '\2714'; }
+body.mobile .toolbar button#btn-rebus::before { content: 'R'; font-size: 0.85rem; font-weight: 700; }
 
-body.mobile .presence-bar { flex-shrink: 0; }
+body.mobile .presence-bar { flex-shrink: 0; padding: 3px 8px; min-height: 22px; font-size: 0.72rem; gap: 8px; }
 body.mobile .fire-bar { flex-shrink: 0; }
 
-body.mobile .current-clue-bar { font-size: 0.85rem; padding: 6px 10px; background: #2b2d5e; color: #fff; flex-shrink: 0; }
+/* Mobile: move clue bar below grid */
+body.mobile .current-clue-bar { font-size: 0.82rem; padding: 5px 8px; background: #2b2d5e; color: #fff; flex-shrink: 0; order: 10; min-height: 30px; }
 body.mobile .clue-nav-btn { color: #fff; }
 
 /* Grid area fills remaining space */
-body.mobile .app { flex: 1; min-height: 0; overflow: hidden; padding: 0; gap: 0; }
+body.mobile .app { flex: 1; min-height: 0; overflow: hidden; padding: 0; gap: 0; order: 5; }
 body.mobile .grid-container {
   width: 100%; height: 100%;
   display: flex; align-items: center; justify-content: center;
@@ -671,8 +693,8 @@ body.mobile .hint-btn { left: auto; right: 4px; top: auto; bottom: 4px; transfor
 body.mobile .hint-btn:hover { transform: scale(1.1); }
 body.mobile .clue-panel { display: none; }
 
-/* Keyboard at bottom of flex column */
-body.mobile .mobile-keyboard { display: block; position: static; flex-shrink: 0; padding-bottom: env(safe-area-inset-bottom, 0px); }
+/* Keyboard at bottom of flex column, after clue bar */
+body.mobile .mobile-keyboard { display: block; position: static; flex-shrink: 0; order: 11; padding: 4px 3px; padding-bottom: env(safe-area-inset-bottom, 0px); }
 
 /* ─── Fire streak effects ─────────────────────────────────────── */
 @keyframes fire-dance {
@@ -1019,10 +1041,12 @@ body.mobile .mobile-keyboard { display: block; position: static; flex-shrink: 0;
   </div>
 
   <div class="toolbar">
-    <button id="btn-clear">Clear Puzzle</button>
-    <button id="btn-reveal">Reveal Puzzle</button>
-    <button id="btn-rebus" style="display:none">Rebus</button>
+    <button class="toolbar-back" id="btn-back-mobile" title="Back to calendar">&#x2304;</button>
     <span class="solve-timer" id="solve-timer">0:00</span>
+    <div class="toolbar-spacer"></div>
+    <button id="btn-clear" title="Clear Puzzle"><span class="btn-label">Clear Puzzle</span></button>
+    <button id="btn-reveal" title="Reveal Puzzle"><span class="btn-label">Reveal Puzzle</span></button>
+    <button id="btn-rebus" style="display:none"><span class="btn-label">Rebus</span></button>
   </div>
 
   <div class="presence-bar" id="presence-bar"></div>
@@ -1782,9 +1806,19 @@ function computeAndApplyCellSize() {
   if (!PUZZLE) return;
   let cellSize;
   if (IS_MOBILE) {
-    const availW = window.innerWidth - 8;
-    const availH = window.innerHeight - 260;
-    cellSize = Math.max(16, Math.min(40, Math.floor(Math.min(availW / COLS, availH / ROWS))));
+    const availW = window.innerWidth - 4;
+    // Measure actual toolbar + presence + fire bar heights, plus clue bar + keyboard + safe area below grid
+    const toolbar = document.querySelector('.toolbar');
+    const presence = document.querySelector('.presence-bar');
+    const toolbarH = toolbar ? toolbar.offsetHeight : 40;
+    const presenceH = (presence && presence.style.display !== 'none') ? presence.offsetHeight : 0;
+    const fireBarH = 22; // always reserve for fire bar
+    const clueBarH = 32;
+    const keyboardH = 128; // 3 rows × 38px + gaps + padding
+    const safeArea = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--sab') || '0') || 34;
+    const overhead = toolbarH + presenceH + fireBarH + clueBarH + keyboardH + safeArea + 4;
+    const availH = window.innerHeight - overhead;
+    cellSize = Math.max(14, Math.min(40, Math.floor(Math.min(availW / COLS, availH / ROWS))));
   } else {
     const maxGridW = Math.min(window.innerWidth - 420, 650);
     // Dynamically measure height of fixed elements above .app
@@ -3444,6 +3478,7 @@ gridEl.addEventListener('keydown', (e) => {
 
 // ─── Toolbar ───────────────────────────────────────────────────
 btnBack.addEventListener('click', () => showCalendar());
+document.getElementById('btn-back-mobile').addEventListener('click', () => showCalendar());
 
 document.getElementById('hint-btn').addEventListener('click', voteForHint);
 
