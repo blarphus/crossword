@@ -3481,15 +3481,22 @@ function advanceToNextClueIfWordFilled(typedRow, typedCol) {
   // Try clues after current, then wrap — skip fully solved words
   for (let i = 1; i < clues.length; i++) {
     const next = clues[(idx + i) % clues.length];
-    if (isWordSolved(next, direction)) continue; // skip completed words
+    if (isWordSolved(next, direction)) continue;
     const nextCells = getWordCells(next, direction);
     const firstEmpty = nextCells.find(([r, c]) => !userGrid[r]?.[c]);
-    if (firstEmpty) {
-      [selectedRow, selectedCol] = firstEmpty;
-    } else {
-      selectedRow = next.row;
-      selectedCol = next.col;
-    }
+    [selectedRow, selectedCol] = firstEmpty || [next.row, next.col];
+    return;
+  }
+
+  // All clues in this direction solved — switch to other direction's first unsolved
+  const otherDir = direction === 'across' ? 'down' : 'across';
+  const otherClues = otherDir === 'across' ? PUZZLE.clues.across : PUZZLE.clues.down;
+  for (const next of otherClues) {
+    if (isWordSolved(next, otherDir)) continue;
+    const nextCells = getWordCells(next, otherDir);
+    const firstEmpty = nextCells.find(([r, c]) => !userGrid[r]?.[c]);
+    [selectedRow, selectedCol] = firstEmpty || [next.row, next.col];
+    direction = otherDir;
     return;
   }
 }
