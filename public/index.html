@@ -743,8 +743,13 @@ body.mobile .grid-container {
   flex-shrink: 1;
 }
 body.mobile .grid { touch-action: none; }
-body.mobile .hint-btn { left: auto; right: 4px; top: auto; bottom: 4px; transform: none; }
-body.mobile .hint-btn:hover { transform: scale(1.1); }
+body.mobile .toolbar button#hint-btn {
+  width: auto; height: 32px; padding: 0 6px; border: 1.5px solid #daa520 !important;
+  background: linear-gradient(135deg, #ffd700, #ffec80, #daa520) !important;
+  font-size: 0.8rem; color: #5c3d00 !important; gap: 3px;
+}
+body.mobile .toolbar button#hint-btn .hint-icon { font-size: 0.95rem; }
+body.mobile .toolbar button#hint-btn .hint-votes { font-size: 0.65rem; }
 body.mobile .clue-panel { display: none; }
 
 /* Keyboard at bottom of flex column, after clue bar */
@@ -796,38 +801,28 @@ body.mobile .mobile-keyboard { display: block; position: static; flex-shrink: 0;
   text-shadow: 0 0 6px rgba(255,106,0,0.5);
 }
 
-/* Hint button */
+/* Hint button (in toolbar) */
 @keyframes hint-glow {
-  0%, 100% { box-shadow: 0 0 8px rgba(255,215,0,0.4); }
-  50% { box-shadow: 0 0 18px rgba(255,215,0,0.8); }
+  0%, 100% { box-shadow: 0 0 6px rgba(255,215,0,0.3); }
+  50% { box-shadow: 0 0 14px rgba(255,215,0,0.7); }
 }
 .hint-btn {
   display: none;
-  position: absolute;
-  left: 2px;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 54px;
-  padding: 8px 4px;
-  border-radius: 12px;
-  border: 2px solid #daa520;
-  background: linear-gradient(135deg, #ffd700, #ffec80, #daa520);
-  color: #5c3d00;
-  font-size: 0.7rem;
+  border: 1.5px solid #daa520 !important;
+  background: linear-gradient(135deg, #ffd700, #ffec80, #daa520) !important;
+  color: #5c3d00 !important;
   font-weight: 800;
   cursor: pointer;
   animation: hint-glow 2s ease-in-out infinite;
-  z-index: 5;
   transition: transform 0.2s;
-  text-align: center;
-  line-height: 1.3;
-  flex-direction: column;
+  flex-direction: row;
+  gap: 4px;
 }
-.hint-btn:hover { transform: translateY(-50%) scale(1.1); }
+.hint-btn:hover { transform: scale(1.08); background: linear-gradient(135deg, #ffe44d, #fff1a0, #e6b800) !important; }
 .hint-btn.show { display: flex; align-items: center; justify-content: center; }
-.hint-btn.voted { opacity: 0.7; border-style: dashed; }
-.hint-btn .hint-icon { font-size: 1.2rem; }
-.hint-btn .hint-votes { font-size: 0.6rem; margin-top: 2px; }
+.hint-btn.voted { opacity: 0.6; border-style: dashed !important; animation: none; }
+.hint-btn .hint-icon { font-size: 1rem; line-height: 1; }
+.hint-btn .hint-votes { font-size: 0.75rem; }
 
 /* Flying hint letter */
 .hint-flyer {
@@ -1150,6 +1145,7 @@ body.mobile .mobile-keyboard { display: block; position: static; flex-shrink: 0;
       <button id="btn-clear" title="Clear Puzzle"><span class="btn-label">Clear Puzzle</span></button>
       <button id="btn-reveal" title="Reveal Puzzle"><span class="btn-label">Reveal Puzzle</span></button>
       <button id="btn-rebus" style="display:none"><span class="btn-label">Rebus</span></button>
+      <button class="hint-btn" id="hint-btn" title="Vote for a hint"><span class="hint-icon">💡</span><span class="hint-votes" id="hint-votes"></span></button>
     </div>
   </div>
 
@@ -1169,7 +1165,6 @@ body.mobile .mobile-keyboard { display: block; position: static; flex-shrink: 0;
   <div class="app">
     <div class="grid-container">
       <div class="grid" id="grid" tabindex="0"></div>
-      <button class="hint-btn" id="hint-btn" title="Vote for a hint"><span class="hint-icon">💡</span><span class="hint-votes" id="hint-votes"></span></button>
       <input type="text" id="mobile-input" class="mobile-input" autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false">
     </div>
     <div class="clue-panel" id="clue-panel"></div>
@@ -1969,6 +1964,8 @@ function showPuzzleEntryOverlay(dateStr, paused) {
       socket.emit('resume-puzzle', { puzzleDate: currentDate });
       startTimerTick();
     }
+    // Auto-focus the grid so typing works immediately
+    setTimeout(() => focusGrid(), 50);
   };
 
   // Change name button
