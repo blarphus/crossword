@@ -2576,7 +2576,6 @@ function extendMyFire(cellKeys, newExpiresAt) {
 function breakMyFire() {
   sfxFireBreak();
   showComboBroken();
-  hideFireBar();
   removeFireCellEffects();
   myFireActive = false;
   myFireExpiresAt = 0;
@@ -2584,10 +2583,10 @@ function breakMyFire() {
   myRecentWordCompletions = [];
   myFireMultiplier = 1.5;
   myFireWordsCompleted = 0;
+  hideFireBar();
 }
 
 function expireMyFire() {
-  hideFireBar();
   removeFireCellEffects();
   myFireActive = false;
   myFireExpiresAt = 0;
@@ -2595,6 +2594,7 @@ function expireMyFire() {
   myRecentWordCompletions = [];
   myFireMultiplier = 1.5;
   myFireWordsCompleted = 0;
+  hideFireBar();
 }
 
 function applyFireCellEffects() {
@@ -2658,6 +2658,17 @@ function updatePresenceFireTimers() {
   // Expire local fire if timer ran out
   if (myFireActive && myFireExpiresAt <= now) {
     expireMyFire();
+  }
+
+  // Clean up expired remote fire states
+  for (const [sid, rs] of remoteFireStates) {
+    if (rs.expiresAt <= now) {
+      for (const key of rs.fireCells) {
+        const [r, c] = key.split(',').map(Number);
+        if (cellEls[r]?.[c]) cellEls[r][c].classList.remove('on-fire');
+      }
+      remoteFireStates.delete(sid);
+    }
   }
 }
 
@@ -3307,6 +3318,7 @@ function render() {
     remoteCursorCells.set(`${user.row},${user.col}`, user.color);
   }
 
+  const renderNow = Date.now();
   for (let r = 0; r < ROWS; r++) {
     for (let c = 0; c < COLS; c++) {
       const el = cellEls[r][c];
@@ -3386,7 +3398,7 @@ function render() {
       }
 
       // Fire cell effect
-      const isOnFire = myFireCells.has(key) || [...remoteFireStates.values()].some(s => s.fireCells.has(key));
+      const isOnFire = myFireCells.has(key) || [...remoteFireStates.values()].some(s => s.expiresAt > renderNow && s.fireCells.has(key));
       el.classList.toggle('on-fire', isOnFire);
       if (isOnFire && !el.style.animationDelay) {
         el.style.setProperty('--fire-delay', ((r * COLS + c) % 7) * 0.1 + 's');
