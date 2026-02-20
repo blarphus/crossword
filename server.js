@@ -21,11 +21,6 @@ app.use(express.static(path.join(__dirname, 'public')));
 function getIp(req) {
   return req.ip || req.headers['x-forwarded-for']?.split(',')[0]?.trim() || 'unknown';
 }
-function getSocketIp(socket) {
-  return socket.handshake.headers['x-forwarded-for']?.split(',')[0]?.trim()
-    || socket.handshake.address || 'unknown';
-}
-
 function todayET() {
   return new Date().toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
 }
@@ -825,31 +820,9 @@ function buildAiWordQueue(pData) {
   return words;
 }
 
-function distributeAiTiming(cellCount, finalSolveTime, wordCount) {
-  if (cellCount === 0) return { thinkTimes: [], cellTimes: [] };
+function distributeAiTiming(cellCount, finalSolveTime) {
+  if (cellCount === 0) return { cellTimes: [] };
   const totalMs = finalSolveTime * 1000;
-
-  // Split into bursts: some words solved quickly in succession (hot streak),
-  // others with long pauses (thinking / reading clues / scanning grid).
-  // ~25% of time is think pauses, ~75% is typing, but with high variance.
-
-  const rawThink = [];
-  for (let i = 0; i < wordCount; i++) {
-    // Mix of short pauses (quick succession) and long pauses (stuck/scanning)
-    const r = Math.random();
-    if (r < 0.25) {
-      // Long pause: reading a clue, scanning grid (3-10x base)
-      rawThink.push(3 + Math.random() * 7);
-    } else if (r < 0.55) {
-      // Medium pause: moving to next word (0.8-3x base)
-      rawThink.push(0.8 + Math.random() * 2.2);
-    } else {
-      // Quick succession: barely any pause (0.1-0.8x base)
-      rawThink.push(0.1 + Math.random() * 0.7);
-    }
-  }
-  const thinkSum = rawThink.reduce((s, v) => s + v, 0);
-  const thinkTimes = rawThink.map(v => Math.max(40, (v / thinkSum) * totalMs * 0.25));
 
   // Cell times: burst typing with variable speed
   // Group cells into "streaks" — fast bursts followed by hesitations
@@ -858,22 +831,19 @@ function distributeAiTiming(cellCount, finalSolveTime, wordCount) {
   let streakSpeed = 1;
   for (let i = 0; i < cellCount; i++) {
     if (streakLen <= 0) {
-      // Start a new streak: 2-8 cells at a particular speed
       streakLen = 2 + Math.floor(Math.random() * 7);
-      // Speed varies widely: 0.3 (fast) to 4.0 (slow/hesitant)
       const r = Math.random();
       if (r < 0.3) streakSpeed = 0.2 + Math.random() * 0.4;    // fast burst
       else if (r < 0.7) streakSpeed = 0.5 + Math.random() * 1;  // normal
       else streakSpeed = 1.5 + Math.random() * 2.5;              // slow/careful
     }
-    // Add per-cell jitter within the streak
     rawCell.push(streakSpeed * (0.6 + Math.random() * 0.8));
     streakLen--;
   }
   const cellSum = rawCell.reduce((s, v) => s + v, 0);
   const cellTimes = rawCell.map(v => Math.max(40, (v / cellSum) * totalMs * 0.75));
 
-  return { thinkTimes, cellTimes };
+  return { cellTimes };
 }
 
 // Per-(day, difficulty) wander parameters: after each word, the bot has
@@ -952,7 +922,7 @@ async function startAiSolving(puzzleDate) {
     // Estimate total cells for timing (used for initial timing budget)
     let estCells = 0;
     for (const w of allWords) estCells += w.cells.length;
-    const timing = distributeAiTiming(estCells, bot.finalSolveTime, allWords.length);
+    const timing = distributeAiTiming(estCells, bot.finalSolveTime);
 
     // Cursor emit helper
     const emitCursor = (r, c, dir) => {

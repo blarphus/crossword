@@ -2685,8 +2685,6 @@ function setupSocketHandlers() {
     for (const u of users) {
       remoteUsers.set(u.socketId, { userId: u.userId, userName: u.userName || 'User', color: u.color, row: u.row, col: u.col, direction: u.direction, isBot: !!u.isBot });
     }
-    // Update filler colors from room users
-    updateFillerColorsFromRoom();
     renderPresenceBar();
     if (PUZZLE) render();
   });
@@ -2733,7 +2731,7 @@ function setupSocketHandlers() {
       userGrid[row][col] = letter;
       const key = `${row},${col}`;
       if (letter) {
-        const color = remoteColor || findColorForUser(remoteUserId);
+        const color = remoteColor || remoteUsers.get(remoteUserId)?.color || '#ccc';
         cellFillers.set(key, { userName: remoteName || 'User', color });
         if (autoCheck && isCellCorrect(row, col, letter)) {
           checkedCells[row][col] = true;
@@ -2919,28 +2917,6 @@ function setupSocketHandlers() {
     if (!PUZZLE) return;
     applyHintReveal(cells);
   });
-}
-
-function findColorForUser(userId) {
-  for (const [, u] of remoteUsers) {
-    if (u.userId === userId) return u.color;
-  }
-  return '#ccc';
-}
-
-function updateFillerColorsFromRoom() {
-  // After getting room state, update filler colors for users we now know about
-  const nameColorMap = new Map();
-  nameColorMap.set(myName, myColor);
-  for (const [, u] of remoteUsers) {
-    nameColorMap.set(u.userName, u.color);
-  }
-  for (const [key, filler] of cellFillers) {
-    const knownColor = nameColorMap.get(filler.userName);
-    if (knownColor) {
-      filler.color = knownColor;
-    }
-  }
 }
 
 function computeUserPoints() {
@@ -3293,7 +3269,6 @@ function render() {
       }
 
       // Player color outline only for cells in completed words
-      const wcColor = completedWordCells.get(key);
       if (wcColor && !hintCells.has(key) && userGrid[r][c]) {
         el.style.boxShadow = `inset 0 0 0 2px ${wcColor}`;
       } else {
@@ -3744,7 +3719,6 @@ gridEl.addEventListener('keydown', (e) => {
         checkedCells[selectedRow][selectedCol] = true;
       }
     }
-    render();
     advanceCursor(true);
     render();
     checkCompletion();
@@ -3865,7 +3839,6 @@ function handleLetterInput(letter) {
       checkedCells[selectedRow][selectedCol] = true;
     }
   }
-  render();
   advanceCursor(true);
   render();
   checkCompletion();
