@@ -511,8 +511,11 @@ function leaveCurrentPuzzle(socket) {
       pausedSockets.delete(puzzleDate);
       stopTimer(puzzleDate);
     } else {
-      // If remaining real players are all paused, stop timer
-      if (areAllPaused(puzzleDate)) stopTimer(puzzleDate);
+      // If remaining real players are all paused, stop timer and pause bots
+      if (areAllPaused(puzzleDate)) {
+        stopTimer(puzzleDate);
+        pauseAllBots(puzzleDate);
+      }
       if (hs && hs.available && hs.votes.size > 0) {
         const realCount = getRealPlayerCount(puzzleDate);
         io.to(`puzzle:${puzzleDate}`).emit('hint-vote-update', { votes: hs.votes.size, total: realCount });
@@ -793,6 +796,30 @@ function removeAllAiBots(puzzleDate) {
   for (const botId of botIds) removeAiBot(puzzleDate, botId);
 }
 
+function pauseAllBots(puzzleDate) {
+  const roomBots = aiBots.get(puzzleDate);
+  if (!roomBots) return;
+  for (const [, bot] of roomBots) {
+    for (const t of bot.timers) clearTimeout(t);
+    bot.timers = [];
+    bot.started = false;
+    bot.paused = true;
+  }
+}
+
+function resumeAllBots(puzzleDate) {
+  const roomBots = aiBots.get(puzzleDate);
+  if (!roomBots) return;
+  let anyResumed = false;
+  for (const [, bot] of roomBots) {
+    if (bot.paused) {
+      bot.paused = false;
+      anyResumed = true;
+    }
+  }
+  if (anyResumed) startAiSolving(puzzleDate);
+}
+
 function getAiBotList(puzzleDate) {
   const roomBots = aiBots.get(puzzleDate);
   if (!roomBots) return [];
@@ -868,6 +895,11 @@ const AI_WANDER_TIME = [
   [8000, 8000, 6867, 8000, 4711], // Sat
 ];
 
+// Base minimum wander time (ms) between words — varies by day of week.
+// Prevents fire streak dominance; calibrated via Monte Carlo simulation.
+const AI_BASE_WANDER = [5000, 6000, 5000, 4000, 3500, 2500, 2000];
+//                       Sun   Mon   Tue   Wed   Thu   Fri   Sat
+
 // Generate a single random cursor hop (2-5 squares in a random direction)
 function randomHop(pData, fromR, fromC) {
   const maxR = pData.dimensions.rows;
@@ -936,10 +968,10 @@ async function startAiSolving(puzzleDate) {
       });
     };
 
-    // Alive check
+    // Alive check (also fails when paused)
     const isAlive = () => {
       const currentBots = aiBots.get(puzzleDate);
-      return currentBots && currentBots.has(bot.botId);
+      return currentBots && currentBots.has(bot.botId) && !bot.paused;
     };
 
     let cursorR = allWords[0].cells[0].row;
@@ -951,6 +983,7 @@ async function startAiSolving(puzzleDate) {
     const dow = dateObj.getDay();
     const wanderChance = AI_WANDER_CHANCE[dow][bot.difficultyIndex];
     const wanderTimeMs = AI_WANDER_TIME[dow][bot.difficultyIndex];
+    const baseWanderMs = AI_BASE_WANDER[dow];
 
     // Recursive chain: process one word at a time
     // Shared wander helper — wanders for `duration` ms then calls `cb`
@@ -988,10 +1021,11 @@ async function startAiSolving(puzzleDate) {
         bot.timers.push(t);
       };
 
-      // Always wander at least once between words; coin flip decides duration
+      // Base wander (±25% random) + extra wander between words
+      const base = baseWanderMs * (0.75 + Math.random() * 0.5);
       const fullWander = Math.random() < wanderChance;
-      const duration = fullWander ? wanderTimeMs : (400 + Math.random() * 800);
-      doWanderFor(duration, startFilling);
+      const extra = fullWander ? wanderTimeMs : (400 + Math.random() * 800);
+      doWanderFor(base + extra, startFilling);
 
       const startFillingWord = async (wi, ci) => {
         if (!isAlive()) return;
@@ -1043,8 +1077,8 @@ async function startAiSolving(puzzleDate) {
       };
     };
 
-    // Wander for 5 seconds before starting to solve
-    doWanderFor(5000, () => processWord(0));
+    // Brief wander before starting to solve
+    doWanderFor(2000, () => processWord(0));
   }
 }
 
@@ -1154,19 +1188,21 @@ io.on('connection', async (socket) => {
   socket.on('pause-puzzle', async ({ puzzleDate }) => {
     if (!pausedSockets.has(puzzleDate)) pausedSockets.set(puzzleDate, new Set());
     pausedSockets.get(puzzleDate).add(socket.id);
-    // If all players are now paused, stop the timer
+    // If all players are now paused, stop the timer and pause bots
     if (areAllPaused(puzzleDate)) {
       await stopTimer(puzzleDate);
+      pauseAllBots(puzzleDate);
     }
   });
 
   socket.on('resume-puzzle', async ({ puzzleDate }) => {
     const paused = pausedSockets.get(puzzleDate);
     if (paused) paused.delete(socket.id);
-    // If timer was stopped (all were paused), restart it
+    // If timer was stopped (all were paused), restart it and resume bots
     if (!puzzleTimerState.has(puzzleDate)) {
       await startTimer(puzzleDate);
       io.to(`puzzle:${puzzleDate}`).emit('timer-sync', { seconds: getElapsedSeconds(puzzleDate) });
+      resumeAllBots(puzzleDate);
     }
   });
 
