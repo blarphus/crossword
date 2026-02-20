@@ -992,7 +992,7 @@ async function startAiSolving(puzzleDate) {
       let elapsed = 0;
       const step = () => {
         if (!isAlive()) return;
-        const hopDelay = 300 + Math.random() * 600;
+        const hopDelay = 1500 + Math.random() * 2000;
         if (elapsed + hopDelay < duration) {
           const [hr, hc] = randomHop(pData, wanderR, wanderC);
           wanderR = hr; wanderC = hc;
