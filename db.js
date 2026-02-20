@@ -125,28 +125,23 @@ async function getState(puzzleDate) {
 }
 
 async function upsertCell(puzzleDate, row, col, letter) {
-  // Use JSONB path to update a single cell in the grid
-  const existing = await getState(puzzleDate);
-  if (!existing) {
-    // Create a new empty grid and set the cell
-    const grid = {};
-    grid[`${row},${col}`] = letter;
+  const key = `${row},${col}`;
+  if (letter === '') {
+    // Delete key atomically using JSONB - operator
+    const { rowCount } = await pool.query(
+      `UPDATE puzzle_state SET user_grid = user_grid - $1, updated_at = NOW()
+       WHERE puzzle_date = $2`,
+      [key, puzzleDate]
+    );
+    if (rowCount === 0) return; // nothing to delete from
+  } else {
+    // Set key atomically using JSONB || operator with INSERT ... ON CONFLICT
     await pool.query(
       `INSERT INTO puzzle_state (puzzle_date, user_grid, updated_at)
-       VALUES ($1, $2, NOW())`,
-      [puzzleDate, JSON.stringify(grid)]
-    );
-  } else {
-    const grid = existing.user_grid;
-    if (letter === '') {
-      delete grid[`${row},${col}`];
-    } else {
-      grid[`${row},${col}`] = letter;
-    }
-    await pool.query(
-      `UPDATE puzzle_state SET user_grid = $1, updated_at = NOW()
-       WHERE puzzle_date = $2`,
-      [JSON.stringify(grid), puzzleDate]
+       VALUES ($1, $2, NOW())
+       ON CONFLICT (puzzle_date) DO UPDATE
+       SET user_grid = puzzle_state.user_grid || $2, updated_at = NOW()`,
+      [puzzleDate, JSON.stringify({ [key]: letter })]
     );
   }
 }
@@ -318,25 +313,21 @@ async function getUserCount() {
 
 async function upsertCellFiller(puzzleDate, row, col, name) {
   const key = `${row},${col}`;
-  const existing = await getState(puzzleDate);
-  if (!existing) {
-    // No state row yet — create one with just the filler
-    const fillers = name ? { [key]: name } : {};
+  if (!name) {
+    // Delete key atomically using JSONB - operator
     await pool.query(
-      `INSERT INTO puzzle_state (puzzle_date, user_grid, cell_fillers, updated_at)
-       VALUES ($1, '{}', $2, NOW())`,
-      [puzzleDate, JSON.stringify(fillers)]
+      `UPDATE puzzle_state SET cell_fillers = COALESCE(cell_fillers, '{}'::jsonb) - $1
+       WHERE puzzle_date = $2`,
+      [key, puzzleDate]
     );
   } else {
-    const fillers = existing.cell_fillers || {};
-    if (name) {
-      fillers[key] = name;
-    } else {
-      delete fillers[key];
-    }
+    // Set key atomically using JSONB || operator with INSERT ... ON CONFLICT
     await pool.query(
-      'UPDATE puzzle_state SET cell_fillers = $1 WHERE puzzle_date = $2',
-      [JSON.stringify(fillers), puzzleDate]
+      `INSERT INTO puzzle_state (puzzle_date, user_grid, cell_fillers, updated_at)
+       VALUES ($1, '{}', $2, NOW())
+       ON CONFLICT (puzzle_date) DO UPDATE
+       SET cell_fillers = COALESCE(puzzle_state.cell_fillers, '{}'::jsonb) || $2`,
+      [puzzleDate, JSON.stringify({ [key]: name })]
     );
   }
 }
