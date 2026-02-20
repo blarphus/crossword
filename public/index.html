@@ -3260,7 +3260,9 @@ function render() {
       // Cell filler color: colored inset box-shadow showing who typed the letter
       const fillerColor = cellColors.get(key);
       if (fillerColor && userGrid[r][c]) {
-        el.style.boxShadow = `inset 0 0 0 2px ${fillerColor}`;
+        const isPending = fillerColor === '#3B82F6';
+        const thickness = isPending ? '3px' : '2px';
+        el.style.boxShadow = `inset 0 0 0 ${thickness} ${fillerColor}`;
       } else {
         el.style.boxShadow = '';
       }

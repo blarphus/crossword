@@ -970,6 +970,31 @@ async function startAiSolving(puzzleDate) {
 
     // Recursive chain: process one word at a time
     const BOT_PENDING_COLOR = '#3B82F6'; // blue while word is in progress
+
+    // Shared wander helper — wanders for `duration` ms then calls `cb`
+    const doWanderFor = (duration, cb) => {
+      let wanderR = cursorR, wanderC = cursorC;
+      let elapsed = 0;
+      const step = () => {
+        if (!isAlive()) return;
+        const hopDelay = 300 + Math.random() * 600;
+        if (elapsed + hopDelay < duration) {
+          const [hr, hc] = randomHop(pData, wanderR, wanderC);
+          wanderR = hr; wanderC = hc;
+          emitCursor(hr, hc, Math.random() < 0.5 ? 'across' : 'down');
+          elapsed += hopDelay;
+          const t = setTimeout(step, hopDelay);
+          bot.timers.push(t);
+        } else {
+          const remaining = Math.max(0, duration - elapsed);
+          const t = setTimeout(cb, remaining);
+          bot.timers.push(t);
+        }
+      };
+      const t = setTimeout(step, 100);
+      bot.timers.push(t);
+    };
+
     const processWord = (wi) => {
       if (!isAlive() || wi >= allWords.length) return;
 
@@ -982,33 +1007,10 @@ async function startAiSolving(puzzleDate) {
         bot.timers.push(t);
       };
 
-      // Roll wanderChance — if hit, wander for wanderTimeMs before filling
-      if (Math.random() < wanderChance) {
-        let wanderR = cursorR, wanderC = cursorC;
-        let elapsed = 0;
-        const doWander = () => {
-          if (!isAlive()) return;
-          const hopDelay = 300 + Math.random() * 600;
-          if (elapsed + hopDelay < wanderTimeMs) {
-            const [hr, hc] = randomHop(pData, wanderR, wanderC);
-            wanderR = hr; wanderC = hc;
-            emitCursor(hr, hc, Math.random() < 0.5 ? 'across' : 'down');
-            elapsed += hopDelay;
-            const t = setTimeout(doWander, hopDelay);
-            bot.timers.push(t);
-          } else {
-            const remaining = Math.max(0, wanderTimeMs - elapsed);
-            const t = setTimeout(startFilling, remaining);
-            bot.timers.push(t);
-          }
-        };
-        const t = setTimeout(doWander, 100);
-        bot.timers.push(t);
-      } else {
-        // No wander — go straight to filling with small delay
-        const t = setTimeout(startFilling, 50 + Math.random() * 150);
-        bot.timers.push(t);
-      }
+      // Always wander at least once between words; coin flip decides duration
+      const fullWander = Math.random() < wanderChance;
+      const duration = fullWander ? wanderTimeMs : (400 + Math.random() * 800);
+      doWanderFor(duration, startFilling);
 
       const startFillingWord = async (wi, ci) => {
         if (!isAlive()) return;
@@ -1068,8 +1070,8 @@ async function startAiSolving(puzzleDate) {
       };
     };
 
-    // Kick off the chain
-    processWord(0);
+    // Wander for 5 seconds before starting to solve
+    doWanderFor(5000, () => processWord(0));
   }
 }
 
