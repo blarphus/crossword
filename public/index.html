@@ -242,12 +242,13 @@ body {
 }
 /* Per-user fire in presence bar */
 .presence-fire-header {
-  display: none;
+  display: flex;
   flex-direction: column;
   align-items: center;
   width: 100%;
+  visibility: hidden;
 }
-.presence-user.on-fire .presence-fire-header { display: flex; }
+.presence-user.on-fire .presence-fire-header { visibility: visible; }
 .presence-user.on-fire { box-shadow: 0 0 4px rgba(255,106,0,0.4); }
 .presence-flames {
   width: 48px;
