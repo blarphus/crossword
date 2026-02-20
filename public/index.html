@@ -452,6 +452,7 @@ body {
 }
 .clue-item:hover { background: var(--clue-hover); }
 .clue-item.active { background: var(--clue-active); }
+.clue-item.ref-active { background: #fff3b0; }
 .clue-item.solved { opacity: 0.45; text-decoration: line-through; }
 .clue-item.solved.active { opacity: 0.6; }
 .clue-item .clue-num { font-weight: 700; min-width: 24px; }
@@ -3166,10 +3167,25 @@ function getWordLen(clue, dir) {
 
 function parseReferencedClues(clueText) {
   const refs = [];
-  const regex = /(\d+)[-\s]?([Aa]cross|[Dd]own)/g;
+  // Match explicit "N-Across" or "N-Down" references
+  const explicitRegex = /(\d+)[-\s]?([Aa]cross|[Dd]own)/g;
   let m;
-  while ((m = regex.exec(clueText)) !== null) {
+  while ((m = explicitRegex.exec(clueText)) !== null) {
     refs.push({ n: parseInt(m[1]), dir: m[2].toLowerCase() });
+  }
+  // Match grouped references like "24-, 38- and 49-Across" or "12- and 15-Down"
+  // Pattern: sequence of "N-," or "N- and" before an explicit direction
+  const groupRegex = /(?:(\d+)-[\s,]+(?:and\s+)?)+(\d+)[-\s]?([Aa]cross|[Dd]own)/g;
+  while ((m = groupRegex.exec(clueText)) !== null) {
+    const dir = m[3].toLowerCase();
+    // Extract the full matched substring and pull all numbers from it
+    const fragment = m[0];
+    const nums = [...fragment.matchAll(/(\d+)/g)].map(x => parseInt(x[1]));
+    for (const n of nums) {
+      if (!refs.some(r => r.n === n && r.dir === dir)) {
+        refs.push({ n, dir });
+      }
+    }
   }
   return refs;
 }
@@ -3430,8 +3446,16 @@ function render() {
     clueBarTextEl.innerHTML = '&nbsp;';
   }
 
+  // Build set of referenced clue keys for panel highlighting
+  const refClueKeys = new Set();
+  if (currentClue) {
+    for (const ref of parseReferencedClues(currentClue.clue)) {
+      refClueKeys.add(`${ref.dir}-${ref.n}`);
+    }
+  }
+
   for (const k in clueItemEls) {
-    clueItemEls[k].classList.remove('active');
+    clueItemEls[k].classList.remove('active', 'ref-active');
   }
   if (currentClue) {
     const k = `${direction}-${currentClue.n}`;
@@ -3451,6 +3475,12 @@ function render() {
         } else if (elRect.bottom > sectionRect.bottom) {
           section.scrollTop += elRect.bottom - sectionRect.bottom;
         }
+      }
+    }
+    // Highlight referenced clues in the panel
+    for (const refKey of refClueKeys) {
+      if (clueItemEls[refKey]) {
+        clueItemEls[refKey].classList.add('ref-active');
       }
     }
   }
