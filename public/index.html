@@ -2009,14 +2009,15 @@ function showPuzzleEntryOverlay(dateStr, paused) {
     startBtn.removeEventListener('click', handleStart);
     changeNameBtn.removeEventListener('click', handleChangeName);
     addBotBtn.removeEventListener('click', handleAddBot);
-    // Start AI solving for all bots
-    if (socket && dateStr && aiBotList.length > 0) {
-      socket.emit('start-ai', { puzzleDate: dateStr });
-    }
-    // Resume timer if this was a pause
     if (paused && socket && currentDate) {
+      // Resume: unpause bots and restart timer (resume-puzzle handles bot restart)
       socket.emit('resume-puzzle', { puzzleDate: currentDate });
       startTimerTick();
+    } else {
+      // Fresh start: kick off AI solving
+      if (socket && dateStr && aiBotList.length > 0) {
+        socket.emit('start-ai', { puzzleDate: dateStr });
+      }
     }
     // Auto-focus the grid so typing works immediately
     setTimeout(() => focusGrid(), 50);
