@@ -1560,8 +1560,9 @@ function hasRebus() {
 // Grid zoom state (mobile pinch-to-zoom)
 let gridScale = 1, gridTx = 0, gridTy = 0;
 
-// Solve timer state
-let timerSeconds = 0;
+// Solve timer state — wall-clock based so it doesn't drift when tab is hidden
+let timerBaseSeconds = 0;   // server-synced seconds at the moment we started ticking
+let timerBaseTime = 0;      // Date.now() when we started ticking from timerBaseSeconds
 let timerInterval = null;
 const timerEl = document.getElementById('solve-timer');
 
@@ -1573,16 +1574,19 @@ function formatTimer(s) {
   return `${mins}:${String(secs).padStart(2,'0')}`;
 }
 
+function getTimerSeconds() {
+  if (!timerBaseTime) return timerBaseSeconds;
+  return timerBaseSeconds + Math.floor((Date.now() - timerBaseTime) / 1000);
+}
+
 function updateTimerDisplay() {
-  timerEl.textContent = formatTimer(timerSeconds);
+  timerEl.textContent = formatTimer(getTimerSeconds());
 }
 
 function startTimerTick() {
+  if (!timerBaseTime) timerBaseTime = Date.now();
   if (timerInterval) return;
-  timerInterval = setInterval(() => {
-    timerSeconds++;
-    updateTimerDisplay();
-  }, 1000);
+  timerInterval = setInterval(updateTimerDisplay, 1000);
 }
 
 function stopTimerTick() {
@@ -1591,6 +1595,17 @@ function stopTimerTick() {
     timerInterval = null;
   }
 }
+
+// When tab becomes visible again, immediately update display and re-request state
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') {
+    updateTimerDisplay();
+    // Ask server for fresh state so bot progress catches up
+    if (socket && currentDate) {
+      socket.emit('request-state', { puzzleDate: currentDate });
+    }
+  }
+});
 
 // ─── Remote user presence ──────────────────────────────────────
 const remoteUsers = new Map(); // socketId → {userId, userName, color, row, col, direction}
@@ -1841,7 +1856,8 @@ function showCalendar(pushState = true) {
     currentDate = null;
   }
   stopTimerTick();
-  timerSeconds = 0;
+  timerBaseSeconds = 0;
+  timerBaseTime = 0;
   updateTimerDisplay();
   resetFireState();
   localStorage.removeItem('crossword-current-puzzle');
@@ -2768,9 +2784,38 @@ function setupSocketHandlers() {
   });
 
   socket.on('timer-sync', ({ seconds }) => {
-    timerSeconds = seconds;
+    timerBaseSeconds = seconds;
+    timerBaseTime = Date.now();
     updateTimerDisplay();
     startTimerTick();
+  });
+
+  // Catch up on bot progress / timer after tab was hidden
+  socket.on('state-refresh', ({ userGrid: grid, cellFillers: fillers, userColors: colors, seconds }) => {
+    if (!PUZZLE) return;
+    // Update timer
+    timerBaseSeconds = seconds;
+    timerBaseTime = Date.now();
+    updateTimerDisplay();
+    // Apply grid and filler updates
+    for (const [key, letter] of Object.entries(grid)) {
+      const [r, c] = key.split(',').map(Number);
+      if (r >= 0 && r < ROWS && c >= 0 && c < COLS) {
+        userGrid[r][c] = letter;
+        if (autoCheck && isCellCorrect(r, c, letter)) checkedCells[r][c] = true;
+      }
+    }
+    if (fillers) {
+      for (const [key, name] of Object.entries(fillers)) {
+        if (name && name !== '(hint)') {
+          const color = (colors && colors[name]) || '#ccc';
+          cellFillers.set(key, { userName: name, color });
+          cellColors.set(key, color);
+        }
+      }
+    }
+    render();
+    checkCompletion();
   });
 
   socket.on('puzzle-cleared', () => {

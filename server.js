@@ -1196,6 +1196,25 @@ io.on('connection', async (socket) => {
     }
   });
 
+  // Lightweight state refresh (used when tab regains focus)
+  socket.on('request-state', async ({ puzzleDate }) => {
+    try {
+      const state = await db.getState(puzzleDate);
+      if (!state) return;
+      const userColors = {};
+      const room = puzzleRooms.get(puzzleDate);
+      if (room) for (const [, info] of room) { if (info.userName) userColors[info.userName] = info.color; }
+      socket.emit('state-refresh', {
+        userGrid: state.user_grid || {},
+        cellFillers: state.cell_fillers || {},
+        userColors,
+        seconds: getElapsedSeconds(puzzleDate),
+      });
+    } catch (err) {
+      console.error('[ws] request-state error:', err);
+    }
+  });
+
   // ─── Hint voting ───────────────────────────────────────────────
   socket.on('hint-vote', async ({ puzzleDate }) => {
     try {
