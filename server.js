@@ -862,7 +862,27 @@ function distributeAiTiming(cellCount, finalSolveTime, wordCount) {
   return { thinkTimes, cellTimes };
 }
 
-// Wander duration is now driven by per-word thinkTime budget (no coin-flip).
+// Per-(day, difficulty) wander parameters: after each word, the bot has
+// wanderChance probability of wandering for wanderTime ms before the next word.
+// Values calibrated via Monte Carlo simulation so E[totalTime] ≈ target time.
+const AI_WANDER_CHANCE = [
+  [0.78, 0.52, 0.65, 0.61, 0.25], // Sun
+  [0.40, 0.78, 0.75, 0.14, 0.36], // Mon
+  [0.75, 0.80, 0.25, 0.42, 0.18], // Tue
+  [0.72, 0.40, 0.74, 0.46, 0.27], // Wed
+  [0.75, 0.78, 0.45, 0.46, 0.50], // Thu
+  [0.75, 0.72, 0.75, 0.67, 0.50], // Fri
+  [0.84, 0.80, 0.74, 0.55, 0.74], // Sat
+];
+const AI_WANDER_TIME = [
+  [5712, 7221, 4537, 4166, 8000], // Sun
+  [4291, 1839, 1519, 6958, 2130], // Mon
+  [2871, 2267, 5684, 2913, 5328], // Tue
+  [5256, 8000, 3368, 4682, 6319], // Wed
+  [6611, 5332, 7292, 6119, 4486], // Thu
+  [8000, 7104, 5357, 5161, 5496], // Fri
+  [8000, 8000, 6867, 8000, 4711], // Sat
+];
 
 // Generate a single random cursor hop (2-5 squares in a random direction)
 function randomHop(pData, fromR, fromC) {
@@ -942,44 +962,51 @@ async function startAiSolving(puzzleDate) {
     let cursorC = allWords[0].cells[0].col;
     let cellIdx = 0; // index into timing.cellTimes
 
+    // Compute day-of-week once for wander params
+    const dateObj = new Date(puzzleDate + 'T12:00:00');
+    const dow = dateObj.getDay();
+    const wanderChance = AI_WANDER_CHANCE[dow][bot.difficultyIndex];
+    const wanderTimeMs = AI_WANDER_TIME[dow][bot.difficultyIndex];
+
     // Recursive chain: process one word at a time
     const processWord = (wi) => {
       if (!isAlive() || wi >= allWords.length) return;
 
       const word = allWords[wi];
-      const thinkBudget = timing.thinkTimes[wi] || 200; // ms budget for wandering
 
-      let wanderR = cursorR, wanderC = cursorC;
-      let elapsed = 0;
-
-      const doWander = () => {
-        if (!isAlive()) return;
-
-        // Each hop takes 300-900ms
-        const hopDelay = 300 + Math.random() * 600;
-
-        if (elapsed + hopDelay < thinkBudget) {
-          // Still have budget — do a random hop
-          const [hr, hc] = randomHop(pData, wanderR, wanderC);
-          wanderR = hr; wanderC = hc;
-          emitCursor(hr, hc, Math.random() < 0.5 ? 'across' : 'down');
-          elapsed += hopDelay;
-          const t = setTimeout(doWander, hopDelay);
-          bot.timers.push(t);
-        } else {
-          // Budget exhausted — land on target word and start filling
-          const remainingBudget = Math.max(0, thinkBudget - elapsed);
-          emitCursor(word.cells[0].row, word.cells[0].col, word.dir);
-          const t = setTimeout(() => startFillingWord(wi, 0), remainingBudget + 100);
-          bot.timers.push(t);
-        }
+      const startFilling = () => {
+        emitCursor(word.cells[0].row, word.cells[0].col, word.dir);
+        const t = setTimeout(() => startFillingWord(wi, 0), 100);
+        bot.timers.push(t);
       };
 
-      // Start with a small initial delay
-      const initDelay = 100 + Math.random() * 200;
-      elapsed += initDelay;
-      const t = setTimeout(doWander, initDelay);
-      bot.timers.push(t);
+      // Roll wanderChance — if hit, wander for wanderTimeMs before filling
+      if (Math.random() < wanderChance) {
+        let wanderR = cursorR, wanderC = cursorC;
+        let elapsed = 0;
+        const doWander = () => {
+          if (!isAlive()) return;
+          const hopDelay = 300 + Math.random() * 600;
+          if (elapsed + hopDelay < wanderTimeMs) {
+            const [hr, hc] = randomHop(pData, wanderR, wanderC);
+            wanderR = hr; wanderC = hc;
+            emitCursor(hr, hc, Math.random() < 0.5 ? 'across' : 'down');
+            elapsed += hopDelay;
+            const t = setTimeout(doWander, hopDelay);
+            bot.timers.push(t);
+          } else {
+            const remaining = Math.max(0, wanderTimeMs - elapsed);
+            const t = setTimeout(startFilling, remaining);
+            bot.timers.push(t);
+          }
+        };
+        const t = setTimeout(doWander, 100);
+        bot.timers.push(t);
+      } else {
+        // No wander — go straight to filling with small delay
+        const t = setTimeout(startFilling, 50 + Math.random() * 150);
+        bot.timers.push(t);
+      }
 
       const startFillingWord = async (wi, ci) => {
         if (!isAlive()) return;
