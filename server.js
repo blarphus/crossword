@@ -884,16 +884,16 @@ const AI_WANDER_TIME = [
   [8000, 8000, 6867, 8000, 4711], // Sat
 ];
 
-// Arrow-key step: move one cell in a cardinal direction, clamped to grid
-// dir: 0=up, 1=down, 2=left, 3=right
-function arrowStep(pData, fromR, fromC, dir) {
+// Generate a single random cursor hop (2-5 squares in a random direction)
+function randomHop(pData, fromR, fromC) {
   const maxR = pData.dimensions.rows;
   const maxC = pData.dimensions.cols;
-  const dr = dir === 0 ? -1 : dir === 1 ? 1 : 0;
-  const dc = dir === 2 ? -1 : dir === 3 ? 1 : 0;
+  const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+  const dist = 2 + Math.floor(Math.random() * 4);
+  const angle = Math.random() * Math.PI * 2;
   return [
-    Math.max(0, Math.min(maxR - 1, fromR + dr)),
-    Math.max(0, Math.min(maxC - 1, fromC + dc)),
+    clamp(Math.round(fromR + Math.sin(angle) * dist), 0, maxR - 1),
+    clamp(Math.round(fromC + Math.cos(angle) * dist), 0, maxC - 1),
   ];
 }
 
@@ -986,38 +986,19 @@ async function startAiSolving(puzzleDate) {
       if (Math.random() < wanderChance) {
         let wanderR = cursorR, wanderC = cursorC;
         let elapsed = 0;
-        // Arrow-key wandering: hold a direction for a streak, pause, pick new dir
-        let arrowDir = Math.floor(Math.random() * 4); // 0=up 1=down 2=left 3=right
-        let streakLeft = 2 + Math.floor(Math.random() * 5); // 2-6 cells per streak
         const doWander = () => {
           if (!isAlive()) return;
-          if (elapsed >= wanderTimeMs) {
-            const t = setTimeout(startFilling, 0);
-            bot.timers.push(t);
-            return;
-          }
-          // Move one cell in current direction
-          const [nr, nc] = arrowStep(pData, wanderR, wanderC, arrowDir);
-          const hitEdge = nr === wanderR && nc === wanderC;
-          streakLeft--;
-          if (hitEdge || streakLeft <= 0) {
-            // Pick a new direction (different from current) and new streak length
-            const prev = arrowDir;
-            arrowDir = (prev + 1 + Math.floor(Math.random() * 3)) % 4;
-            streakLeft = 2 + Math.floor(Math.random() * 5);
-            // Pause between streaks like releasing then pressing a new arrow key
-            const pauseDelay = 250 + Math.random() * 450;
-            elapsed += pauseDelay;
-            const t = setTimeout(doWander, pauseDelay);
+          const hopDelay = 300 + Math.random() * 600;
+          if (elapsed + hopDelay < wanderTimeMs) {
+            const [hr, hc] = randomHop(pData, wanderR, wanderC);
+            wanderR = hr; wanderC = hc;
+            emitCursor(hr, hc, Math.random() < 0.5 ? 'across' : 'down');
+            elapsed += hopDelay;
+            const t = setTimeout(doWander, hopDelay);
             bot.timers.push(t);
           } else {
-            wanderR = nr; wanderC = nc;
-            const dir = arrowDir <= 1 ? 'down' : 'across';
-            emitCursor(nr, nc, dir);
-            // Key-repeat speed within a streak
-            const repeatDelay = 80 + Math.random() * 120;
-            elapsed += repeatDelay;
-            const t = setTimeout(doWander, repeatDelay);
+            const remaining = Math.max(0, wanderTimeMs - elapsed);
+            const t = setTimeout(startFilling, remaining);
             bot.timers.push(t);
           }
         };
