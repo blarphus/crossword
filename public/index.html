@@ -1303,6 +1303,59 @@ function sfxFireStart(remote) {
   osc.stop(t + 0.6);
 }
 
+function sfxCombo(remote) {
+  const p = remote ? REMOTE_PITCH : 1;
+  const v = remote ? REMOTE_VOL : 1;
+  const ctx = getAudioCtx();
+  const t = ctx.currentTime;
+  // Triumphant power chord: C5 E5 G5 rapid staccato + shimmer
+  [523, 659, 784].forEach((freq, i) => {
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.type = 'triangle';
+    osc.frequency.value = freq * p;
+    const start = t + i * 0.06;
+    gain.gain.setValueAtTime(0.13 * v, start);
+    gain.gain.exponentialRampToValueAtTime(0.001, start + 0.3);
+    osc.start(start);
+    osc.stop(start + 0.3);
+  });
+  // High shimmer accent
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  osc.connect(gain);
+  gain.connect(ctx.destination);
+  osc.type = 'sine';
+  osc.frequency.value = 1568 * p; // G6
+  gain.gain.setValueAtTime(0, t + 0.15);
+  gain.gain.linearRampToValueAtTime(0.1 * v, t + 0.2);
+  gain.gain.exponentialRampToValueAtTime(0.001, t + 0.5);
+  osc.start(t + 0.15);
+  osc.stop(t + 0.5);
+}
+
+function sfxFireExtend(remote) {
+  const p = remote ? REMOTE_PITCH : 1;
+  const v = remote ? REMOTE_VOL : 1;
+  const ctx = getAudioCtx();
+  const t = ctx.currentTime;
+  // Quick ascending whoosh
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  osc.connect(gain);
+  gain.connect(ctx.destination);
+  osc.type = 'sawtooth';
+  osc.frequency.setValueAtTime(400 * p, t);
+  osc.frequency.exponentialRampToValueAtTime(1200 * p, t + 0.15);
+  gain.gain.setValueAtTime(0.05 * v, t);
+  gain.gain.linearRampToValueAtTime(0.08 * v, t + 0.08);
+  gain.gain.exponentialRampToValueAtTime(0.001, t + 0.2);
+  osc.start(t);
+  osc.stop(t + 0.2);
+}
+
 function sfxFireBreak(remote) {
   const p = remote ? REMOTE_PITCH : 1;
   const v = remote ? REMOTE_VOL : 1;
@@ -2315,8 +2368,9 @@ function sendCellUpdate(row, col, letter) {
           let wb = rawWb;
           if (wasOnFire) wb = Math.round(wb * myFireMultiplier);
           persistedPoints.set(myName, (persistedPoints.get(myName) || 0) + wb);
-          setTimeout(() => showPointFloat(row, col, wb, wb >= (wasOnFire ? 125 : 250) ? 'combo' : 'word', wasOnFire), 200);
-          sfxWordComplete();
+          const isCombo = wb >= (wasOnFire ? 125 : 250);
+          setTimeout(() => showPointFloat(row, col, wb, isCombo ? 'combo' : 'word', wasOnFire), 200);
+          if (isCombo) sfxCombo(); else sfxWordComplete();
           triggerWordWave(row, col);
 
           // Get all cells this user has filled for fire display
@@ -2330,6 +2384,7 @@ function sendCellUpdate(row, col, letter) {
             myFireWordsCompleted += wordsCompleted;
             myFireMultiplier = 1.5 + Math.floor(myFireWordsCompleted / 3) * 0.5;
             extendMyFire(allUserCells, myFireExpiresAt + 5000);
+            sfxFireExtend();
           }
 
           // Track word completions toward fire trigger (only when not on fire)
@@ -2686,6 +2741,7 @@ function handleRemoteFireEvent(fireEvent, remoteUserId) {
       const [r, c] = key.split(',').map(Number);
       if (cellEls[r]?.[c]) cellEls[r][c].classList.add('on-fire');
     }
+    sfxFireStart(true);
     startPresenceFireInterval();
     renderPresenceBar();
   } else if (fireEvent.type === 'extended') {
@@ -2700,6 +2756,7 @@ function handleRemoteFireEvent(fireEvent, remoteUserId) {
         const [r2, c2] = key.split(',').map(Number);
         if (cellEls[r2]?.[c2]) cellEls[r2][c2].classList.add('on-fire');
       }
+      sfxFireExtend(true);
       renderPresenceBar();
     }
   } else if (fireEvent.type === 'broken') {
@@ -2711,6 +2768,7 @@ function handleRemoteFireEvent(fireEvent, remoteUserId) {
       }
       remoteFireStates.delete(remoteSocketId);
     }
+    sfxFireBreak(true);
     showComboBroken();
     renderPresenceBar();
   }
@@ -2806,6 +2864,7 @@ function setupSocketHandlers() {
         persistedPoints.set(remoteName, (persistedPoints.get(remoteName) || 0) + wordBonus);
         const isCombo = wordBonus >= 250;
         setTimeout(() => showPointFloat(row, col, wordBonus, isCombo ? 'combo' : 'word', isFireBoosted), 200);
+        if (isCombo) sfxCombo(true); else sfxWordComplete(true);
         triggerWordWave(row, col, remoteColor);
       }
       // Apply remote last-square bonus
