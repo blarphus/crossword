@@ -3463,6 +3463,35 @@ function retreatCursor() {
   }
 }
 
+// After filling the last cell of a word, jump to the next sequential clue in the same direction
+function advanceToNextClueIfWordFilled(typedRow, typedCol) {
+  const clue = getClueForCell(typedRow, typedCol, direction);
+  if (!clue) return;
+  const cells = getWordCells(clue, direction);
+  if (!cells.every(([r, c]) => userGrid[r]?.[c])) return; // not all filled yet
+
+  const clues = direction === 'across' ? PUZZLE.clues.across : PUZZLE.clues.down;
+  const idx = clues.findIndex(c => c.n === clue.n);
+  if (idx === -1) return;
+
+  // Try clues after current, then wrap from beginning
+  for (let i = 1; i <= clues.length; i++) {
+    const next = clues[(idx + i) % clues.length];
+    const nextCells = getWordCells(next, direction);
+    const firstEmpty = nextCells.find(([r, c]) => !userGrid[r]?.[c]);
+    if (firstEmpty) {
+      [selectedRow, selectedCol] = firstEmpty;
+      return;
+    }
+    // If fully filled, still jump there (to first cell) so user sees progression
+    if (i === 1 || (idx + i) % clues.length === idx) {
+      selectedRow = next.row;
+      selectedCol = next.col;
+      return;
+    }
+  }
+}
+
 function isWordSolved(clue, dir) {
   const cells = getWordCells(clue, dir);
   return cells.every(([r, c]) => isCellCorrect(r, c));
@@ -3636,6 +3665,7 @@ mobileInput.addEventListener('input', (e) => {
       render();
       return;
     }
+    const typedRow = selectedRow, typedCol = selectedCol;
     if (!checkedCells[selectedRow][selectedCol]) {
       const letter = char.toUpperCase();
       userGrid[selectedRow][selectedCol] = letter;
@@ -3646,6 +3676,7 @@ mobileInput.addEventListener('input', (e) => {
     }
     render();
     advanceCursor(true);
+    advanceToNextClueIfWordFilled(typedRow, typedCol);
     render();
     checkCompletion();
   }
@@ -3794,6 +3825,7 @@ gridEl.addEventListener('keydown', (e) => {
   }
   else if (/^[a-zA-Z]$/.test(key)) {
     e.preventDefault();
+    const typedRow = selectedRow, typedCol = selectedCol;
     if (!checkedCells[selectedRow][selectedCol]) {
       const letter = key.toUpperCase();
       userGrid[selectedRow][selectedCol] = letter;
@@ -3803,6 +3835,7 @@ gridEl.addEventListener('keydown', (e) => {
       }
     }
     advanceCursor(true);
+    advanceToNextClueIfWordFilled(typedRow, typedCol);
     render();
     checkCompletion();
   }
