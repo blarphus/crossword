@@ -796,6 +796,28 @@ body.mobile .mobile-keyboard { display: block; position: static; flex-shrink: 0;
   animation: combo-broken-anim 1.5s ease-out forwards;
 }
 
+/* Fire announcement banner */
+@keyframes fire-announce-anim {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(0.5); }
+  20% { opacity: 1; transform: translate(-50%, -50%) scale(1.1); }
+  70% { opacity: 1; transform: translate(-50%, -50%) scale(1.1); }
+  100% { opacity: 0; transform: translate(-50%, -50%) scale(0.9); }
+}
+.fire-announce {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0.5);
+  font-size: 1.5rem;
+  font-weight: 900;
+  color: #ff6a00;
+  text-shadow: 0 0 12px rgba(255,106,0,0.6), 0 2px 6px rgba(0,0,0,0.3);
+  pointer-events: none;
+  z-index: 20;
+  white-space: nowrap;
+  animation: fire-announce-anim 2s ease-out forwards;
+}
+
 /* Fire-boosted point floats */
 .point-float.fire-points {
   color: #ff6a00;
@@ -2704,6 +2726,16 @@ function showComboBroken() {
   el.addEventListener('animationend', () => el.remove());
 }
 
+function showFireAnnounce(name) {
+  const container = document.querySelector('.grid-container');
+  if (!container) return;
+  const el = document.createElement('div');
+  el.className = 'fire-announce';
+  el.textContent = `${name} is on fire!`;
+  container.appendChild(el);
+  el.addEventListener('animationend', () => el.remove());
+}
+
 function handleRemoteFireEvent(fireEvent, remoteUserId) {
   // Find socketId for this remote user
   let remoteSocketId = null;
@@ -2724,6 +2756,7 @@ function handleRemoteFireEvent(fireEvent, remoteUserId) {
       if (cellEls[r]?.[c]) cellEls[r][c].classList.add('on-fire');
     }
     sfxFireStart(true);
+    showFireAnnounce(fireEvent.userName);
     startPresenceFireInterval();
     renderPresenceBar();
   } else if (fireEvent.type === 'extended') {
