@@ -153,17 +153,15 @@ body {
 #puzzle-view { display: none; flex-direction: column; height: 100vh; overflow: hidden; }
 
 .puzzle-header {
-  text-align: center;
-  padding: 16px;
+  display: flex;
+  align-items: center;
+  padding: 10px 16px;
   background: var(--white);
   border-bottom: 2px solid #ddd;
   flex-shrink: 0;
+  gap: 12px;
 }
 .puzzle-header .back-btn {
-  position: absolute;
-  left: 16px;
-  top: 50%;
-  transform: translateY(-50%);
   padding: 6px 14px;
   border: 1px solid #ccc;
   border-radius: 4px;
@@ -171,21 +169,17 @@ body {
   cursor: pointer;
   font-size: 0.85rem;
   transition: background 0.15s;
+  flex-shrink: 0;
 }
 .puzzle-header .back-btn:hover { background: #eee; }
-.puzzle-header { position: relative; }
+.puzzle-header .header-center { flex: 1; min-width: 0; text-align: center; }
 .puzzle-header h1 { font-size: 1.3rem; font-weight: 700; }
-.puzzle-header .meta { font-size: 0.85rem; color: #666; margin-top: 4px; }
+.puzzle-header .meta { font-size: 0.85rem; color: #666; margin-top: 2px; }
 
 .toolbar {
   display: flex;
-  justify-content: center;
   align-items: center;
-  gap: 12px;
-  padding: 10px;
-  background: var(--white);
-  border-bottom: 1px solid #ddd;
-  flex-wrap: wrap;
+  gap: 8px;
   flex-shrink: 0;
 }
 .toolbar-back { display: none; }
@@ -700,12 +694,15 @@ body.mobile .star-overlay { font-size: 1.1rem; }
 /* Puzzle view fills screen as flex column */
 body.mobile #puzzle-view { position: fixed; inset: 0; overflow: hidden; }
 
-/* Mobile: hide puzzle-header entirely, use compact toolbar */
-body.mobile .puzzle-header { display: none; }
+/* Mobile: hide header center (title/meta), show only toolbar */
+body.mobile .puzzle-header { padding: 0; border-bottom: none; }
+body.mobile .puzzle-header .back-btn { display: none; }
+body.mobile .puzzle-header .header-center { display: none; }
 
 body.mobile .toolbar {
   gap: 0; padding: 6px 10px; flex-shrink: 0; flex-wrap: nowrap;
   justify-content: flex-start; border-bottom: 1px solid #ddd;
+  width: 100%;
 }
 body.mobile .toolbar-back {
   display: flex; align-items: center; justify-content: center;
@@ -1140,19 +1137,20 @@ body.mobile .mobile-keyboard { display: block; position: static; flex-shrink: 0;
 <div id="puzzle-view">
   <div class="puzzle-header">
     <button class="back-btn" id="btn-back">&larr; Calendar</button>
-    <h1 id="puzzle-title">The New York Times Crossword</h1>
-    <div class="meta" id="puzzle-meta"></div>
-    <div class="rebus-indicator" id="rebus-indicator" style="display:none">This puzzle contains rebus squares</div>
-  </div>
-
-  <div class="toolbar">
-    <button class="toolbar-back" id="btn-back-mobile" title="Back to calendar">&#x2304;</button>
-    <span class="solve-timer" id="solve-timer">0:00</span>
-    <div class="toolbar-spacer"></div>
-    <button id="btn-pause" title="Pause"><span class="btn-label">Pause</span></button>
-    <button id="btn-clear" title="Clear Puzzle"><span class="btn-label">Clear Puzzle</span></button>
-    <button id="btn-reveal" title="Reveal Puzzle"><span class="btn-label">Reveal Puzzle</span></button>
-    <button id="btn-rebus" style="display:none"><span class="btn-label">Rebus</span></button>
+    <div class="header-center">
+      <h1 id="puzzle-title">The New York Times Crossword</h1>
+      <div class="meta" id="puzzle-meta"></div>
+      <div class="rebus-indicator" id="rebus-indicator" style="display:none">This puzzle contains rebus squares</div>
+    </div>
+    <div class="toolbar">
+      <button class="toolbar-back" id="btn-back-mobile" title="Back to calendar">&#x2304;</button>
+      <span class="solve-timer" id="solve-timer">0:00</span>
+      <div class="toolbar-spacer"></div>
+      <button id="btn-pause" title="Pause"><span class="btn-label">Pause</span></button>
+      <button id="btn-clear" title="Clear Puzzle"><span class="btn-label">Clear Puzzle</span></button>
+      <button id="btn-reveal" title="Reveal Puzzle"><span class="btn-label">Reveal Puzzle</span></button>
+      <button id="btn-rebus" style="display:none"><span class="btn-label">Rebus</span></button>
+    </div>
   </div>
 
   <div class="presence-bar" id="presence-bar"></div>
