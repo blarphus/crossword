@@ -535,6 +535,20 @@ function leaveCurrentPuzzle(socket) {
 // ─── Extracted cell-update logic (shared by real players and AI bots) ────
 async function processCellUpdate({ puzzleDate, row, col, letter, socketId, userName, userColor, isBot }) {
   const room = `puzzle:${puzzleDate}`;
+
+  // Correct letters are locked — cannot be overwritten or erased
+  const pDataCheck = await getPuzzleData(puzzleDate);
+  if (pDataCheck) {
+    const correctAnswer = getCorrectAnswer(pDataCheck, row, col);
+    if (correctAnswer) {
+      const state = await db.getState(puzzleDate);
+      const currentLetter = state?.user_grid?.[`${row},${col}`];
+      if (currentLetter === correctAnswer && letter !== correctAnswer) {
+        return { pointDelta: 0, wordBonus: 0, fireEvent: null, guessCorrect: null, lastSquareBonus: 0, payload: null };
+      }
+    }
+  }
+
   let pointDelta = 0;
   let wordBonus = 0;
   let fireEvent = null;
@@ -997,7 +1011,6 @@ async function startAiSolving(puzzleDate) {
       if (!isAlive() || wi >= allWords.length) return;
 
       const word = allWords[wi];
-      const botFilledCells = []; // cells this bot fills in current word
 
       const startFilling = () => {
         emitCursor(word.cells[0].row, word.cells[0].col, word.dir);
@@ -1030,13 +1043,7 @@ async function startAiSolving(puzzleDate) {
         }
 
         if (nextCi >= word.cells.length) {
-          // Word is fully filled — clear bot-pending for these cells
-          if (botFilledCells.length > 0) {
-            io.to(`puzzle:${puzzleDate}`).emit('bot-word-done', {
-              cells: botFilledCells.map(fc => ({ row: fc.row, col: fc.col })),
-              botId: bot.botId,
-            });
-          }
+          // Word is fully filled
           cursorR = word.cells[word.cells.length - 1].row;
           cursorC = word.cells[word.cells.length - 1].col;
           processWord(wi + 1);
@@ -1052,14 +1059,9 @@ async function startAiSolving(puzzleDate) {
           if (!isAlive()) return;
           try {
             emitCursor(cell.row, cell.col, word.dir);
-            botFilledCells.push({ row: cell.row, col: cell.col, letter: cell.letter });
             await processCellUpdate({
               puzzleDate, row: cell.row, col: cell.col, letter: cell.letter,
               socketId: bot.botId, userName: bot.name, userColor: bot.color, isBot: true,
-            });
-            // Mark cell as bot-pending (blue) until word completes
-            io.to(`puzzle:${puzzleDate}`).emit('bot-pending', {
-              row: cell.row, col: cell.col, botId: bot.botId,
             });
           } catch (err) {
             console.error('[ai] fill error:', err);
@@ -1149,6 +1151,7 @@ io.on('connection', async (socket) => {
         puzzleDate, row, col, letter,
         socketId: socket.id, userName, userColor, isBot: false,
       });
+      if (!result.payload) return; // cell is locked (correct answer)
       // For real players: broadcast to others (not self) and send fire update to self
       socket.to(`puzzle:${puzzleDate}`).emit('cell-updated', result.payload);
       if (result.fireEvent) {

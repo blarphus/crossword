@@ -1609,9 +1609,7 @@ document.addEventListener('visibilitychange', () => {
 
 // ─── Remote user presence ──────────────────────────────────────
 const remoteUsers = new Map(); // socketId → {userId, userName, color, row, col, direction}
-const cellColors = new Map();  // "r,c" → color (who filled this cell)
 const cellFillers = new Map(); // "r,c" → {userName, color} (who filled this cell)
-const pendingBotCells = new Set(); // "r,c" keys for cells bots are currently filling (shown blue)
 const guessStats = new Map(); // userName → { total, incorrect }
 const persistedPoints = new Map(); // userName → number (base points from DB, excludes word bonuses)
 const roomCounts = new Map();  // puzzleDate → player count
@@ -2051,9 +2049,7 @@ async function loadPuzzle(dateStr) {
   currentDate = dateStr;
   localStorage.setItem('crossword-current-puzzle', dateStr);
   remoteUsers.clear();
-  cellColors.clear();
   cellFillers.clear();
-  pendingBotCells.clear();
   persistedPoints.clear();
   guessStats.clear();
   completedWordCells.clear();
@@ -2212,7 +2208,6 @@ function applySharedState(gridMap, fillersMap, pointsMap, userColorsMap, guesses
         } else {
           const color = (userColorsMap && userColorsMap[name]) || (name === myName ? myColor : '#ccc');
           cellFillers.set(key, { userName: name, color });
-          cellColors.set(key, color);
         }
       }
     }
@@ -2299,7 +2294,6 @@ function sendCellUpdate(row, col, letter) {
   // Prevent modifying hint cells (cannot delete or overwrite)
   if (hintCells.has(key)) return;
   if (letter) {
-    cellColors.set(key, myColor);
     cellFillers.set(key, { userName: myName, color: myColor });
     // Immediate local point scoring with fire mechanic
     if (PUZZLE) {
@@ -2380,7 +2374,6 @@ function sendCellUpdate(row, col, letter) {
       }
     }
   } else {
-    cellColors.delete(key);
     cellFillers.delete(key);
     // Deleting a letter does NOT break fire or count toward streak
   }
@@ -2709,16 +2702,6 @@ function setupSocketHandlers() {
     renderAiBotList();
   });
 
-  // Bot cell pending (blue) / done (switch to bot color)
-  socket.on('bot-pending', ({ row, col }) => {
-    pendingBotCells.add(`${row},${col}`);
-    if (PUZZLE) render();
-  });
-  socket.on('bot-word-done', ({ cells }) => {
-    for (const { row, col } of cells) pendingBotCells.delete(`${row},${col}`);
-    if (PUZZLE) render();
-  });
-
   socket.on('user-left', ({ socketId }) => {
     remoteUsers.delete(socketId);
     renderPresenceBar();
@@ -2751,7 +2734,6 @@ function setupSocketHandlers() {
       const key = `${row},${col}`;
       if (letter) {
         const color = remoteColor || findColorForUser(remoteUserId);
-        cellColors.set(key, color);
         cellFillers.set(key, { userName: remoteName || 'User', color });
         if (autoCheck && isCellCorrect(row, col, letter)) {
           checkedCells[row][col] = true;
@@ -2764,7 +2746,6 @@ function setupSocketHandlers() {
           guessStats.set(remoteName, gs);
         }
       } else {
-        cellColors.delete(key);
         cellFillers.delete(key);
       }
       // Apply remote point delta
@@ -2822,7 +2803,6 @@ function setupSocketHandlers() {
         if (name && name !== '(hint)') {
           const color = (colors && colors[name]) || '#ccc';
           cellFillers.set(key, { userName: name, color });
-          cellColors.set(key, color);
         }
       }
     }
@@ -2837,9 +2817,7 @@ function setupSocketHandlers() {
         userGrid[r][c] = '';
         checkedCells[r][c] = false;
       }
-    cellColors.clear();
     cellFillers.clear();
-    pendingBotCells.clear();
     persistedPoints.clear();
     guessStats.clear();
     completedWordCells.clear();
@@ -2961,7 +2939,6 @@ function updateFillerColorsFromRoom() {
     const knownColor = nameColorMap.get(filler.userName);
     if (knownColor) {
       filler.color = knownColor;
-      cellColors.set(key, knownColor);
     }
   }
 }
@@ -3315,12 +3292,10 @@ function render() {
         el.style.background = '';
       }
 
-      // Cell filler color: colored inset box-shadow showing who typed the letter
-      const isBotPending = pendingBotCells.has(key);
-      const fillerColor = isBotPending ? '#3B82F6' : cellColors.get(key);
-      if (fillerColor && userGrid[r][c]) {
-        const thickness = isBotPending ? '3px' : '2px';
-        el.style.boxShadow = `inset 0 0 0 ${thickness} ${fillerColor}`;
+      // Player color outline only for cells in completed words
+      const wcColor = completedWordCells.get(key);
+      if (wcColor && !hintCells.has(key) && userGrid[r][c]) {
+        el.style.boxShadow = `inset 0 0 0 2px ${wcColor}`;
       } else {
         el.style.boxShadow = '';
       }
@@ -3806,9 +3781,7 @@ btnClear.addEventListener('click', () => {
       userGrid[r][c] = '';
       checkedCells[r][c] = false;
     }
-  cellColors.clear();
   cellFillers.clear();
-  pendingBotCells.clear();
   persistedPoints.clear();
   guessStats.clear();
   solved = false;
