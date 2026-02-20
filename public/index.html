@@ -1611,6 +1611,7 @@ document.addEventListener('visibilitychange', () => {
 const remoteUsers = new Map(); // socketId → {userId, userName, color, row, col, direction}
 const cellColors = new Map();  // "r,c" → color (who filled this cell)
 const cellFillers = new Map(); // "r,c" → {userName, color} (who filled this cell)
+const pendingBotCells = new Set(); // "r,c" keys for cells bots are currently filling (shown blue)
 const guessStats = new Map(); // userName → { total, incorrect }
 const persistedPoints = new Map(); // userName → number (base points from DB, excludes word bonuses)
 const roomCounts = new Map();  // puzzleDate → player count
@@ -2052,6 +2053,7 @@ async function loadPuzzle(dateStr) {
   remoteUsers.clear();
   cellColors.clear();
   cellFillers.clear();
+  pendingBotCells.clear();
   persistedPoints.clear();
   guessStats.clear();
   completedWordCells.clear();
@@ -2707,6 +2709,16 @@ function setupSocketHandlers() {
     renderAiBotList();
   });
 
+  // Bot cell pending (blue) / done (switch to bot color)
+  socket.on('bot-pending', ({ row, col }) => {
+    pendingBotCells.add(`${row},${col}`);
+    if (PUZZLE) render();
+  });
+  socket.on('bot-word-done', ({ cells }) => {
+    for (const { row, col } of cells) pendingBotCells.delete(`${row},${col}`);
+    if (PUZZLE) render();
+  });
+
   socket.on('user-left', ({ socketId }) => {
     remoteUsers.delete(socketId);
     renderPresenceBar();
@@ -2827,6 +2839,7 @@ function setupSocketHandlers() {
       }
     cellColors.clear();
     cellFillers.clear();
+    pendingBotCells.clear();
     persistedPoints.clear();
     guessStats.clear();
     completedWordCells.clear();
@@ -3303,10 +3316,10 @@ function render() {
       }
 
       // Cell filler color: colored inset box-shadow showing who typed the letter
-      const fillerColor = cellColors.get(key);
+      const isBotPending = pendingBotCells.has(key);
+      const fillerColor = isBotPending ? '#3B82F6' : cellColors.get(key);
       if (fillerColor && userGrid[r][c]) {
-        const isPending = fillerColor === '#3B82F6';
-        const thickness = isPending ? '3px' : '2px';
+        const thickness = isBotPending ? '3px' : '2px';
         el.style.boxShadow = `inset 0 0 0 ${thickness} ${fillerColor}`;
       } else {
         el.style.boxShadow = '';
@@ -3795,6 +3808,7 @@ btnClear.addEventListener('click', () => {
     }
   cellColors.clear();
   cellFillers.clear();
+  pendingBotCells.clear();
   persistedPoints.clear();
   guessStats.clear();
   solved = false;

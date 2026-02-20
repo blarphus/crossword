@@ -969,8 +969,6 @@ async function startAiSolving(puzzleDate) {
     const wanderTimeMs = AI_WANDER_TIME[dow][bot.difficultyIndex];
 
     // Recursive chain: process one word at a time
-    const BOT_PENDING_COLOR = '#3B82F6'; // blue while word is in progress
-
     // Shared wander helper — wanders for `duration` ms then calls `cb`
     const doWanderFor = (duration, cb) => {
       let wanderR = cursorR, wanderC = cursorC;
@@ -1032,12 +1030,11 @@ async function startAiSolving(puzzleDate) {
         }
 
         if (nextCi >= word.cells.length) {
-          // Word is fully filled — recolor bot's cells from blue to real color
-          for (const fc of botFilledCells) {
-            io.to(`puzzle:${puzzleDate}`).emit('cell-updated', {
-              row: fc.row, col: fc.col, letter: fc.letter,
-              userId: bot.botId, userName: bot.name, color: bot.color,
-              pointDelta: 0, wordBonus: 0, fireEvent: null, guessCorrect: null, lastSquareBonus: false,
+          // Word is fully filled — clear bot-pending for these cells
+          if (botFilledCells.length > 0) {
+            io.to(`puzzle:${puzzleDate}`).emit('bot-word-done', {
+              cells: botFilledCells.map(fc => ({ row: fc.row, col: fc.col })),
+              botId: bot.botId,
             });
           }
           cursorR = word.cells[word.cells.length - 1].row;
@@ -1058,7 +1055,11 @@ async function startAiSolving(puzzleDate) {
             botFilledCells.push({ row: cell.row, col: cell.col, letter: cell.letter });
             await processCellUpdate({
               puzzleDate, row: cell.row, col: cell.col, letter: cell.letter,
-              socketId: bot.botId, userName: bot.name, userColor: BOT_PENDING_COLOR, isBot: true,
+              socketId: bot.botId, userName: bot.name, userColor: bot.color, isBot: true,
+            });
+            // Mark cell as bot-pending (blue) until word completes
+            io.to(`puzzle:${puzzleDate}`).emit('bot-pending', {
+              row: cell.row, col: cell.col, botId: bot.botId,
             });
           } catch (err) {
             console.error('[ai] fill error:', err);
