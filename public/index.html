@@ -3456,10 +3456,12 @@ function advanceCursor(skipFilled = false) {
 function retreatCursor() {
   if (direction === 'across') {
     let nc = selectedCol - 1;
-    if (nc >= 0 && !isBlack(selectedRow, nc)) selectedCol = nc;
+    while (nc >= 0 && isBlack(selectedRow, nc)) nc--;
+    if (nc >= 0) selectedCol = nc;
   } else {
     let nr = selectedRow - 1;
-    if (nr >= 0 && !isBlack(nr, selectedCol)) selectedRow = nr;
+    while (nr >= 0 && isBlack(nr, selectedCol)) nr--;
+    if (nr >= 0) selectedRow = nr;
   }
 }
 
