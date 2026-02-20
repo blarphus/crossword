@@ -1201,12 +1201,13 @@ io.on('connection', async (socket) => {
   socket.on('resume-puzzle', async ({ puzzleDate }) => {
     const paused = pausedSockets.get(puzzleDate);
     if (paused) paused.delete(socket.id);
-    // If timer was stopped (all were paused), restart it and resume bots
+    // Restart timer if it was stopped during pause
     if (!puzzleTimerState.has(puzzleDate)) {
       await startTimer(puzzleDate);
-      io.to(`puzzle:${puzzleDate}`).emit('timer-sync', { seconds: getElapsedSeconds(puzzleDate) });
-      resumeAllBots(puzzleDate);
     }
+    // Always sync timer and resume bots (resumeAllBots is a no-op if none are paused)
+    io.to(`puzzle:${puzzleDate}`).emit('timer-sync', { seconds: getElapsedSeconds(puzzleDate) });
+    resumeAllBots(puzzleDate);
   });
 
   // Lightweight state refresh (used when tab regains focus)
