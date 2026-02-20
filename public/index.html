@@ -3602,12 +3602,13 @@ function showLeaderboard() {
   }
   players.sort((a, b) => b.pts - a.pts);
 
+  const timeStr = formatTimer(getTimerSeconds());
   if (players.length > 0) {
     titleEl.textContent = `${players[0].name} wins!`;
-    msgEl.textContent = 'Puzzle complete! Final standings:';
+    msgEl.textContent = `Solved in ${timeStr} — Final standings:`;
   } else {
     titleEl.textContent = 'Congratulations!';
-    msgEl.textContent = 'You solved the crossword!';
+    msgEl.textContent = `Solved in ${timeStr}!`;
   }
 
   lbEl.innerHTML = '';
