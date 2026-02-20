@@ -1337,25 +1337,6 @@ function sfxCombo(remote) {
   osc.stop(t + 0.5);
 }
 
-function sfxFireExtend(remote) {
-  const p = remote ? REMOTE_PITCH : 1;
-  const v = remote ? REMOTE_VOL : 1;
-  const ctx = getAudioCtx();
-  const t = ctx.currentTime;
-  // Quick ascending whoosh
-  const osc = ctx.createOscillator();
-  const gain = ctx.createGain();
-  osc.connect(gain);
-  gain.connect(ctx.destination);
-  osc.type = 'sawtooth';
-  osc.frequency.setValueAtTime(400 * p, t);
-  osc.frequency.exponentialRampToValueAtTime(1200 * p, t + 0.15);
-  gain.gain.setValueAtTime(0.05 * v, t);
-  gain.gain.linearRampToValueAtTime(0.08 * v, t + 0.08);
-  gain.gain.exponentialRampToValueAtTime(0.001, t + 0.2);
-  osc.start(t);
-  osc.stop(t + 0.2);
-}
 
 function sfxFireBreak(remote) {
   const p = remote ? REMOTE_PITCH : 1;
@@ -2386,7 +2367,6 @@ function sendCellUpdate(row, col, letter) {
             myFireWordsCompleted += wordsCompleted;
             myFireMultiplier = 1.5 + Math.floor(myFireWordsCompleted / 3) * 0.5;
             extendMyFire(allUserCells, myFireExpiresAt + 5000);
-            sfxFireExtend();
           }
 
           // Track word completions toward fire trigger (only when not on fire)
@@ -2758,7 +2738,6 @@ function handleRemoteFireEvent(fireEvent, remoteUserId) {
         const [r2, c2] = key.split(',').map(Number);
         if (cellEls[r2]?.[c2]) cellEls[r2][c2].classList.add('on-fire');
       }
-      sfxFireExtend(true);
       renderPresenceBar();
     }
   } else if (fireEvent.type === 'broken') {
