@@ -969,10 +969,12 @@ async function startAiSolving(puzzleDate) {
     const wanderTimeMs = AI_WANDER_TIME[dow][bot.difficultyIndex];
 
     // Recursive chain: process one word at a time
+    const BOT_PENDING_COLOR = '#3B82F6'; // blue while word is in progress
     const processWord = (wi) => {
       if (!isAlive() || wi >= allWords.length) return;
 
       const word = allWords[wi];
+      const botFilledCells = []; // cells this bot fills in current word
 
       const startFilling = () => {
         emitCursor(word.cells[0].row, word.cells[0].col, word.dir);
@@ -1047,7 +1049,14 @@ async function startAiSolving(puzzleDate) {
         }
 
         if (nextCi >= word.cells.length) {
-          // Word is fully filled — skip to next word immediately
+          // Word is fully filled — recolor bot's cells from blue to real color
+          for (const fc of botFilledCells) {
+            io.to(`puzzle:${puzzleDate}`).emit('cell-updated', {
+              row: fc.row, col: fc.col, letter: fc.letter,
+              userId: bot.botId, userName: bot.name, color: bot.color,
+              pointDelta: 0, wordBonus: 0, fireEvent: null, guessCorrect: null, lastSquareBonus: false,
+            });
+          }
           cursorR = word.cells[word.cells.length - 1].row;
           cursorC = word.cells[word.cells.length - 1].col;
           processWord(wi + 1);
@@ -1063,9 +1072,10 @@ async function startAiSolving(puzzleDate) {
           if (!isAlive()) return;
           try {
             emitCursor(cell.row, cell.col, word.dir);
+            botFilledCells.push({ row: cell.row, col: cell.col, letter: cell.letter });
             await processCellUpdate({
               puzzleDate, row: cell.row, col: cell.col, letter: cell.letter,
-              socketId: bot.botId, userName: bot.name, userColor: bot.color, isBot: true,
+              socketId: bot.botId, userName: bot.name, userColor: BOT_PENDING_COLOR, isBot: true,
             });
           } catch (err) {
             console.error('[ai] fill error:', err);
