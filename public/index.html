@@ -3445,12 +3445,12 @@ function onCellClick(r, c) {
 function advanceCursor(skipFilled = false) {
   if (direction === 'across') {
     let nc = selectedCol + 1;
-    while (nc < COLS && (isBlack(selectedRow, nc) || (skipFilled && userGrid[selectedRow][nc]))) nc++;
-    if (nc < COLS) selectedCol = nc;
+    while (nc < COLS && !isBlack(selectedRow, nc) && skipFilled && userGrid[selectedRow][nc]) nc++;
+    if (nc < COLS && !isBlack(selectedRow, nc)) selectedCol = nc;
   } else {
     let nr = selectedRow + 1;
-    while (nr < ROWS && (isBlack(nr, selectedCol) || (skipFilled && userGrid[nr][selectedCol]))) nr++;
-    if (nr < ROWS) selectedRow = nr;
+    while (nr < ROWS && !isBlack(nr, selectedCol) && skipFilled && userGrid[nr][selectedCol]) nr++;
+    if (nr < ROWS && !isBlack(nr, selectedCol)) selectedRow = nr;
   }
 }
 
@@ -3466,8 +3466,9 @@ function retreatCursor() {
   }
 }
 
-// After filling the last cell of a word, jump to the next sequential clue in the same direction
+// After filling the last cell of a word correctly, jump to the next unsolved sequential clue
 function advanceToNextClueIfWordFilled(typedRow, typedCol) {
+  if (!isCellCorrect(typedRow, typedCol)) return; // wrong letter → stay put
   const clue = getClueForCell(typedRow, typedCol, direction);
   if (!clue) return;
   const cells = getWordCells(clue, direction);
@@ -3477,21 +3478,19 @@ function advanceToNextClueIfWordFilled(typedRow, typedCol) {
   const idx = clues.findIndex(c => c.n === clue.n);
   if (idx === -1) return;
 
-  // Try clues after current, then wrap from beginning
-  for (let i = 1; i <= clues.length; i++) {
+  // Try clues after current, then wrap — skip fully solved words
+  for (let i = 1; i < clues.length; i++) {
     const next = clues[(idx + i) % clues.length];
+    if (isWordSolved(next, direction)) continue; // skip completed words
     const nextCells = getWordCells(next, direction);
     const firstEmpty = nextCells.find(([r, c]) => !userGrid[r]?.[c]);
     if (firstEmpty) {
       [selectedRow, selectedCol] = firstEmpty;
-      return;
-    }
-    // If fully filled, still jump there (to first cell) so user sees progression
-    if (i === 1 || (idx + i) % clues.length === idx) {
+    } else {
       selectedRow = next.row;
       selectedCol = next.col;
-      return;
     }
+    return;
   }
 }
 
