@@ -203,7 +203,7 @@ body {
 
 .presence-bar {
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   justify-content: center;
   gap: 10px;
   padding: 6px 10px;
@@ -215,8 +215,15 @@ body {
 }
 .presence-user {
   display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+}
+.presence-user-info {
+  display: flex;
   align-items: center;
   gap: 4px;
+  white-space: nowrap;
 }
 .presence-dot {
   width: 10px;
@@ -232,6 +239,52 @@ body {
 .presence-pts {
   font-weight: 700;
   font-variant-numeric: tabular-nums;
+}
+/* Per-user fire in presence bar */
+.presence-fire-header {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
+.presence-user.on-fire .presence-fire-header { display: flex; }
+.presence-user.on-fire { filter: drop-shadow(0 0 4px rgba(255,106,0,0.4)); }
+.presence-flames {
+  width: 48px;
+  height: 14px;
+  background-image: var(--fire-sprite);
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  transform-origin: center bottom;
+  animation: fire-flicker 0.7s ease-in-out infinite;
+}
+.presence-fire-timer {
+  position: relative;
+  width: 72px;
+  height: 14px;
+  background: #1a1a2e;
+  border-radius: 3px;
+  overflow: hidden;
+  margin-bottom: 2px;
+}
+.presence-fire-timer-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #ff6a00, #ffa500, #ffd700);
+  transition: width 0.1s linear;
+  border-radius: 3px;
+}
+.presence-fire-timer-label {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.55rem;
+  font-weight: 700;
+  color: #fff;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.6);
+  pointer-events: none;
+  white-space: nowrap;
 }
 .solve-timer {
   font-variant-numeric: tabular-nums;
@@ -726,33 +779,8 @@ body.mobile .mobile-keyboard { display: block; position: static; flex-shrink: 0;
   animation-delay: var(--fire-delay, 0s);
 }
 
-/* Fire bar */
-.fire-bar {
-  display: none;
-  position: relative;
-  height: 22px;
-  background: #1a1a2e;
-  overflow: hidden;
-  flex-shrink: 0;
-}
-.fire-bar.active { display: block; }
-.fire-bar-fill {
-  height: 100%;
-  background: linear-gradient(90deg, #ff6a00, #ffa500, #ffd700);
-  transition: width 0.05s linear;
-}
-.fire-bar-label {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.72rem;
-  font-weight: 700;
-  color: #fff;
-  text-shadow: 0 1px 2px rgba(0,0,0,0.5);
-  pointer-events: none;
-}
+/* Fire bar (legacy global bar — hidden, replaced by per-user presence fire) */
+.fire-bar { display: none !important; }
 
 /* Combo broken overlay */
 @keyframes combo-broken-anim {
@@ -1620,11 +1648,10 @@ let lastCursorKey = '';
 let myFireActive = false;
 let myFireExpiresAt = 0;
 let myFireCells = new Set();    // "r,c" strings
-let myFireBarInterval = null;
 let myRecentWordCompletions = []; // [{timestamp,row,col},...] for tracking word completions toward fire
 let myFireMultiplier = 1.5;
 let myFireWordsCompleted = 0;
-const remoteFireStates = new Map(); // socketId → {userName, color, fireCells: Set, expiresAt}
+const remoteFireStates = new Map(); // socketId → {userName, color, fireCells: Set, expiresAt, fireMultiplier}
 
 // Completed word cells: "r,c" → color of the player who completed the word
 const completedWordCells = new Map();
@@ -2033,12 +2060,9 @@ function computeAndApplyCellSize() {
     // Dynamically measure height of fixed elements above .app
     const appEl = document.querySelector('.app');
     const appTop = appEl ? appEl.getBoundingClientRect().top : 200;
-    // Reserve space for fire bar (22px) even when hidden
-    const fireBar = document.getElementById('fire-bar');
-    const fireBarReserve = (fireBar && fireBar.classList.contains('active')) ? 0 : 22;
     // Internal overhead: app padding (16+24) + grid-container padding-top (18) + margin-bottom (24) + grid border (4)
     const internal = 86;
-    const maxGridH = window.innerHeight - appTop - fireBarReserve - internal;
+    const maxGridH = window.innerHeight - appTop - internal;
     cellSize = Math.max(16, Math.min(40, Math.floor(Math.min(maxGridW / COLS, maxGridH / ROWS))));
   }
   document.documentElement.style.setProperty('--cell-size', cellSize + 'px');
@@ -2587,32 +2611,86 @@ function removeFireCellEffects() {
   }
 }
 
-function showFireBar() {
-  const bar = document.getElementById('fire-bar');
-  bar.classList.add('active');
-  if (myFireBarInterval) clearInterval(myFireBarInterval);
-  myFireBarInterval = setInterval(() => {
-    const now = Date.now();
-    const remaining = myFireExpiresAt - now;
-    if (remaining <= 0) {
-      expireMyFire();
-      return;
+let presenceFireInterval = null;
+
+function updatePresenceFireTimers() {
+  const now = Date.now();
+  const totalDuration = 30000;
+  document.querySelectorAll('.presence-user').forEach(el => {
+    const uname = el.dataset.username;
+    let expiresAt = 0, multiplier = 1.5, isOnFire = false;
+
+    if (uname === myName && myFireActive) {
+      expiresAt = myFireExpiresAt;
+      multiplier = myFireMultiplier;
+      isOnFire = true;
+    } else {
+      for (const [, rs] of remoteFireStates) {
+        if (rs.userName === uname && rs.expiresAt > now) {
+          expiresAt = rs.expiresAt;
+          multiplier = rs.fireMultiplier || 1.5;
+          isOnFire = true;
+          break;
+        }
+      }
     }
-    const totalDuration = 30000; // base duration for percentage
-    const pct = Math.min(100, (remaining / totalDuration) * 100);
-    document.getElementById('fire-bar-fill').style.width = pct + '%';
-    const multStr = myFireMultiplier % 1 === 0 ? myFireMultiplier.toFixed(0) : myFireMultiplier.toFixed(1);
-    document.getElementById('fire-bar-label').textContent = `ON FIRE ${multStr}x \u00B7 ${(remaining / 1000).toFixed(1)}s`;
-  }, 50);
+
+    if (isOnFire) {
+      if (!el.classList.contains('on-fire')) el.classList.add('on-fire');
+      const remaining = expiresAt - now;
+      if (remaining <= 0) {
+        el.classList.remove('on-fire');
+        return;
+      }
+      const pct = Math.min(100, (remaining / totalDuration) * 100);
+      const fill = el.querySelector('.presence-fire-timer-fill');
+      const label = el.querySelector('.presence-fire-timer-label');
+      if (fill) fill.style.width = pct + '%';
+      if (label) {
+        const multStr = multiplier % 1 === 0 ? multiplier.toFixed(0) : multiplier.toFixed(1);
+        label.textContent = `ON FIRE ${multStr}x`;
+      }
+    } else {
+      if (el.classList.contains('on-fire')) el.classList.remove('on-fire');
+    }
+  });
+
+  // Expire local fire if timer ran out
+  if (myFireActive && myFireExpiresAt <= now) {
+    expireMyFire();
+  }
+}
+
+function startPresenceFireInterval() {
+  if (presenceFireInterval) return;
+  presenceFireInterval = setInterval(updatePresenceFireTimers, 100);
+}
+
+function stopPresenceFireInterval() {
+  if (presenceFireInterval) {
+    clearInterval(presenceFireInterval);
+    presenceFireInterval = null;
+  }
+}
+
+function showFireBar() {
+  // Start the unified presence fire timer interval
+  startPresenceFireInterval();
+  renderPresenceBar();
 }
 
 function hideFireBar() {
-  const bar = document.getElementById('fire-bar');
-  bar.classList.remove('active');
-  if (myFireBarInterval) {
-    clearInterval(myFireBarInterval);
-    myFireBarInterval = null;
+  // Stop interval only if no one is on fire anymore
+  let anyFire = false;
+  if (myFireActive) anyFire = true;
+  if (!anyFire) {
+    const now = Date.now();
+    for (const [, rs] of remoteFireStates) {
+      if (rs.expiresAt > now) { anyFire = true; break; }
+    }
   }
+  if (!anyFire) stopPresenceFireInterval();
+  renderPresenceBar();
 }
 
 function showComboBroken() {
@@ -2638,11 +2716,14 @@ function handleRemoteFireEvent(fireEvent, remoteUserId) {
     remoteFireStates.set(remoteSocketId, {
       userName: fireEvent.userName, color: fireEvent.color,
       fireCells: fireCellSet, expiresAt: Date.now() + fireEvent.remainingMs,
+      fireMultiplier: fireEvent.fireMultiplier || 1.5,
     });
     for (const key of fireCellSet) {
       const [r, c] = key.split(',').map(Number);
       if (cellEls[r]?.[c]) cellEls[r][c].classList.add('on-fire');
     }
+    startPresenceFireInterval();
+    renderPresenceBar();
   } else if (fireEvent.type === 'extended') {
     const rs = remoteFireStates.get(remoteSocketId);
     if (rs) {
@@ -2650,10 +2731,12 @@ function handleRemoteFireEvent(fireEvent, remoteUserId) {
         rs.fireCells.add(`${c.row},${c.col}`);
       }
       rs.expiresAt = Date.now() + fireEvent.remainingMs;
+      rs.fireMultiplier = fireEvent.fireMultiplier || rs.fireMultiplier || 1.5;
       for (const key of rs.fireCells) {
         const [r2, c2] = key.split(',').map(Number);
         if (cellEls[r2]?.[c2]) cellEls[r2][c2].classList.add('on-fire');
       }
+      renderPresenceBar();
     }
   } else if (fireEvent.type === 'broken') {
     const rs = remoteFireStates.get(remoteSocketId);
@@ -2665,6 +2748,7 @@ function handleRemoteFireEvent(fireEvent, remoteUserId) {
       remoteFireStates.delete(remoteSocketId);
     }
     showComboBroken();
+    renderPresenceBar();
   }
 }
 
@@ -2984,18 +3068,44 @@ function renderPresenceBar() {
     const data = points.get(u.name);
     const pts = data ? data.pts : 0;
     const filled = filledCounts.get(u.name) || 0;
-    const el = document.createElement('span');
+    const el = document.createElement('div');
     el.className = 'presence-user';
+    el.dataset.username = u.name;
+
+    // Determine if this user is on fire
+    let isOnFire = false;
+    if (u.name === myName) {
+      isOnFire = myFireActive;
+    } else {
+      for (const [, rs] of remoteFireStates) {
+        if (rs.userName === u.name && rs.expiresAt > Date.now()) { isOnFire = true; break; }
+      }
+    }
+    if (isOnFire) el.classList.add('on-fire');
+
     const filledStr = filled > 0 ? ` <span class="presence-filled">${filled}</span>` : '';
     const ptsStr = pts !== 0 ? ` <span class="presence-pts">${pts > 0 ? '+' : ''}${pts}</span>` : '';
     const botBadge = u.isBot ? ' <span class="presence-bot-badge">BOT</span>' : '';
-    el.innerHTML = `<span class="presence-dot" style="background:${u.color}"></span>${u.label}${botBadge}${filledStr}${ptsStr}`;
+    el.innerHTML =
+      `<div class="presence-fire-header">` +
+        `<div class="presence-flames"></div>` +
+        `<div class="presence-fire-timer">` +
+          `<div class="presence-fire-timer-fill"></div>` +
+          `<span class="presence-fire-timer-label">ON FIRE</span>` +
+        `</div>` +
+      `</div>` +
+      `<div class="presence-user-info">` +
+        `<span class="presence-dot" style="background:${u.color}"></span>${u.label}${botBadge}${filledStr}${ptsStr}` +
+      `</div>`;
     if (u.name === myName) {
       el.style.cursor = 'pointer';
       el.addEventListener('click', () => showNameModal(true));
     }
     presenceBarEl.appendChild(el);
   }
+
+  // Immediately update fire timers after render
+  updatePresenceFireTimers();
 }
 
 // ─── Helpers ───────────────────────────────────────────────────
