@@ -248,15 +248,13 @@ body {
   width: 100%;
 }
 .presence-user.on-fire .presence-fire-header { display: flex; }
-.presence-user.on-fire { filter: drop-shadow(0 0 4px rgba(255,106,0,0.4)); }
+.presence-user.on-fire { box-shadow: 0 0 4px rgba(255,106,0,0.4); }
 .presence-flames {
   width: 48px;
   height: 14px;
-  background-image: var(--fire-sprite);
+  background-image: url(/fire.webp);
   background-size: 100% 100%;
   background-repeat: no-repeat;
-  transform-origin: center bottom;
-  animation: fire-flicker 0.7s ease-in-out infinite;
 }
 .presence-fire-timer {
   position: relative;
@@ -754,13 +752,7 @@ body.mobile .clue-panel { display: none; }
 /* Keyboard at bottom of flex column, after clue bar */
 body.mobile .mobile-keyboard { display: block; position: static; flex-shrink: 0; order: 11; padding: 4px 3px; padding-bottom: env(safe-area-inset-bottom, 0px); }
 
-/* ─── Fire streak effects (pre-rendered sprite) ──────────────── */
-@keyframes fire-flicker {
-  0%, 100% { transform: scaleY(1) scaleX(1); opacity: 0.85; }
-  25%      { transform: scaleY(1.15) scaleX(0.95); opacity: 1; }
-  50%      { transform: scaleY(0.9) scaleX(1.05); opacity: 0.8; }
-  75%      { transform: scaleY(1.1) scaleX(0.98); opacity: 0.95; }
-}
+/* ─── Fire streak effects (animated WebP sprite) ──────────────── */
 .cell.on-fire::before {
   content: '';
   position: absolute;
@@ -768,15 +760,11 @@ body.mobile .mobile-keyboard { display: block; position: static; flex-shrink: 0;
   left: -2px;
   right: -2px;
   height: 18px;
-  background-image: var(--fire-sprite);
+  background-image: url(/fire.webp);
   background-size: 100% 100%;
   background-repeat: no-repeat;
   pointer-events: none;
   z-index: 5;
-  transform-origin: center bottom;
-  will-change: transform, opacity;
-  animation: fire-flicker 0.7s ease-in-out infinite;
-  animation-delay: var(--fire-delay, 0s);
 }
 
 /* Fire bar (legacy global bar — hidden, replaced by per-user presence fire) */
@@ -1358,41 +1346,7 @@ function sfxVictory() {
   });
 }
 
-// ─── Pre-render fire sprite to canvas (GPU-friendly) ────────────
-(function preRenderFireSprite() {
-  const W = 60, H = 24;
-  const c = document.createElement('canvas');
-  c.width = W; c.height = H;
-  const ctx = c.getContext('2d');
-  const flames = [
-    { x: 0.08, w: 0.30, h: 0.70, r: 255, g: 60,  b: 0,   a: 0.85 },
-    { x: 0.28, w: 0.35, h: 1.00, r: 255, g: 140, b: 20,  a: 0.9 },
-    { x: 0.50, w: 0.28, h: 0.60, r: 255, g: 90,  b: 0,   a: 0.8 },
-    { x: 0.72, w: 0.32, h: 0.80, r: 255, g: 120, b: 10,  a: 0.85 },
-    { x: 0.92, w: 0.26, h: 0.55, r: 255, g: 70,  b: 0,   a: 0.75 },
-  ];
-  for (const f of flames) {
-    const cx = f.x * W, rw = f.w * W * 0.5, rh = f.h * H;
-    const grad = ctx.createRadialGradient(cx, H, 0, cx, H, Math.max(rw, rh));
-    grad.addColorStop(0, `rgba(${f.r},${f.g},${f.b},${f.a})`);
-    grad.addColorStop(0.5, `rgba(${Math.min(255, f.r + 60)},${Math.min(255, f.g + 60)},${Math.min(255, f.b + 30)},${f.a * 0.35})`);
-    grad.addColorStop(1, 'transparent');
-    ctx.save();
-    ctx.translate(cx, H);
-    ctx.scale(rw / Math.max(rw, rh), rh / Math.max(rw, rh));
-    ctx.translate(-cx, -H);
-    ctx.fillStyle = grad;
-    ctx.fillRect(cx - Math.max(rw, rh), H - Math.max(rw, rh), Math.max(rw, rh) * 2, Math.max(rw, rh));
-    ctx.restore();
-  }
-  // Apply blur by drawing to a second canvas with filter
-  const c2 = document.createElement('canvas');
-  c2.width = W; c2.height = H;
-  const ctx2 = c2.getContext('2d');
-  ctx2.filter = 'blur(1.5px)';
-  ctx2.drawImage(c, 0, 0);
-  document.documentElement.style.setProperty('--fire-sprite', `url(${c2.toDataURL()})`);
-})();
+// Fire sprite is now a pre-rendered animated WebP at /fire.webp
 
 // ─── Device identity ────────────────────────────────────────────
 function getDeviceId() {
@@ -2598,10 +2552,12 @@ function expireMyFire() {
 }
 
 function applyFireCellEffects() {
-  for (const key of myFireCells) {
-    const [r, c] = key.split(',').map(Number);
-    if (cellEls[r]?.[c]) cellEls[r][c].classList.add('on-fire');
-  }
+  requestAnimationFrame(() => {
+    for (const key of myFireCells) {
+      const [r, c] = key.split(',').map(Number);
+      if (cellEls[r]?.[c]) cellEls[r][c].classList.add('on-fire');
+    }
+  });
 }
 
 function removeFireCellEffects() {
@@ -2616,7 +2572,8 @@ let presenceFireInterval = null;
 function updatePresenceFireTimers() {
   const now = Date.now();
   const totalDuration = 30000;
-  document.querySelectorAll('.presence-user').forEach(el => {
+  const presenceEls = presenceBarEl ? presenceBarEl.children : [];
+  for (let i = 0; i < presenceEls.length; i++) { const el = presenceEls[i];
     const uname = el.dataset.username;
     let expiresAt = 0, multiplier = 1.5, isOnFire = false;
 
@@ -2640,7 +2597,7 @@ function updatePresenceFireTimers() {
       const remaining = expiresAt - now;
       if (remaining <= 0) {
         el.classList.remove('on-fire');
-        return;
+        continue;
       }
       const pct = Math.min(100, (remaining / totalDuration) * 100);
       const fill = el.querySelector('.presence-fire-timer-fill');
@@ -2653,7 +2610,7 @@ function updatePresenceFireTimers() {
     } else {
       if (el.classList.contains('on-fire')) el.classList.remove('on-fire');
     }
-  });
+  }
 
   // Expire local fire if timer ran out
   if (myFireActive && myFireExpiresAt <= now) {
@@ -3319,6 +3276,13 @@ function render() {
   }
 
   const renderNow = Date.now();
+  // Pre-build a merged set of all fire cell keys (local + remote) for O(1) lookup
+  const allFireKeys = new Set(myFireCells);
+  for (const [, rs] of remoteFireStates) {
+    if (rs.expiresAt > renderNow) {
+      for (const k of rs.fireCells) allFireKeys.add(k);
+    }
+  }
   for (let r = 0; r < ROWS; r++) {
     for (let c = 0; c < COLS; c++) {
       const el = cellEls[r][c];
@@ -3398,11 +3362,8 @@ function render() {
       }
 
       // Fire cell effect
-      const isOnFire = myFireCells.has(key) || [...remoteFireStates.values()].some(s => s.expiresAt > renderNow && s.fireCells.has(key));
+      const isOnFire = allFireKeys.has(key);
       el.classList.toggle('on-fire', isOnFire);
-      if (isOnFire && !el.style.animationDelay) {
-        el.style.setProperty('--fire-delay', ((r * COLS + c) % 7) * 0.1 + 's');
-      }
     }
   }
 
