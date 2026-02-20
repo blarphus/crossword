@@ -670,6 +670,9 @@ async function processCellUpdate({ puzzleDate, row, col, letter, socketId, userN
       if (complete) {
         lastSquareBonus = 250;
         await db.addPoints(puzzleDate, userName, lastSquareBonus);
+        // Stop and persist the timer on completion
+        await stopTimer(puzzleDate);
+        io.to(`puzzle:${puzzleDate}`).emit('timer-sync', { seconds: getElapsedSeconds(puzzleDate) });
         // Clean up all AI bots on puzzle completion
         removeAllAiBots(puzzleDate);
       }
@@ -1465,6 +1468,18 @@ const PORT = process.env.PORT || 3000;
         }
       }
     });
+
+    // Periodically persist all active in-memory timers to DB (crash recovery)
+    setInterval(async () => {
+      for (const [puzzleDate, state] of puzzleTimerState) {
+        const elapsed = state.accumulated + (state.startedAt ? (Date.now() - state.startedAt) / 1000 : 0);
+        try {
+          await db.saveTimer(puzzleDate, elapsed);
+        } catch (err) {
+          console.error('[timer] Periodic save failed for', puzzleDate, err);
+        }
+      }
+    }, 30000);
 
     server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
   } catch (err) {
