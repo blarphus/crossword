@@ -194,6 +194,7 @@ body {
   transition: background 0.15s;
 }
 .toolbar button:hover { background: #eee; }
+.toolbar button#btn-trails.trails-off { opacity: 0.4; }
 
 .presence-bar {
   display: flex;
@@ -717,7 +718,8 @@ body.mobile .toolbar .btn-label { display: none; }
 body.mobile .toolbar button#btn-pause,
 body.mobile .toolbar button#btn-clear,
 body.mobile .toolbar button#btn-reveal,
-body.mobile .toolbar button#btn-rebus {
+body.mobile .toolbar button#btn-rebus,
+body.mobile .toolbar button#btn-trails {
   width: 32px; height: 32px; padding: 0; border: none;
   background: none; font-size: 1.1rem; color: #555; cursor: pointer;
   display: flex; align-items: center; justify-content: center;
@@ -726,6 +728,8 @@ body.mobile .toolbar button#btn-pause::before { content: '\275A\275A'; font-size
 body.mobile .toolbar button#btn-clear::before { content: '\2715'; }
 body.mobile .toolbar button#btn-reveal::before { content: '\2714'; }
 body.mobile .toolbar button#btn-rebus::before { content: 'R'; font-size: 0.85rem; font-weight: 700; }
+body.mobile .toolbar button#btn-trails::before { content: '\1F441'; font-size: 0.95rem; }
+body.mobile .toolbar button#btn-trails.trails-off { opacity: 0.4; }
 
 body.mobile .presence-bar { flex-shrink: 0; padding: 3px 8px; min-height: 22px; font-size: 0.72rem; gap: 8px; }
 body.mobile .fire-bar { flex-shrink: 0; }
@@ -1168,6 +1172,7 @@ body.mobile .mobile-keyboard { display: block; position: static; flex-shrink: 0;
       <button id="btn-clear" title="Clear Puzzle"><span class="btn-label">Clear Puzzle</span></button>
       <button id="btn-reveal" title="Reveal Puzzle"><span class="btn-label">Reveal Puzzle</span></button>
       <button id="btn-rebus" style="display:none"><span class="btn-label">Rebus</span></button>
+      <button id="btn-trails" title="Toggle other players' highlights"><span class="btn-label">Trails</span></button>
       <button class="hint-btn" id="hint-btn" title="Vote for a hint"><span class="hint-icon">💡</span><span class="hint-votes" id="hint-votes"></span></button>
     </div>
   </div>
@@ -1572,6 +1577,7 @@ let solved = false;
 let currentDate = null;
 let rebusMode = false;
 let rebusBuffer = '';
+let showTrails = localStorage.getItem('crossword-show-trails') !== 'false';
 
 function getCorrectAnswer(r, c) {
   if (!PUZZLE) return '';
@@ -3346,17 +3352,21 @@ function render() {
   // Build remote user highlight maps
   const remoteCursorCells = new Map(); // "r,c" → color (selected cell)
   const remoteWordCells = new Map();   // "r,c" → color (word highlight)
-  for (const [, user] of remoteUsers) {
-    if (!PUZZLE) break;
-    const rClue = getClueForCell(user.row, user.col, user.direction);
-    if (rClue) {
-      const rWordCells = getWordCells(rClue, user.direction);
-      for (const [wr, wc] of rWordCells) {
-        const key = `${wr},${wc}`;
-        if (!remoteWordCells.has(key)) remoteWordCells.set(key, user.color);
+  if (showTrails) {
+    for (const [, user] of remoteUsers) {
+      if (!PUZZLE) break;
+      // Map near-black to grey so highlights are visible
+      const hlColor = user.color === '#222222' ? '#888888' : user.color;
+      const rClue = getClueForCell(user.row, user.col, user.direction);
+      if (rClue) {
+        const rWordCells = getWordCells(rClue, user.direction);
+        for (const [wr, wc] of rWordCells) {
+          const key = `${wr},${wc}`;
+          if (!remoteWordCells.has(key)) remoteWordCells.set(key, hlColor);
+        }
       }
+      remoteCursorCells.set(`${user.row},${user.col}`, hlColor);
     }
-    remoteCursorCells.set(`${user.row},${user.col}`, user.color);
   }
 
   const renderNow = Date.now();
@@ -3961,6 +3971,15 @@ function pausePuzzle() {
   showPuzzleEntryOverlay(currentDate, true);
 }
 document.getElementById('btn-pause').addEventListener('click', pausePuzzle);
+
+const trailsBtn = document.getElementById('btn-trails');
+if (!showTrails) trailsBtn.classList.add('trails-off');
+trailsBtn.addEventListener('click', () => {
+  showTrails = !showTrails;
+  localStorage.setItem('crossword-show-trails', showTrails);
+  trailsBtn.classList.toggle('trails-off', !showTrails);
+  render();
+});
 
 // Auto-pause when tabbing away
 document.addEventListener('visibilitychange', () => {
