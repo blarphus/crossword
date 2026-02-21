@@ -820,7 +820,7 @@ function resumeAllBots(puzzleDate) {
       anyResumed = true;
     }
   }
-  if (anyResumed) startAiSolving(puzzleDate);
+  if (anyResumed) startAiSolving(puzzleDate).catch(err => console.error('[ai] resumeAllBots startAiSolving error:', err));
 }
 
 function getAiBotList(puzzleDate) {
@@ -917,6 +917,7 @@ function randomHop(pData, fromR, fromC) {
 }
 
 async function startAiSolving(puzzleDate) {
+  try {
   const roomBots = aiBots.get(puzzleDate);
   if (!roomBots) return;
 
@@ -1016,11 +1017,21 @@ async function startAiSolving(puzzleDate) {
     const processWord = (wi) => {
       if (!isAlive() || wi >= allWords.length) return;
 
+      // Trim expired timer references to prevent memory leak
+      if (bot.timers.length > 100) {
+        bot.timers = bot.timers.slice(-50);
+      }
+
       const word = allWords[wi];
 
       const startFilling = () => {
         emitCursor(word.cells[0].row, word.cells[0].col, word.dir);
-        const t = setTimeout(() => startFillingWord(wi, 0), 100);
+        const t = setTimeout(() => {
+          startFillingWord(wi, 0).catch(err => {
+            console.error('[ai] startFillingWord error:', err);
+            processWord(wi + 1);
+          });
+        }, 100);
         bot.timers.push(t);
       };
 
@@ -1031,57 +1042,68 @@ async function startAiSolving(puzzleDate) {
       doWanderFor(base + extra, startFilling);
 
       const startFillingWord = async (wi, ci) => {
-        if (!isAlive()) return;
-
-        // Get live grid state to check which cells still need filling
-        let currentGrid = {};
         try {
-          const currentState = await db.getState(puzzleDate);
-          currentGrid = currentState?.user_grid || {};
-        } catch (e) { /* continue with empty grid */ }
-
-        // Find next unfilled cell in this word starting from ci
-        let nextCi = ci;
-        while (nextCi < word.cells.length) {
-          const cell = word.cells[nextCi];
-          if (currentGrid[`${cell.row},${cell.col}`] !== cell.letter) break;
-          nextCi++;
-          cellIdx++; // consume the timing slot
-        }
-
-        if (nextCi >= word.cells.length) {
-          // Word is fully filled
-          cursorR = word.cells[word.cells.length - 1].row;
-          cursorC = word.cells[word.cells.length - 1].col;
-          processWord(wi + 1);
-          return;
-        }
-
-        // Fill this cell
-        const cell = word.cells[nextCi];
-        const fillTime = timing.cellTimes[cellIdx] || 100;
-        cellIdx++;
-
-        const t = setTimeout(async () => {
           if (!isAlive()) return;
+
+          // Get live grid state to check which cells still need filling
+          let currentGrid = {};
           try {
-            emitCursor(cell.row, cell.col, word.dir);
-            await processCellUpdate({
-              puzzleDate, row: cell.row, col: cell.col, letter: cell.letter,
-              socketId: bot.botId, userName: bot.name, userColor: bot.color, isBot: true,
-            });
-          } catch (err) {
-            console.error('[ai] fill error:', err);
+            const currentState = await db.getState(puzzleDate);
+            currentGrid = currentState?.user_grid || {};
+          } catch (e) { /* continue with empty grid */ }
+
+          // Find next unfilled cell in this word starting from ci
+          let nextCi = ci;
+          while (nextCi < word.cells.length) {
+            const cell = word.cells[nextCi];
+            if (currentGrid[`${cell.row},${cell.col}`] !== cell.letter) break;
+            nextCi++;
+            cellIdx++; // consume the timing slot
           }
-          // Continue to next cell in this word
-          startFillingWord(wi, nextCi + 1);
-        }, fillTime);
-        bot.timers.push(t);
+
+          if (nextCi >= word.cells.length) {
+            // Word is fully filled
+            cursorR = word.cells[word.cells.length - 1].row;
+            cursorC = word.cells[word.cells.length - 1].col;
+            processWord(wi + 1);
+            return;
+          }
+
+          // Fill this cell
+          const cell = word.cells[nextCi];
+          const fillTime = timing.cellTimes[cellIdx] || 100;
+          cellIdx++;
+
+          const t = setTimeout(async () => {
+            if (!isAlive()) return;
+            try {
+              emitCursor(cell.row, cell.col, word.dir);
+              await processCellUpdate({
+                puzzleDate, row: cell.row, col: cell.col, letter: cell.letter,
+                socketId: bot.botId, userName: bot.name, userColor: bot.color, isBot: true,
+              });
+            } catch (err) {
+              console.error('[ai] fill error:', err);
+            }
+            // Continue to next cell in this word
+            startFillingWord(wi, nextCi + 1).catch(err => {
+              console.error('[ai] startFillingWord error:', err);
+              processWord(wi + 1);
+            });
+          }, fillTime);
+          bot.timers.push(t);
+        } catch (err) {
+          console.error('[ai] startFillingWord outer error:', err);
+          processWord(wi + 1);
+        }
       };
     };
 
     // Brief wander before starting to solve
     doWanderFor(2000, () => processWord(0));
+  }
+  } catch (err) {
+    console.error('[ai] startAiSolving error:', err);
   }
 }
 
@@ -1334,7 +1356,7 @@ io.on('connection', async (socket) => {
   });
 
   socket.on('start-ai', ({ puzzleDate }) => {
-    startAiSolving(puzzleDate);
+    startAiSolving(puzzleDate).catch(err => console.error('[ai] start-ai error:', err));
   });
 
   socket.on('get-ai-bots', ({ puzzleDate }) => {
