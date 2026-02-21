@@ -318,13 +318,13 @@ let aiBotCounter = 0;
 
 // Target solve times in seconds: [dayOfWeek][difficultyIndex]
 const AI_TARGET_TIMES = [
-  [2400, 1800, 1300, 1000,  700], // Sun
-  [ 480,  360,  260,  200,  140], // Mon
-  [ 600,  450,  330,  250,  175], // Tue
-  [1050,  790,  570,  440,  310], // Wed
-  [1350, 1010,  730,  560,  390], // Thu
-  [1650, 1240,  900,  690,  480], // Fri
-  [2000, 1500, 1090,  830,  580], // Sat
+  [2940, 2390, 1835, 1560, 1195], // Sun
+  [630,  510,  395,  335,  255],   // Mon
+  [770,  625,  480,  410,  310],   // Tue
+  [1320, 1075, 825,  700,  535],   // Wed
+  [1680, 1365, 1050, 890,  680],   // Thu
+  [2000, 1625, 1250, 1065, 810],   // Fri
+  [2400, 1950, 1500, 1275, 975],   // Sat
 ];
 
 // Multiplier ranges per difficulty
@@ -880,35 +880,28 @@ function distributeAiTiming(cellCount, finalSolveTime) {
 // wanderChance probability of wandering for wanderTime ms before the next word.
 // Values calibrated via Monte Carlo simulation so E[totalTime] ≈ target time.
 const AI_WANDER_CHANCE = [
-  [0.75, 0.15, 0.55, 0.65, 0.80], // Sun
-  [0.85, 0.25, 0.35, 0.85, 0.60], // Mon
-  [0.55, 0.15, 0.15, 0.15, 0.30], // Tue
-  [0.25, 0.15, 0.75, 0.15, 0.30], // Wed
-  [0.15, 0.75, 0.45, 0.50, 0.60], // Thu
-  [0.85, 0.85, 0.75, 0.15, 0.15], // Fri
-  [0.65, 0.85, 0.55, 0.65, 0.15], // Sat
+  [0.78, 0.52, 0.65, 0.61, 0.25], // Sun
+  [0.40, 0.78, 0.75, 0.14, 0.36], // Mon
+  [0.75, 0.80, 0.25, 0.42, 0.18], // Tue
+  [0.72, 0.40, 0.74, 0.46, 0.27], // Wed
+  [0.75, 0.78, 0.45, 0.46, 0.50], // Thu
+  [0.75, 0.72, 0.75, 0.67, 0.50], // Fri
+  [0.84, 0.80, 0.74, 0.55, 0.74], // Sat
 ];
 const AI_WANDER_TIME = [
-  [ 3000,  7500,  2000,   500,  1000], // Sun
-  [ 2500,  2500,  1000,   500,   500], // Mon
-  [ 3000,  5500,  1500,  1500,   250], // Tue
-  [ 6000,  4000,  2000,  5000,  1750], // Wed
-  [ 7500,  3500,  2500,   500,  1000], // Thu
-  [ 1500,  1000,  3000,  5000,  2500], // Fri
-  [ 7000,  3500,  3500,   500,  3500], // Sat
+  [5712, 7221, 4537, 4166, 8000], // Sun
+  [4291, 1839, 1519, 6958, 2130], // Mon
+  [2871, 2267, 5684, 2913, 5328], // Tue
+  [5256, 8000, 3368, 4682, 6319], // Wed
+  [6611, 5332, 7292, 6119, 4486], // Thu
+  [8000, 7104, 5357, 5161, 5496], // Fri
+  [8000, 8000, 6867, 8000, 4711], // Sat
 ];
 
-// Base wander time (ms) between words — per day and difficulty.
-// Calibrated via Monte Carlo simulation so E[totalTime] ≈ target.
-const AI_BASE_WANDER = [
-  [1200, 1000,  600, 1000,  200], // Sun
-  [ 400,  800,  600,  600,  200], // Mon
-  [1000,  800,  800,  400,  300], // Tue
-  [1600, 1600,  400,  200,  100], // Wed
-  [2400,  400,  800, 1200,  400], // Thu
-  [3200, 2600,  200,  600,  400], // Fri
-  [ 200,  800,  600, 1600,  400], // Sat
-];
+// Base minimum wander time (ms) between words — varies by day of week.
+// Prevents fire streak dominance; calibrated via Monte Carlo simulation.
+const AI_BASE_WANDER = [5000, 6000, 5000, 4000, 3500, 2500, 2000];
+//                       Sun   Mon   Tue   Wed   Thu   Fri   Sat
 
 // Generate a single random cursor hop (2-5 squares in a random direction)
 function randomHop(pData, fromR, fromC) {
@@ -993,7 +986,7 @@ async function startAiSolving(puzzleDate) {
     const dow = dateObj.getDay();
     const wanderChance = AI_WANDER_CHANCE[dow][bot.difficultyIndex];
     const wanderTimeMs = AI_WANDER_TIME[dow][bot.difficultyIndex];
-    const baseWanderMs = AI_BASE_WANDER[dow][bot.difficultyIndex];
+    const baseWanderMs = AI_BASE_WANDER[dow];
 
     // Recursive chain: process one word at a time
     // Shared wander helper — wanders for `duration` ms then calls `cb`
@@ -1022,8 +1015,6 @@ async function startAiSolving(puzzleDate) {
 
     const processWord = (wi) => {
       if (!isAlive() || wi >= allWords.length) return;
-      // Prevent timers array from growing unboundedly
-      if (bot.timers.length > 50) bot.timers = bot.timers.slice(-10);
 
       const word = allWords[wi];
 
@@ -1040,58 +1031,52 @@ async function startAiSolving(puzzleDate) {
       doWanderFor(base + extra, startFilling);
 
       const startFillingWord = async (wi, ci) => {
+        if (!isAlive()) return;
+
+        // Get live grid state to check which cells still need filling
+        let currentGrid = {};
         try {
-          if (!isAlive()) return;
+          const currentState = await db.getState(puzzleDate);
+          currentGrid = currentState?.user_grid || {};
+        } catch (e) { /* continue with empty grid */ }
 
-          // Get live grid state to check which cells still need filling
-          let currentGrid = {};
-          try {
-            const currentState = await db.getState(puzzleDate);
-            currentGrid = currentState?.user_grid || {};
-          } catch (e) { /* continue with empty grid */ }
-
-          // Find next unfilled cell in this word starting from ci
-          let nextCi = ci;
-          while (nextCi < word.cells.length) {
-            const cell = word.cells[nextCi];
-            if (currentGrid[`${cell.row},${cell.col}`] !== cell.letter) break;
-            nextCi++;
-            cellIdx++; // consume the timing slot
-          }
-
-          if (nextCi >= word.cells.length) {
-            // Word is fully filled
-            cursorR = word.cells[word.cells.length - 1].row;
-            cursorC = word.cells[word.cells.length - 1].col;
-            processWord(wi + 1);
-            return;
-          }
-
-          // Fill this cell
+        // Find next unfilled cell in this word starting from ci
+        let nextCi = ci;
+        while (nextCi < word.cells.length) {
           const cell = word.cells[nextCi];
-          const fillTime = timing.cellTimes[cellIdx] || 100;
-          cellIdx++;
-
-          const t = setTimeout(async () => {
-            if (!isAlive()) return;
-            try {
-              emitCursor(cell.row, cell.col, word.dir);
-              await processCellUpdate({
-                puzzleDate, row: cell.row, col: cell.col, letter: cell.letter,
-                socketId: bot.botId, userName: bot.name, userColor: bot.color, isBot: true,
-              });
-            } catch (err) {
-              console.error('[ai] fill error:', err);
-            }
-            // Continue to next cell in this word
-            startFillingWord(wi, nextCi + 1);
-          }, fillTime);
-          bot.timers.push(t);
-        } catch (err) {
-          console.error('[ai] startFillingWord error:', err);
-          // Attempt to continue with next word instead of dying
-          processWord(wi + 1);
+          if (currentGrid[`${cell.row},${cell.col}`] !== cell.letter) break;
+          nextCi++;
+          cellIdx++; // consume the timing slot
         }
+
+        if (nextCi >= word.cells.length) {
+          // Word is fully filled
+          cursorR = word.cells[word.cells.length - 1].row;
+          cursorC = word.cells[word.cells.length - 1].col;
+          processWord(wi + 1);
+          return;
+        }
+
+        // Fill this cell
+        const cell = word.cells[nextCi];
+        const fillTime = timing.cellTimes[cellIdx] || 100;
+        cellIdx++;
+
+        const t = setTimeout(async () => {
+          if (!isAlive()) return;
+          try {
+            emitCursor(cell.row, cell.col, word.dir);
+            await processCellUpdate({
+              puzzleDate, row: cell.row, col: cell.col, letter: cell.letter,
+              socketId: bot.botId, userName: bot.name, userColor: bot.color, isBot: true,
+            });
+          } catch (err) {
+            console.error('[ai] fill error:', err);
+          }
+          // Continue to next cell in this word
+          startFillingWord(wi, nextCi + 1);
+        }, fillTime);
+        bot.timers.push(t);
       };
     };
 
