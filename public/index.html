@@ -2812,13 +2812,13 @@ function setupSocketHandlers() {
       remoteUsers.set(u.socketId, { userId: u.userId, userName: u.userName || 'User', color: u.color, row: u.row, col: u.col, direction: u.direction, isBot: !!u.isBot });
     }
     renderPresenceBar();
-    if (PUZZLE) render();
+    if (PUZZLE) render({ scrollClues: false });
   });
 
   socket.on('user-joined', ({ socketId, userId, userName: uName, color, row, col, direction: dir, isBot }) => {
     remoteUsers.set(socketId, { userId, userName: uName || 'User', color, row, col, direction: dir, isBot: !!isBot });
     renderPresenceBar();
-    if (PUZZLE) render();
+    if (PUZZLE) render({ scrollClues: false });
   });
 
   socket.on('ai-bot-list', (list) => {
@@ -2829,7 +2829,7 @@ function setupSocketHandlers() {
   socket.on('user-left', ({ socketId }) => {
     remoteUsers.delete(socketId);
     renderPresenceBar();
-    if (PUZZLE) render();
+    if (PUZZLE) render({ scrollClues: false });
   });
 
   socket.on('cursor-moved', ({ socketId, userId, userName: uName, row, col, direction: dir }) => {
@@ -2842,7 +2842,7 @@ function setupSocketHandlers() {
       remoteUsers.set(socketId, { userId, userName: uName || 'User', color: '#ccc', row, col, direction: dir });
     }
     if (PUZZLE) {
-      render();
+      render({ scrollClues: false });
       // Scroll bot cursor cells into view
       const isBot = (user && user.isBot) || socketId.startsWith('ai-bot-');
       if (isBot && cellEls[row]?.[col]) {
@@ -2896,7 +2896,7 @@ function setupSocketHandlers() {
       if (fireEvent) {
         handleRemoteFireEvent(fireEvent, remoteUserId);
       }
-      render();
+      render({ scrollClues: false });
       checkCompletion();
     }
   });
@@ -3329,7 +3329,7 @@ function buildCluePanel() {
 }
 
 // ─── Rendering ─────────────────────────────────────────────────
-function render() {
+function render({ scrollClues = true } = {}) {
   if (!PUZZLE) return;
   const currentClue = getClueForCell(selectedRow, selectedCol, direction);
   const wordCells = currentClue ? getWordCells(currentClue, direction) : [];
@@ -3484,19 +3484,21 @@ function render() {
     const k = `${direction}-${currentClue.n}`;
     if (clueItemEls[k]) {
       clueItemEls[k].classList.add('active');
-      // Scroll active clue into view, accounting for sticky header
-      const el = clueItemEls[k];
-      const section = el.closest('.clue-section');
-      if (section) {
-        const stickyH = section.querySelector('h2');
-        const headerHeight = stickyH ? stickyH.offsetHeight : 0;
-        const sectionRect = section.getBoundingClientRect();
-        const elRect = el.getBoundingClientRect();
-        const visibleTop = sectionRect.top + headerHeight;
-        if (elRect.top < visibleTop) {
-          section.scrollTop += elRect.top - visibleTop;
-        } else if (elRect.bottom > sectionRect.bottom) {
-          section.scrollTop += elRect.bottom - sectionRect.bottom;
+      // Only scroll clue panel for local cursor movements
+      if (scrollClues) {
+        const el = clueItemEls[k];
+        const section = el.closest('.clue-section');
+        if (section) {
+          const stickyH = section.querySelector('h2');
+          const headerHeight = stickyH ? stickyH.offsetHeight : 0;
+          const sectionRect = section.getBoundingClientRect();
+          const elRect = el.getBoundingClientRect();
+          const visibleTop = sectionRect.top + headerHeight;
+          if (elRect.top < visibleTop) {
+            section.scrollTop += elRect.top - visibleTop;
+          } else if (elRect.bottom > sectionRect.bottom) {
+            section.scrollTop += elRect.bottom - sectionRect.bottom;
+          }
         }
       }
     }
