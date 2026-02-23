@@ -625,7 +625,7 @@ async function processCellUpdate({ puzzleDate, row, col, letter, socketId, userN
           if (fs.onFire && wasOnFire) {
             fs.fireWordsCompleted += completed;
             fs.fireMultiplier = 1.5 + Math.floor(fs.fireWordsCompleted / 3) * 0.5;
-            fs.fireExpiresAt += 5000;
+            fs.fireExpiresAt = Math.min(fs.fireExpiresAt + 5000, now + 30000);
             fs.fireCells = userFireCells;
             if (fs.fireTimer) clearTimeout(fs.fireTimer);
             const remainingMs = fs.fireExpiresAt - now;
