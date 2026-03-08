@@ -2407,14 +2407,9 @@ function sendCellUpdate(row, col, letter) {
             myRecentWordCompletions = myRecentWordCompletions.filter(e => now - e.timestamp < 30000);
             const totalCompletions = myRecentWordCompletions.reduce((sum, e) => sum + e.count, 0);
             if (totalCompletions >= 3) {
-              // Collect all word cells from the completions that triggered fire
-              const fireStartCells = [];
-              for (const entry of myRecentWordCompletions) {
-                if (entry.wordCells) fireStartCells.push(...entry.wordCells);
-              }
               myFireMultiplier = 1.5;
               myFireWordsCompleted = 0;
-              startMyFire(fireStartCells, now + 30000);
+              startMyFire([], now + 30000);
               myRecentWordCompletions = [];
             }
           }

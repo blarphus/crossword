@@ -629,18 +629,13 @@ async function processCellUpdate({ puzzleDate, row, col, letter, socketId, userN
             fs.recentWordCompletions = fs.recentWordCompletions.filter(e => now - e.timestamp < 30000);
             const totalCompletions = fs.recentWordCompletions.reduce((sum, e) => sum + e.count, 0);
             if (totalCompletions >= 3) {
-              // Collect all word cells from the completions that triggered fire
-              const fireStartCells = [];
-              for (const entry of fs.recentWordCompletions) {
-                if (entry.wordCells) fireStartCells.push(...entry.wordCells);
-              }
               fs.onFire = true;
               fs.fireExpiresAt = now + 30000;
-              fs.fireCells = fireStartCells;
+              fs.fireCells = [];
               fs.fireMultiplier = 1.5;
               fs.fireWordsCompleted = 0;
               fs.fireTimer = setTimeout(() => expireFire(socketId), 30000);
-              fireEvent = { type: 'started', userName, color: userColor, fireCells: fireStartCells, remainingMs: 30000, fireMultiplier: 1.5 };
+              fireEvent = { type: 'started', userName, color: userColor, fireCells: [], remainingMs: 30000, fireMultiplier: 1.5 };
               fs.recentWordCompletions = [];
             }
           }
