@@ -1,10 +1,11 @@
 const { Pool } = require('pg');
 
+const isRender = process.env.DATABASE_URL?.includes('render.com') ||
+                 process.env.DATABASE_URL?.includes('dpg-');
+
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: process.env.DATABASE_URL?.includes('render.com')
-    ? { rejectUnauthorized: false }
-    : false,
+  ssl: isRender ? { rejectUnauthorized: false } : false,
 });
 
 // Set search_path on every new connection so all queries hit the crossword schema
