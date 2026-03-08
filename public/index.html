@@ -3448,12 +3448,7 @@ function render({ scrollClues = true } = {}) {
         el.style.background = '';
       }
 
-      // Player color outline only for cells in completed words
-      if (wcColor && !hintCells.has(key) && userGrid[r][c]) {
-        el.style.boxShadow = `inset 0 0 0 2px ${wcColor}`;
-      } else {
-        el.style.boxShadow = '';
-      }
+      el.style.boxShadow = '';
 
       // Fire cell effect
       const isOnFire = allFireKeys.has(key);
