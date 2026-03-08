@@ -761,20 +761,6 @@ body.mobile .clue-panel { display: none; }
 /* Keyboard at bottom of flex column, after clue bar */
 body.mobile .mobile-keyboard { display: block; position: static; flex-shrink: 0; order: 11; padding: 4px 3px; padding-bottom: env(safe-area-inset-bottom, 0px); }
 
-/* ─── Fire streak effects (animated WebP sprite) ──────────────── */
-.cell.on-fire::before {
-  content: '';
-  position: absolute;
-  bottom: 0;
-  left: -2px;
-  right: -2px;
-  height: 18px;
-  background-image: url(/fire.webp);
-  background-size: 100% 100%;
-  background-repeat: no-repeat;
-  pointer-events: none;
-  z-index: 5;
-}
 
 /* Fire bar (legacy global bar — hidden, replaced by per-user presence fire) */
 .fire-bar { display: none !important; }
@@ -1656,14 +1642,9 @@ let lastCursorKey = '';
 // Fire streak state
 let myFireActive = false;
 let myFireExpiresAt = 0;
-let myFireCells = new Set();    // "r,c" strings
-let myRecentWordCompletions = []; // [{timestamp,row,col},...] for tracking word completions toward fire
-let myFireMultiplier = 1.5;
+let myRecentWordCompletions = []; // [{timestamp,count},...] for tracking word completions toward fire
 let myFireWordsCompleted = 0;
-const remoteFireStates = new Map(); // socketId → {userName, color, fireCells: Set, expiresAt, fireMultiplier}
-
-// Completed word cells: "r,c" → color of the player who completed the word
-const completedWordCells = new Map();
+const remoteFireStates = new Map(); // socketId → {userName, color, expiresAt}
 
 // Hint system state
 const hintCells = new Set(); // "r,c" strings — cells revealed by hints (cannot be deleted)
@@ -2088,7 +2069,7 @@ async function loadPuzzle(dateStr) {
   cellFillers.clear();
   persistedPoints.clear();
   guessStats.clear();
-  completedWordCells.clear();
+
   lastCursorKey = '';
   resetFireState();
   hintCells.clear();
@@ -2313,11 +2294,7 @@ function sendCellUpdate(row, col, letter) {
         const now = Date.now();
         const wasOnFire = myFireActive;
 
-        if (isCorrect && myFireActive) {
-          // Add this cell to fire effect
-          myFireCells.add(`${row},${col}`);
-          if (cellEls[row]?.[col]) cellEls[row][col].classList.add('on-fire');
-        } else if (!isCorrect && myFireActive) {
+        if (!isCorrect && myFireActive) {
           breakMyFire();
         } else if (!isCorrect && !myFireActive) {
           myRecentWordCompletions = [];
@@ -2331,15 +2308,10 @@ function sendCellUpdate(row, col, letter) {
             sfxWordComplete();
             triggerWordWave(row, col);
 
-            // Extend fire on word completion while on fire — add entire completed word(s) to fire
+            // Extend fire on word completion while on fire
             if (myFireActive && wasOnFire) {
               myFireWordsCompleted += wordsCompleted;
               myFireExpiresAt = myFireExpiresAt + 5000;
-              for (const wk of wordCellKeys) {
-                myFireCells.add(wk);
-                const [wr, wc] = wk.split(',').map(Number);
-                if (cellEls[wr]?.[wc]) cellEls[wr][wc].classList.add('on-fire');
-              }
             }
 
             // Track word completions toward fire trigger (only when not on fire)
@@ -2518,69 +2490,35 @@ function applyHintReveal(cells) {
 function resetFireState() {
   myFireActive = false;
   myFireExpiresAt = 0;
-  myFireCells.clear();
   myRecentWordCompletions = [];
-  myFireMultiplier = 1.5;
   myFireWordsCompleted = 0;
   remoteFireStates.clear();
   hideFireBar();
 }
 
-function startMyFire(fireCellKeys, expiresAt) {
+function startMyFire(_, expiresAt) {
   myFireActive = true;
   myFireExpiresAt = expiresAt;
-  myFireCells = new Set(fireCellKeys);
   sfxFireStart();
   showFireBar();
-  applyFireCellEffects();
-}
-
-function extendMyFire(cellKeys, newExpiresAt) {
-  myFireExpiresAt = newExpiresAt;
-  removeFireCellEffects();
-  myFireCells = new Set(cellKeys);
-  applyFireCellEffects();
-  // Fire bar is already running, it'll pick up the new expiry
 }
 
 function breakMyFire() {
   sfxFireBreak();
   showComboBroken();
-  removeFireCellEffects();
   myFireActive = false;
   myFireExpiresAt = 0;
-  myFireCells.clear();
   myRecentWordCompletions = [];
-  myFireMultiplier = 1.5;
   myFireWordsCompleted = 0;
   hideFireBar();
 }
 
 function expireMyFire() {
-  removeFireCellEffects();
   myFireActive = false;
   myFireExpiresAt = 0;
-  myFireCells.clear();
   myRecentWordCompletions = [];
-  myFireMultiplier = 1.5;
   myFireWordsCompleted = 0;
   hideFireBar();
-}
-
-function applyFireCellEffects() {
-  requestAnimationFrame(() => {
-    for (const key of myFireCells) {
-      const [r, c] = key.split(',').map(Number);
-      if (cellEls[r]?.[c]) cellEls[r][c].classList.add('on-fire');
-    }
-  });
-}
-
-function removeFireCellEffects() {
-  for (const key of myFireCells) {
-    const [r, c] = key.split(',').map(Number);
-    if (cellEls[r]?.[c]) cellEls[r][c].classList.remove('on-fire');
-  }
 }
 
 let presenceFireInterval = null;
@@ -2591,17 +2529,15 @@ function updatePresenceFireTimers() {
   const presenceEls = presenceBarEl ? presenceBarEl.children : [];
   for (let i = 0; i < presenceEls.length; i++) { const el = presenceEls[i];
     const uname = el.dataset.username;
-    let expiresAt = 0, multiplier = 1.5, isOnFire = false;
+    let expiresAt = 0, isOnFire = false;
 
     if (uname === myName && myFireActive) {
       expiresAt = myFireExpiresAt;
-      multiplier = myFireMultiplier;
       isOnFire = true;
     } else {
       for (const [, rs] of remoteFireStates) {
         if (rs.userName === uname && rs.expiresAt > now) {
           expiresAt = rs.expiresAt;
-          multiplier = rs.fireMultiplier || 1.5;
           isOnFire = true;
           break;
         }
@@ -2619,10 +2555,7 @@ function updatePresenceFireTimers() {
       const fill = el.querySelector('.presence-fire-timer-fill');
       const label = el.querySelector('.presence-fire-timer-label');
       if (fill) fill.style.width = pct + '%';
-      if (label) {
-        const multStr = multiplier % 1 === 0 ? multiplier.toFixed(0) : multiplier.toFixed(1);
-        label.textContent = `ON FIRE ${multStr}x`;
-      }
+      if (label) label.textContent = 'ON FIRE';
     } else {
       if (el.classList.contains('on-fire')) el.classList.remove('on-fire');
     }
@@ -2636,10 +2569,6 @@ function updatePresenceFireTimers() {
   // Clean up expired remote fire states
   for (const [sid, rs] of remoteFireStates) {
     if (rs.expiresAt <= now) {
-      for (const key of rs.fireCells) {
-        const [r, c] = key.split(',').map(Number);
-        if (cellEls[r]?.[c]) cellEls[r][c].classList.remove('on-fire');
-      }
       remoteFireStates.delete(sid);
     }
   }
@@ -2706,11 +2635,9 @@ function handleRemoteFireEvent(fireEvent, remoteUserId) {
   if (!remoteSocketId) return;
 
   if (fireEvent.type === 'started') {
-    // Start with empty fire cells — only new correct letters get fire
     remoteFireStates.set(remoteSocketId, {
       userName: fireEvent.userName, color: fireEvent.color,
-      fireCells: new Set(), expiresAt: Date.now() + fireEvent.remainingMs,
-      fireMultiplier: fireEvent.fireMultiplier || 1.5,
+      expiresAt: Date.now() + fireEvent.remainingMs,
     });
     sfxFireStart(true);
     showFireAnnounce(fireEvent.userName);
@@ -2719,25 +2646,11 @@ function handleRemoteFireEvent(fireEvent, remoteUserId) {
   } else if (fireEvent.type === 'extended') {
     const rs = remoteFireStates.get(remoteSocketId);
     if (rs) {
-      for (const c of fireEvent.fireCells) {
-        const key = `${c.row},${c.col}`;
-        rs.fireCells.add(key);
-        const [r2, c2] = key.split(',').map(Number);
-        if (cellEls[r2]?.[c2]) cellEls[r2][c2].classList.add('on-fire');
-      }
       rs.expiresAt = Date.now() + fireEvent.remainingMs;
-      rs.fireMultiplier = fireEvent.fireMultiplier || rs.fireMultiplier || 1.5;
       renderPresenceBar();
     }
   } else if (fireEvent.type === 'broken') {
-    const rs = remoteFireStates.get(remoteSocketId);
-    if (rs) {
-      for (const key of rs.fireCells) {
-        const [r, c] = key.split(',').map(Number);
-        if (cellEls[r]?.[c]) cellEls[r][c].classList.remove('on-fire');
-      }
-      remoteFireStates.delete(remoteSocketId);
-    }
+    remoteFireStates.delete(remoteSocketId);
     sfxFireBreak(true);
     showComboBroken();
     renderPresenceBar();
@@ -2838,17 +2751,6 @@ function setupSocketHandlers() {
         sfxWordComplete(true);
         triggerWordWave(row, col, remoteColor);
       }
-      // If remote user is on fire and typed a correct letter, add cell to their fire display
-      if (letter && guessCorrect && !fireEvent) {
-        for (const [sid, rs] of remoteFireStates) {
-          const u = remoteUsers.get(sid);
-          if (u && u.userName === remoteName) {
-            rs.fireCells.add(`${row},${col}`);
-            if (cellEls[row]?.[col]) cellEls[row][col].classList.add('on-fire');
-            break;
-          }
-        }
-      }
       // Handle remote fire events
       if (fireEvent) {
         handleRemoteFireEvent(fireEvent, remoteUserId);
@@ -2902,7 +2804,7 @@ function setupSocketHandlers() {
     cellFillers.clear();
     persistedPoints.clear();
     guessStats.clear();
-    completedWordCells.clear();
+  
     resetFireState();
     hintCells.clear();
     hideHintBtn();
@@ -2947,20 +2849,11 @@ function setupSocketHandlers() {
   socket.on('fire-update', (fireEvent) => {
     if (!PUZZLE) return;
     if (fireEvent.type === 'started') {
-      const cellKeys = fireEvent.fireCells.map(c => `${c.row},${c.col}`);
-      myFireMultiplier = fireEvent.fireMultiplier || 1.5;
-      // Server is authoritative; sync up if needed
       if (!myFireActive) {
-        startMyFire(cellKeys, Date.now() + fireEvent.remainingMs);
+        startMyFire([], Date.now() + fireEvent.remainingMs);
       }
     } else if (fireEvent.type === 'extended') {
       myFireExpiresAt = Date.now() + fireEvent.remainingMs;
-      if (fireEvent.fireMultiplier) myFireMultiplier = fireEvent.fireMultiplier;
-      // Sync fire cells from server (only cells filled during fire)
-      for (const c of fireEvent.fireCells) {
-        myFireCells.add(`${c.row},${c.col}`);
-      }
-      applyFireCellEffects();
     } else if (fireEvent.type === 'broken') {
       if (myFireActive) breakMyFire();
     }
@@ -2970,16 +2863,9 @@ function setupSocketHandlers() {
   // Handled inside cell-updated handler above
 
   // Fire streak: remote fire expired naturally
-  socket.on('fire-expired', ({ socketId: remoteSocketId, userName: remoteName, color: remoteColor, fireCells }) => {
+  socket.on('fire-expired', ({ socketId: remoteSocketId }) => {
     if (!PUZZLE) return;
-    const rs = remoteFireStates.get(remoteSocketId);
-    if (rs) {
-      for (const key of rs.fireCells) {
-        const [r, c] = key.split(',').map(Number);
-        if (cellEls[r]?.[c]) cellEls[r][c].classList.remove('on-fire');
-      }
-      remoteFireStates.delete(remoteSocketId);
-    }
+    remoteFireStates.delete(remoteSocketId);
   });
 
   // ─── Hint system events ──────────────────────────────────────
@@ -3333,14 +3219,6 @@ function render({ scrollClues = true } = {}) {
     }
   }
 
-  const renderNow = Date.now();
-  // Pre-build a merged set of all fire cell keys (local + remote) for O(1) lookup
-  const allFireKeys = new Set(myFireCells);
-  for (const [, rs] of remoteFireStates) {
-    if (rs.expiresAt > renderNow) {
-      for (const k of rs.fireCells) allFireKeys.add(k);
-    }
-  }
   for (let r = 0; r < ROWS; r++) {
     for (let c = 0; c < COLS; c++) {
       const el = cellEls[r][c];
@@ -3417,8 +3295,6 @@ function render({ scrollClues = true } = {}) {
       el.style.boxShadow = '';
 
       // Fire cell effect
-      const isOnFire = allFireKeys.has(key);
-      el.classList.toggle('on-fire', isOnFire);
     }
   }
 
