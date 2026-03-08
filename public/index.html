@@ -3055,10 +3055,13 @@ function renderPresenceBar() {
   }
   presenceBarEl.style.display = '';
 
-  // Count filled squares per player
+  // Count correct filled squares per player
   const filledCounts = new Map();
-  for (const [, filler] of cellFillers) {
-    filledCounts.set(filler.userName, (filledCounts.get(filler.userName) || 0) + 1);
+  for (const [key, filler] of cellFillers) {
+    const [r, c] = key.split(',').map(Number);
+    if (isCellCorrect(r, c)) {
+      filledCounts.set(filler.userName, (filledCounts.get(filler.userName) || 0) + 1);
+    }
   }
 
   for (const u of allUsers) {
@@ -3678,11 +3681,14 @@ function showLeaderboard() {
     return;
   }
 
-  // Count filled squares per player
+  // Count correct filled squares per player
   const filledCells = new Map();
   const playerColors = new Map();
-  for (const [, filler] of cellFillers) {
-    filledCells.set(filler.userName, (filledCells.get(filler.userName) || 0) + 1);
+  for (const [key, filler] of cellFillers) {
+    const [r, c] = key.split(',').map(Number);
+    if (isCellCorrect(r, c)) {
+      filledCells.set(filler.userName, (filledCells.get(filler.userName) || 0) + 1);
+    }
     if (filler.color && filler.color !== '#ccc') playerColors.set(filler.userName, filler.color);
   }
 
