@@ -2758,8 +2758,18 @@ function setupSocketHandlers() {
     myColor = yourColor;
     if (yourName) myName = yourName;
     remoteUsers.clear();
+    const userColorMap = new Map();
+    userColorMap.set(myName, myColor);
     for (const u of users) {
       remoteUsers.set(u.socketId, { userId: u.userId, userName: u.userName || 'User', color: u.color, row: u.row, col: u.col, direction: u.direction, isBot: !!u.isBot });
+      userColorMap.set(u.userName, u.color);
+    }
+    // Update cellFiller colors now that we know everyone's real color
+    for (const [key, filler] of cellFillers) {
+      const realColor = userColorMap.get(filler.userName);
+      if (realColor && filler.color !== realColor) {
+        filler.color = realColor;
+      }
     }
     renderPresenceBar();
     if (PUZZLE) render({ scrollClues: false });
