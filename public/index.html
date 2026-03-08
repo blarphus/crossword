@@ -1650,6 +1650,7 @@ document.addEventListener('visibilitychange', () => {
 
 // ─── Remote user presence ──────────────────────────────────────
 const remoteUsers = new Map(); // socketId → {userId, userName, color, row, col, direction}
+function isSoloMode() { return remoteUsers.size === 0; }
 const cellFillers = new Map(); // "r,c" → {userName, color} (who filled this cell)
 const guessStats = new Map(); // userName → { total, incorrect }
 const persistedPoints = new Map(); // userName → number (base points from DB, excludes word bonuses)
@@ -2338,80 +2339,92 @@ function sendCellUpdate(row, col, letter) {
     // Immediate local point scoring with fire mechanic
     if (PUZZLE) {
       const isCorrect = isCellCorrect(row, col, letter);
-      const isRebus = !!PUZZLE.rebus[`${row},${col}`] && letter.length > 1;
-      const basePts = isRebus ? 50 : 10;
-      const now = Date.now();
-      const wasOnFire = myFireActive;
-
-      // Track guess stats
-      const gs = guessStats.get(myName) || { total: 0, incorrect: 0 };
-      gs.total++;
-      if (!isCorrect) gs.incorrect++;
-      guessStats.set(myName, gs);
-
       sfxType(isCorrect);
 
-      if (isCorrect && myFireActive) {
-        // Correct + on fire: multiplied points
-        const firePts = Math.round(basePts * myFireMultiplier);
-        persistedPoints.set(myName, (persistedPoints.get(myName) || 0) + firePts);
-        showPointFloat(row, col, firePts, null, true);
-        // Add this cell to fire effect
-        myFireCells.add(`${row},${col}`);
-        if (cellEls[row]?.[col]) cellEls[row][col].classList.add('on-fire');
-      } else if (isCorrect && !myFireActive) {
-        // Correct + not on fire: normal points (50 for rebus, 10 for regular)
-        persistedPoints.set(myName, (persistedPoints.get(myName) || 0) + basePts);
-        showPointFloat(row, col, basePts);
-      } else if (!isCorrect && myFireActive) {
-        // Incorrect + on fire: break fire
-        persistedPoints.set(myName, (persistedPoints.get(myName) || 0) - 30);
-        showPointFloat(row, col, -30);
-        breakMyFire();
-      } else {
-        // Incorrect + not on fire: reset word completion streak
-        myRecentWordCompletions = [];
-        persistedPoints.set(myName, (persistedPoints.get(myName) || 0) - 30);
-        showPointFloat(row, col, -30);
-      }
+      if (!isSoloMode()) {
+        const isRebus = !!PUZZLE.rebus[`${row},${col}`] && letter.length > 1;
+        const basePts = isRebus ? 50 : 10;
+        const now = Date.now();
+        const wasOnFire = myFireActive;
 
-      // Word completion bonus (check after grid is updated)
-      if (isCorrect) {
-        const { bonus: rawWb, completed: wordsCompleted, wordCellKeys } = checkLocalWordBonus(row, col);
-        if (rawWb > 0) {
-          resetHintTimer();
-          // Apply fire multiplier to word bonus if was already on fire (not if fire starts this turn)
-          let wb = rawWb;
-          if (wasOnFire) wb = Math.round(wb * myFireMultiplier);
-          persistedPoints.set(myName, (persistedPoints.get(myName) || 0) + wb);
-          const isCombo = wb >= (wasOnFire ? 125 : 250);
-          setTimeout(() => showPointFloat(row, col, wb, isCombo ? 'combo' : 'word', wasOnFire), 200);
-          if (isCombo) sfxCombo(); else sfxWordComplete();
-          triggerWordWave(row, col);
+        // Track guess stats
+        const gs = guessStats.get(myName) || { total: 0, incorrect: 0 };
+        gs.total++;
+        if (!isCorrect) gs.incorrect++;
+        guessStats.set(myName, gs);
 
-          // Extend fire on word completion while on fire — add entire completed word(s) to fire
-          if (myFireActive && wasOnFire) {
-            myFireWordsCompleted += wordsCompleted;
-            myFireMultiplier = 1.5 + Math.floor(myFireWordsCompleted / 3) * 0.5;
-            myFireExpiresAt = myFireExpiresAt + 5000;
-            for (const wk of wordCellKeys) {
-              myFireCells.add(wk);
-              const [wr, wc] = wk.split(',').map(Number);
-              if (cellEls[wr]?.[wc]) cellEls[wr][wc].classList.add('on-fire');
+        if (isCorrect && myFireActive) {
+          // Correct + on fire: multiplied points
+          const firePts = Math.round(basePts * myFireMultiplier);
+          persistedPoints.set(myName, (persistedPoints.get(myName) || 0) + firePts);
+          showPointFloat(row, col, firePts, null, true);
+          // Add this cell to fire effect
+          myFireCells.add(`${row},${col}`);
+          if (cellEls[row]?.[col]) cellEls[row][col].classList.add('on-fire');
+        } else if (isCorrect && !myFireActive) {
+          // Correct + not on fire: normal points (50 for rebus, 10 for regular)
+          persistedPoints.set(myName, (persistedPoints.get(myName) || 0) + basePts);
+          showPointFloat(row, col, basePts);
+        } else if (!isCorrect && myFireActive) {
+          // Incorrect + on fire: break fire
+          persistedPoints.set(myName, (persistedPoints.get(myName) || 0) - 30);
+          showPointFloat(row, col, -30);
+          breakMyFire();
+        } else {
+          // Incorrect + not on fire: reset word completion streak
+          myRecentWordCompletions = [];
+          persistedPoints.set(myName, (persistedPoints.get(myName) || 0) - 30);
+          showPointFloat(row, col, -30);
+        }
+
+        // Word completion bonus (check after grid is updated)
+        if (isCorrect) {
+          const { bonus: rawWb, completed: wordsCompleted, wordCellKeys } = checkLocalWordBonus(row, col);
+          if (rawWb > 0) {
+            resetHintTimer();
+            // Apply fire multiplier to word bonus if was already on fire (not if fire starts this turn)
+            let wb = rawWb;
+            if (wasOnFire) wb = Math.round(wb * myFireMultiplier);
+            persistedPoints.set(myName, (persistedPoints.get(myName) || 0) + wb);
+            const isCombo = wb >= (wasOnFire ? 125 : 250);
+            setTimeout(() => showPointFloat(row, col, wb, isCombo ? 'combo' : 'word', wasOnFire), 200);
+            if (isCombo) sfxCombo(); else sfxWordComplete();
+            triggerWordWave(row, col);
+
+            // Extend fire on word completion while on fire — add entire completed word(s) to fire
+            if (myFireActive && wasOnFire) {
+              myFireWordsCompleted += wordsCompleted;
+              myFireMultiplier = 1.5 + Math.floor(myFireWordsCompleted / 3) * 0.5;
+              myFireExpiresAt = myFireExpiresAt + 5000;
+              for (const wk of wordCellKeys) {
+                myFireCells.add(wk);
+                const [wr, wc] = wk.split(',').map(Number);
+                if (cellEls[wr]?.[wc]) cellEls[wr][wc].classList.add('on-fire');
+              }
+            }
+
+            // Track word completions toward fire trigger (only when not on fire)
+            if (!myFireActive) {
+              myRecentWordCompletions.push({ timestamp: now, count: wordsCompleted, wordCells: wordCellKeys });
+              myRecentWordCompletions = myRecentWordCompletions.filter(e => now - e.timestamp < 30000);
+              const totalCompletions = myRecentWordCompletions.reduce((sum, e) => sum + e.count, 0);
+              if (totalCompletions >= 3) {
+                myFireMultiplier = 1.5;
+                myFireWordsCompleted = 0;
+                startMyFire([], now + 30000);
+                myRecentWordCompletions = [];
+              }
             }
           }
-
-          // Track word completions toward fire trigger (only when not on fire)
-          if (!myFireActive) {
-            myRecentWordCompletions.push({ timestamp: now, count: wordsCompleted, wordCells: wordCellKeys });
-            myRecentWordCompletions = myRecentWordCompletions.filter(e => now - e.timestamp < 30000);
-            const totalCompletions = myRecentWordCompletions.reduce((sum, e) => sum + e.count, 0);
-            if (totalCompletions >= 3) {
-              myFireMultiplier = 1.5;
-              myFireWordsCompleted = 0;
-              startMyFire([], now + 30000);
-              myRecentWordCompletions = [];
-            }
+        }
+      } else {
+        // Solo mode: just check word completions for sound effects and hint timer
+        if (isCorrect) {
+          const { bonus: rawWb } = checkLocalWordBonus(row, col);
+          if (rawWb > 0) {
+            resetHintTimer();
+            sfxWordComplete();
+            triggerWordWave(row, col);
           }
         }
       }
@@ -3104,7 +3117,7 @@ function renderPresenceBar() {
     }
   }
 
-  if (allUsers.length <= 1 && !points.has(myName)) {
+  if (isSoloMode()) {
     presenceBarEl.style.display = 'none';
     return;
   }
@@ -3698,11 +3711,20 @@ function computeAccuracy() {
 }
 
 function showLeaderboard() {
-  const points = computeUserPoints();
-  const accuracy = computeAccuracy();
   const titleEl = document.getElementById('congrats-title');
   const msgEl = document.getElementById('congrats-msg');
   const lbEl = document.getElementById('leaderboard');
+  const timeStr = formatTimer(getTimerSeconds());
+
+  if (isSoloMode()) {
+    titleEl.textContent = 'Congratulations!';
+    msgEl.textContent = `Solved in ${timeStr}!`;
+    lbEl.innerHTML = '';
+    return;
+  }
+
+  const points = computeUserPoints();
+  const accuracy = computeAccuracy();
 
   // Count filled squares per player
   const filledCells = new Map();
@@ -3720,7 +3742,6 @@ function showLeaderboard() {
   }
   players.sort((a, b) => b.pts - a.pts);
 
-  const timeStr = formatTimer(getTimerSeconds());
   if (players.length > 0) {
     titleEl.textContent = `${players[0].name} wins!`;
     msgEl.textContent = `Solved in ${timeStr} — Final standings:`;
@@ -3752,12 +3773,14 @@ function checkCompletion() {
     }
   }
   if (!solved) {
-    // Award 250 point bonus to whoever filled the last square
-    const lastFiller = cellFillers.get(`${selectedRow},${selectedCol}`);
-    if (lastFiller) {
-      const bonus = 250;
-      persistedPoints.set(lastFiller.userName, (persistedPoints.get(lastFiller.userName) || 0) + bonus);
-      showPointFloat(selectedRow, selectedCol, bonus, 'combo', false);
+    if (!isSoloMode()) {
+      // Award 250 point bonus to whoever filled the last square
+      const lastFiller = cellFillers.get(`${selectedRow},${selectedCol}`);
+      if (lastFiller) {
+        const bonus = 250;
+        persistedPoints.set(lastFiller.userName, (persistedPoints.get(lastFiller.userName) || 0) + bonus);
+        showPointFloat(selectedRow, selectedCol, bonus, 'combo', false);
+      }
     }
     sfxVictory();
   }
