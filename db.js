@@ -7,81 +7,21 @@ const pool = new Pool({
     : false,
 });
 
+// Set search_path on every new connection so all queries hit the crossword schema
+pool.on('connect', (client) => {
+  client.query('SET search_path TO crossword, public');
+});
+
 async function initDb() {
-  await pool.query(`
-    CREATE TABLE IF NOT EXISTS puzzle_state (
-      puzzle_date TEXT PRIMARY KEY,
-      user_grid   JSONB NOT NULL,
-      updated_at  TIMESTAMPTZ DEFAULT NOW()
-    )
-  `);
-  await pool.query(`
-    CREATE TABLE IF NOT EXISTS puzzles (
-      date       TEXT PRIMARY KEY,
-      data       JSONB NOT NULL,
-      created_at TIMESTAMPTZ DEFAULT NOW()
-    )
-  `);
-  await pool.query(`
-    CREATE TABLE IF NOT EXISTS metadata (
-      key   TEXT PRIMARY KEY,
-      value TEXT
-    )
-  `);
-  // Add timer column to puzzle_state if missing
-  await pool.query(`
-    ALTER TABLE puzzle_state ADD COLUMN IF NOT EXISTS timer_seconds INTEGER DEFAULT 0
-  `);
-  // Users table
-  await pool.query(`
-    CREATE TABLE IF NOT EXISTS users (
-      ip         TEXT PRIMARY KEY,
-      name       TEXT NOT NULL,
-      color      TEXT NOT NULL,
-      created_at TIMESTAMPTZ DEFAULT NOW()
-    )
-  `);
-  // Migrate users table to support device-based identity
-  await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS device_id TEXT`);
-  await pool.query(`CREATE UNIQUE INDEX IF NOT EXISTS users_device_id_idx ON users (device_id) WHERE device_id IS NOT NULL`);
-  // Cell filler attribution column
-  await pool.query(`
-    ALTER TABLE puzzle_state ADD COLUMN IF NOT EXISTS cell_fillers JSONB DEFAULT '{}'
-  `);
-  // Persisted points column (userName → number)
-  await pool.query(`
-    ALTER TABLE puzzle_state ADD COLUMN IF NOT EXISTS points JSONB DEFAULT '{}'
-  `);
-  // Guess tracking column (userName → { total, incorrect })
-  await pool.query(`
-    ALTER TABLE puzzle_state ADD COLUMN IF NOT EXISTS guesses JSONB DEFAULT '{}'
-  `);
-
-  // ─── Jeopardy tables ──────────────────────────────────────────
-  await pool.query(`
-    CREATE TABLE IF NOT EXISTS jeopardy_games (
-      game_id    TEXT PRIMARY KEY,
-      show_number TEXT,
-      air_date   TEXT,
-      season     INTEGER,
-      data       JSONB NOT NULL,
-      created_at TIMESTAMPTZ DEFAULT NOW()
-    )
-  `);
-  await pool.query(`CREATE INDEX IF NOT EXISTS jeopardy_games_air_date_idx ON jeopardy_games (air_date)`);
-  await pool.query(`CREATE INDEX IF NOT EXISTS jeopardy_games_season_idx ON jeopardy_games (season)`);
-
-  // Jeopardy shared progress (like puzzle_state for crosswords)
-  await pool.query(`
-    CREATE TABLE IF NOT EXISTS jeopardy_progress (
-      game_id        TEXT PRIMARY KEY,
-      clues_answered INTEGER DEFAULT 0,
-      total_clues    INTEGER DEFAULT 60,
-      current_round  TEXT DEFAULT 'jeopardy',
-      completed      BOOLEAN DEFAULT FALSE,
-      updated_at     TIMESTAMPTZ DEFAULT NOW()
-    )
-  `);
+  // Schema is managed by Polycast Sequel migrations (012-crossword-schema.js).
+  // Just verify tables are accessible.
+  const { rows } = await pool.query(
+    `SELECT table_name FROM information_schema.tables
+     WHERE table_schema = 'crossword' AND table_name = 'puzzles'`
+  );
+  if (rows.length === 0) {
+    throw new Error('crossword.puzzles table not found — run Polycast Sequel migrations first');
+  }
 }
 
 async function savePuzzle(date, data) {
