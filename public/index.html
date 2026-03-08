@@ -3234,10 +3234,6 @@ function buildCluePanel() {
   cluePanelEl.innerHTML = '';
   clueItemEls = {};
 
-  // Check if any clue references "starred" clues
-  const allClues = [...(PUZZLE.clues.across || []), ...(PUZZLE.clues.down || [])];
-  const hasStarredRef = allClues.some(c => /starred/i.test(c.clue));
-
   for (const dir of ['across', 'down']) {
     const section = document.createElement('div');
     section.className = 'clue-section';
@@ -3248,9 +3244,6 @@ function buildCluePanel() {
     for (const clue of PUZZLE.clues[dir]) {
       const item = document.createElement('div');
       item.className = 'clue-item';
-      if (hasStarredRef && /^\s*\*/.test(clue.clue)) {
-        item.classList.add('starred');
-      }
 
       const numSpan = document.createElement('span');
       numSpan.className = 'clue-num';
@@ -3423,8 +3416,11 @@ function render({ scrollClues = true } = {}) {
     }
   }
 
+  // Check if current clue references "starred" clues
+  const showStarred = currentClue && /starred/i.test(currentClue.clue);
+
   for (const k in clueItemEls) {
-    clueItemEls[k].classList.remove('active', 'ref-active');
+    clueItemEls[k].classList.remove('active', 'ref-active', 'starred');
   }
   if (currentClue) {
     const k = `${direction}-${currentClue.n}`;
@@ -3452,6 +3448,17 @@ function render({ scrollClues = true } = {}) {
     for (const refKey of refClueKeys) {
       if (clueItemEls[refKey]) {
         clueItemEls[refKey].classList.add('ref-active');
+      }
+    }
+    // Highlight starred clues when the selected clue references them
+    if (showStarred) {
+      for (const dir of ['across', 'down']) {
+        for (const clue of PUZZLE.clues[dir]) {
+          if (/^\s*\*/.test(clue.clue)) {
+            const sk = `${dir}-${clue.n}`;
+            if (clueItemEls[sk]) clueItemEls[sk].classList.add('starred');
+          }
+        }
       }
     }
   }
