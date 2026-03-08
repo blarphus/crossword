@@ -764,13 +764,14 @@ body.mobile .mobile-keyboard { display: block; position: static; flex-shrink: 0;
 .cell.on-fire::before {
   content: '';
   position: absolute;
-  top: -16px;
+  bottom: -16px;
   left: -2px;
   right: -2px;
   height: 18px;
   background-image: url(/fire.webp);
   background-size: 100% 100%;
   background-repeat: no-repeat;
+  transform: scaleY(-1);
   pointer-events: none;
   z-index: 5;
 }
@@ -2388,12 +2389,16 @@ function sendCellUpdate(row, col, letter) {
           if (isCombo) sfxCombo(); else sfxWordComplete();
           triggerWordWave(row, col);
 
-          // Extend fire on word completion while on fire
+          // Extend fire on word completion while on fire — add entire completed word(s) to fire
           if (myFireActive && wasOnFire) {
             myFireWordsCompleted += wordsCompleted;
             myFireMultiplier = 1.5 + Math.floor(myFireWordsCompleted / 3) * 0.5;
             myFireExpiresAt = myFireExpiresAt + 5000;
-            // Fire cells already accumulated — no need to reset
+            for (const wk of wordCellKeys) {
+              myFireCells.add(wk);
+              const [wr, wc] = wk.split(',').map(Number);
+              if (cellEls[wr]?.[wc]) cellEls[wr][wc].classList.add('on-fire');
+            }
           }
 
           // Track word completions toward fire trigger (only when not on fire)
@@ -2402,9 +2407,14 @@ function sendCellUpdate(row, col, letter) {
             myRecentWordCompletions = myRecentWordCompletions.filter(e => now - e.timestamp < 30000);
             const totalCompletions = myRecentWordCompletions.reduce((sum, e) => sum + e.count, 0);
             if (totalCompletions >= 3) {
+              // Collect all word cells from the completions that triggered fire
+              const fireStartCells = [];
+              for (const entry of myRecentWordCompletions) {
+                if (entry.wordCells) fireStartCells.push(...entry.wordCells);
+              }
               myFireMultiplier = 1.5;
               myFireWordsCompleted = 0;
-              startMyFire([], now + 30000);  // Start with empty — only new correct letters get fire
+              startMyFire(fireStartCells, now + 30000);
               myRecentWordCompletions = [];
             }
           }

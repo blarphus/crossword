@@ -618,7 +618,8 @@ async function processCellUpdate({ puzzleDate, row, col, letter, socketId, userN
             fs.fireWordsCompleted += completed;
             fs.fireMultiplier = 1.5 + Math.floor(fs.fireWordsCompleted / 3) * 0.5;
             fs.fireExpiresAt = Math.min(fs.fireExpiresAt + 5000, now + 30000);
-            // fireCells already accumulated during fire — don't reset
+            // Add entire completed word cells to fire
+            for (const wc of completedWordCells) fs.fireCells.push(wc);
             if (fs.fireTimer) clearTimeout(fs.fireTimer);
             const remainingMs = fs.fireExpiresAt - now;
             fs.fireTimer = setTimeout(() => expireFire(socketId), remainingMs);
@@ -628,13 +629,18 @@ async function processCellUpdate({ puzzleDate, row, col, letter, socketId, userN
             fs.recentWordCompletions = fs.recentWordCompletions.filter(e => now - e.timestamp < 30000);
             const totalCompletions = fs.recentWordCompletions.reduce((sum, e) => sum + e.count, 0);
             if (totalCompletions >= 3) {
+              // Collect all word cells from the completions that triggered fire
+              const fireStartCells = [];
+              for (const entry of fs.recentWordCompletions) {
+                if (entry.wordCells) fireStartCells.push(...entry.wordCells);
+              }
               fs.onFire = true;
               fs.fireExpiresAt = now + 30000;
-              fs.fireCells = [];  // Start fresh — only new correct letters get fire
+              fs.fireCells = fireStartCells;
               fs.fireMultiplier = 1.5;
               fs.fireWordsCompleted = 0;
               fs.fireTimer = setTimeout(() => expireFire(socketId), 30000);
-              fireEvent = { type: 'started', userName, color: userColor, fireCells: [], remainingMs: 30000, fireMultiplier: 1.5 };
+              fireEvent = { type: 'started', userName, color: userColor, fireCells: fireStartCells, remainingMs: 30000, fireMultiplier: 1.5 };
               fs.recentWordCompletions = [];
             }
           }
