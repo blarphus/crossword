@@ -579,6 +579,8 @@ async function processCellUpdate({ puzzleDate, row, col, letter, socketId, userN
 
       if (isCorrect && fs.onFire) {
         pointDelta = Math.round(basePts * fs.fireMultiplier);
+        // Track this cell as filled during fire
+        fs.fireCells.push({ row, col });
       } else if (isCorrect && !fs.onFire) {
         pointDelta = basePts;
       } else if (!isCorrect && fs.onFire) {
@@ -612,25 +614,15 @@ async function processCellUpdate({ puzzleDate, row, col, letter, socketId, userN
           hintSt.available = false;
           hintSt.votes.clear();
 
-          const fillers = await db.getCellFillers(puzzleDate);
-          const userFireCells = [];
-          for (const [key, filler] of Object.entries(fillers)) {
-            const fillerName = typeof filler === 'object' ? filler.userName : filler;
-            if (fillerName === userName) {
-              const [r, c] = key.split(',').map(Number);
-              userFireCells.push({ row: r, col: c });
-            }
-          }
-
           if (fs.onFire && wasOnFire) {
             fs.fireWordsCompleted += completed;
             fs.fireMultiplier = 1.5 + Math.floor(fs.fireWordsCompleted / 3) * 0.5;
             fs.fireExpiresAt = Math.min(fs.fireExpiresAt + 5000, now + 30000);
-            fs.fireCells = userFireCells;
+            // fireCells already accumulated during fire — don't reset
             if (fs.fireTimer) clearTimeout(fs.fireTimer);
             const remainingMs = fs.fireExpiresAt - now;
             fs.fireTimer = setTimeout(() => expireFire(socketId), remainingMs);
-            fireEvent = { type: 'extended', userName, color: userColor, fireCells: userFireCells, remainingMs, fireMultiplier: fs.fireMultiplier };
+            fireEvent = { type: 'extended', userName, color: userColor, fireCells: fs.fireCells.slice(), remainingMs, fireMultiplier: fs.fireMultiplier };
           } else if (!fs.onFire) {
             fs.recentWordCompletions.push({ timestamp: now, count: completed, wordCells: completedWordCells });
             fs.recentWordCompletions = fs.recentWordCompletions.filter(e => now - e.timestamp < 30000);
@@ -638,11 +630,11 @@ async function processCellUpdate({ puzzleDate, row, col, letter, socketId, userN
             if (totalCompletions >= 3) {
               fs.onFire = true;
               fs.fireExpiresAt = now + 30000;
-              fs.fireCells = userFireCells;
+              fs.fireCells = [];  // Start fresh — only new correct letters get fire
               fs.fireMultiplier = 1.5;
               fs.fireWordsCompleted = 0;
               fs.fireTimer = setTimeout(() => expireFire(socketId), 30000);
-              fireEvent = { type: 'started', userName, color: userColor, fireCells: userFireCells, remainingMs: 30000, fireMultiplier: 1.5 };
+              fireEvent = { type: 'started', userName, color: userColor, fireCells: [], remainingMs: 30000, fireMultiplier: 1.5 };
               fs.recentWordCompletions = [];
             }
           }
