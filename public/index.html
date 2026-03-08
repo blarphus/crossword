@@ -3288,6 +3288,16 @@ function render({ scrollClues = true } = {}) {
         }
       }
     }
+    // Highlight starred clue cells when the current clue references "starred"
+    if (/starred/i.test(currentClue.clue)) {
+      for (const dir of ['across', 'down']) {
+        for (const clue of PUZZLE.clues[dir]) {
+          if (/^\s*\*/.test(clue.clue)) {
+            for (const [rr, cc] of getWordCells(clue, dir)) refCellSet.add(`${rr},${cc}`);
+          }
+        }
+      }
+    }
   }
 
   // Build remote user highlight maps
