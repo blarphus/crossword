@@ -17,7 +17,7 @@
   --clue-hover: #dce8f0;
   --clue-active: #a7d8ff;
   --error: #ff4444;
-  --checked: #2a6dd4;
+  --checked: #222;
 }
 
 body {
@@ -899,7 +899,8 @@ body.mobile .mobile-keyboard { display: block; position: static; flex-shrink: 0;
   animation: hint-shimmer 2s ease-in-out infinite;
 }
 
-/* Completed word cells — letter color in player color */
+/* Completed word cells — letter color in player color (override checked) */
+.cell.word-complete.checked .letter,
 .cell.word-complete .letter {
   color: var(--wc-color, #4CAF50);
 }
@@ -1436,7 +1437,7 @@ async function initIdentity() {
   showNameModal();
 }
 
-const CLIENT_COLOR_POOL = ['#4CAF50','#222222','#FF9800','#E91E63','#9C27B0','#FF00FF'];
+const CLIENT_COLOR_POOL = ['#4CAF50','#FF9800','#E91E63','#9C27B0','#FF00FF','#2a6dd4'];
 
 function showNameModal(isChange) {
   const modal = document.getElementById('name-modal');
