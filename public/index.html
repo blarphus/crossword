@@ -365,7 +365,7 @@ body {
 .cell.highlight-ref { background: #fff3b0; }
 .cell.highlight-cell { background: var(--highlight-cell); }
 .cell.error .letter { color: var(--error); }
-.cell.checked .letter { color: var(--checked); }
+.cell.checked .letter { color: var(--filler-color, #222); }
 
 /* Rebus cells (multi-letter content) */
 .cell .letter.rebus-text {
@@ -900,11 +900,6 @@ body.mobile .mobile-keyboard { display: block; position: static; flex-shrink: 0;
   animation: hint-shimmer 2s ease-in-out infinite;
 }
 
-/* Completed word cells — letter color in player color (override checked) */
-.cell.word-complete.checked .letter,
-.cell.word-complete .letter {
-  color: var(--wc-color, #4CAF50);
-}
 
 /* ─── Puzzle Entry Overlay ──────────────────────────────────── */
 .puzzle-entry-overlay {
@@ -2170,32 +2165,6 @@ async function loadPuzzle(dateStr) {
         checkedCells[r][c] = true;
 
   // Scan for already-completed words and assign filler colors
-  completedWordCells.clear();
-  for (const dir of ['across', 'down']) {
-    if (!PUZZLE.clues[dir]) continue;
-    for (const clue of PUZZLE.clues[dir]) {
-      const cells = getWordCells(clue, dir);
-      if (cells.every(([r, c]) => isCellCorrect(r, c))) {
-        // Find majority filler color for this word
-        const colorCounts = {};
-        for (const [r, c] of cells) {
-          const filler = cellFillers.get(`${r},${c}`);
-          if (filler && filler.color) {
-            colorCounts[filler.color] = (colorCounts[filler.color] || 0) + 1;
-          }
-        }
-        let bestColor = myColor;
-        let bestCount = 0;
-        for (const [col, cnt] of Object.entries(colorCounts)) {
-          if (cnt > bestCount) { bestCount = cnt; bestColor = col; }
-        }
-        for (const [r, c] of cells) {
-          completedWordCells.set(`${r},${c}`, bestColor);
-        }
-      }
-    }
-  }
-
   // Update header
   const d = new Date(dateStr + 'T12:00:00');
   const dayName = DAYS[d.getDay()];
@@ -2315,7 +2284,6 @@ function triggerWordWave(row, col, completerColor) {
     if (!cells.every(([r, c]) => isCellCorrect(r, c))) continue;
     cells.forEach(([r, c], i) => {
       const key = `${r},${c}`;
-      completedWordCells.set(key, color);
       const el = cellEls[r]?.[c];
       if (!el) return;
       setTimeout(() => {
@@ -2342,59 +2310,30 @@ function sendCellUpdate(row, col, letter) {
       sfxType(isCorrect);
 
       if (!isSoloMode()) {
-        const isRebus = !!PUZZLE.rebus[`${row},${col}`] && letter.length > 1;
-        const basePts = isRebus ? 50 : 10;
         const now = Date.now();
         const wasOnFire = myFireActive;
 
-        // Track guess stats
-        const gs = guessStats.get(myName) || { total: 0, incorrect: 0 };
-        gs.total++;
-        if (!isCorrect) gs.incorrect++;
-        guessStats.set(myName, gs);
-
         if (isCorrect && myFireActive) {
-          // Correct + on fire: multiplied points
-          const firePts = Math.round(basePts * myFireMultiplier);
-          persistedPoints.set(myName, (persistedPoints.get(myName) || 0) + firePts);
-          showPointFloat(row, col, firePts, null, true);
           // Add this cell to fire effect
           myFireCells.add(`${row},${col}`);
           if (cellEls[row]?.[col]) cellEls[row][col].classList.add('on-fire');
-        } else if (isCorrect && !myFireActive) {
-          // Correct + not on fire: normal points (50 for rebus, 10 for regular)
-          persistedPoints.set(myName, (persistedPoints.get(myName) || 0) + basePts);
-          showPointFloat(row, col, basePts);
         } else if (!isCorrect && myFireActive) {
-          // Incorrect + on fire: break fire
-          persistedPoints.set(myName, (persistedPoints.get(myName) || 0) - 30);
-          showPointFloat(row, col, -30);
           breakMyFire();
-        } else {
-          // Incorrect + not on fire: reset word completion streak
+        } else if (!isCorrect && !myFireActive) {
           myRecentWordCompletions = [];
-          persistedPoints.set(myName, (persistedPoints.get(myName) || 0) - 30);
-          showPointFloat(row, col, -30);
         }
 
-        // Word completion bonus (check after grid is updated)
+        // Word completion: sound effects, fire tracking, hint timer
         if (isCorrect) {
           const { bonus: rawWb, completed: wordsCompleted, wordCellKeys } = checkLocalWordBonus(row, col);
           if (rawWb > 0) {
             resetHintTimer();
-            // Apply fire multiplier to word bonus if was already on fire (not if fire starts this turn)
-            let wb = rawWb;
-            if (wasOnFire) wb = Math.round(wb * myFireMultiplier);
-            persistedPoints.set(myName, (persistedPoints.get(myName) || 0) + wb);
-            const isCombo = wb >= (wasOnFire ? 125 : 250);
-            setTimeout(() => showPointFloat(row, col, wb, isCombo ? 'combo' : 'word', wasOnFire), 200);
-            if (isCombo) sfxCombo(); else sfxWordComplete();
+            sfxWordComplete();
             triggerWordWave(row, col);
 
             // Extend fire on word completion while on fire — add entire completed word(s) to fire
             if (myFireActive && wasOnFire) {
               myFireWordsCompleted += wordsCompleted;
-              myFireMultiplier = 1.5 + Math.floor(myFireWordsCompleted / 3) * 0.5;
               myFireExpiresAt = myFireExpiresAt + 5000;
               for (const wk of wordCellKeys) {
                 myFireCells.add(wk);
@@ -2409,7 +2348,6 @@ function sendCellUpdate(row, col, letter) {
               myRecentWordCompletions = myRecentWordCompletions.filter(e => now - e.timestamp < 30000);
               const totalCompletions = myRecentWordCompletions.reduce((sum, e) => sum + e.count, 0);
               if (totalCompletions >= 3) {
-                myFireMultiplier = 1.5;
                 myFireWordsCompleted = 0;
                 startMyFire([], now + 30000);
                 myRecentWordCompletions = [];
@@ -2884,25 +2822,11 @@ function setupSocketHandlers() {
       } else {
         cellFillers.delete(key);
       }
-      // Apply remote point delta
-      const isFireBoosted = fireEvent && (fireEvent.type === 'started' || fireEvent.type === 'extended');
-      if (pointDelta && remoteName) {
-        persistedPoints.set(remoteName, (persistedPoints.get(remoteName) || 0) + pointDelta);
-        showPointFloat(row, col, pointDelta, null, isFireBoosted);
-      }
-      // Apply remote word bonus
+      // Word completion effects (sound, wave)
       if (wordBonus && remoteName) {
         resetHintTimer();
-        persistedPoints.set(remoteName, (persistedPoints.get(remoteName) || 0) + wordBonus);
-        const isCombo = wordBonus >= 250;
-        setTimeout(() => showPointFloat(row, col, wordBonus, isCombo ? 'combo' : 'word', isFireBoosted), 200);
-        if (isCombo) sfxCombo(true); else sfxWordComplete(true);
+        sfxWordComplete(true);
         triggerWordWave(row, col, remoteColor);
-      }
-      // Apply remote last-square bonus
-      if (lastSquareBonus && remoteName) {
-        persistedPoints.set(remoteName, (persistedPoints.get(remoteName) || 0) + lastSquareBonus);
-        setTimeout(() => showPointFloat(row, col, lastSquareBonus, 'combo', false), 400);
       }
       // If remote user is on fire and typed a correct letter, add cell to their fire display
       if (letter && guessCorrect && !fireEvent) {
@@ -3097,8 +3021,6 @@ function computeUserPoints() {
 function renderPresenceBar() {
   presenceBarEl.innerHTML = '';
 
-  const points = computeUserPoints();
-
   // Build list: current user + online remote users
   const allUsers = [{ name: myName, color: myColor, label: myName || 'You', isBot: false }];
   const seenNames = new Set([myName]);
@@ -3109,11 +3031,11 @@ function renderPresenceBar() {
       seenNames.add(user.userName);
     }
   }
-  // Include offline users who have points (from persisted fillers)
-  for (const [name, data] of points) {
-    if (!seenNames.has(name)) {
-      allUsers.push({ name, color: data.color, label: name });
-      seenNames.add(name);
+  // Include offline users who have filled squares
+  for (const [, filler] of cellFillers) {
+    if (!seenNames.has(filler.userName)) {
+      allUsers.push({ name: filler.userName, color: filler.color || '#ccc', label: filler.userName });
+      seenNames.add(filler.userName);
     }
   }
 
@@ -3130,8 +3052,6 @@ function renderPresenceBar() {
   }
 
   for (const u of allUsers) {
-    const data = points.get(u.name);
-    const pts = data ? data.pts : 0;
     const filled = filledCounts.get(u.name) || 0;
     const el = document.createElement('div');
     el.className = 'presence-user';
@@ -3149,7 +3069,6 @@ function renderPresenceBar() {
     if (isOnFire) el.classList.add('on-fire');
 
     const filledStr = filled > 0 ? ` <span class="presence-filled">${filled}</span>` : '';
-    const ptsStr = pts !== 0 ? ` <span class="presence-pts">${pts > 0 ? '+' : ''}${pts}</span>` : '';
     const botBadge = u.isBot ? ' <span class="presence-bot-badge">BOT</span>' : '';
     el.innerHTML =
       `<div class="presence-fire-header">` +
@@ -3160,7 +3079,7 @@ function renderPresenceBar() {
         `</div>` +
       `</div>` +
       `<div class="presence-user-info">` +
-        `<span class="presence-dot" style="background:${u.color}"></span>${u.label}${botBadge}${filledStr}${ptsStr}` +
+        `<span class="presence-dot" style="background:${u.color}"></span>${u.label}${botBadge}${filledStr}` +
       `</div>`;
     if (u.name === myName) {
       el.style.cursor = 'pointer';
@@ -3425,12 +3344,14 @@ function render({ scrollClues = true } = {}) {
       el.classList.toggle('rebus-active', rebusMode && isMyCell);
 
       el.classList.toggle('hint-cell', hintCells.has(key));
-      const wcColor = completedWordCells.get(key);
-      el.classList.toggle('word-complete', !!wcColor && !hintCells.has(key));
-      if (wcColor && !hintCells.has(key)) {
-        el.style.setProperty('--wc-color', wcColor);
-      }
       el.classList.toggle('checked', checkedCells[r][c]);
+      // Set filler color for checked letters
+      const filler = cellFillers.get(key);
+      if (filler && filler.color) {
+        el.style.setProperty('--filler-color', filler.color);
+      } else {
+        el.style.removeProperty('--filler-color');
+      }
       if (autoCheck && userGrid[r][c] && !checkedCells[r][c]) {
         el.classList.toggle('error', !isCellCorrect(r, c));
       } else {
@@ -3723,24 +3644,21 @@ function showLeaderboard() {
     return;
   }
 
-  const points = computeUserPoints();
-  const accuracy = computeAccuracy();
-
   // Count filled squares per player
   const filledCells = new Map();
+  const playerColors = new Map();
   for (const [, filler] of cellFillers) {
     filledCells.set(filler.userName, (filledCells.get(filler.userName) || 0) + 1);
+    if (filler.color && filler.color !== '#ccc') playerColors.set(filler.userName, filler.color);
   }
 
-  // Build sorted list
+  // Build sorted list by squares
   const players = [];
-  for (const [name, data] of points) {
-    const acc = accuracy.get(name) || { correct: 0, total: 0 };
-    const pct = acc.total > 0 ? Math.round((acc.correct / acc.total) * 100) : 0;
-    const filled = filledCells.get(name) || 0;
-    players.push({ name, color: data.color, pts: data.pts, pct, filled });
+  for (const [name, filled] of filledCells) {
+    const color = playerColors.get(name) || (name === myName ? myColor : '#ccc');
+    players.push({ name, color, filled });
   }
-  players.sort((a, b) => b.pts - a.pts);
+  players.sort((a, b) => b.filled - a.filled);
 
   if (players.length > 0) {
     titleEl.textContent = `${players[0].name} wins!`;
@@ -3758,9 +3676,7 @@ function showLeaderboard() {
       <span class="leaderboard-rank">${i + 1}.</span>
       <span class="leaderboard-dot" style="background:${p.color}"></span>
       <span class="leaderboard-name">${p.name}</span>
-      <span class="leaderboard-stats">${p.filled} sq</span>
-      <span class="leaderboard-stats">${p.pct}% acc</span>
-      <span class="leaderboard-pts">${p.pts > 0 ? '+' : ''}${p.pts} pts</span>
+      <span class="leaderboard-pts">${p.filled} squares</span>
     `;
     lbEl.appendChild(row);
   });
@@ -3773,15 +3689,6 @@ function checkCompletion() {
     }
   }
   if (!solved) {
-    if (!isSoloMode()) {
-      // Award 250 point bonus to whoever filled the last square
-      const lastFiller = cellFillers.get(`${selectedRow},${selectedCol}`);
-      if (lastFiller) {
-        const bonus = 250;
-        persistedPoints.set(lastFiller.userName, (persistedPoints.get(lastFiller.userName) || 0) + bonus);
-        showPointFloat(selectedRow, selectedCol, bonus, 'combo', false);
-      }
-    }
     sfxVictory();
   }
   solved = true;
