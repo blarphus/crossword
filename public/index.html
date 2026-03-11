@@ -58,6 +58,33 @@ body {
 .calendar-nav button:disabled { opacity: 0.4; cursor: default; }
 .calendar-nav select { font-size: 0.85rem; }
 
+.mode-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px;
+  background: #eef3f8;
+  border-radius: 999px;
+  border: 1px solid #d7dee6;
+}
+
+.mode-toggle-btn {
+  border: none;
+  background: transparent;
+  color: #5b6570;
+  font-size: 0.78rem;
+  font-weight: 700;
+  padding: 7px 12px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.mode-toggle-btn.active {
+  background: #2a6dd4;
+  color: #fff;
+}
+
 .calendar-day-headers {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
@@ -195,7 +222,19 @@ body {
 }
 .toolbar button:hover { background: #eee; }
 .toolbar button#btn-trails.trails-off { opacity: 0.4; }
-#btn-chat { display: none; }
+#btn-chat {
+  position: relative;
+}
+#btn-chat.has-unread::after {
+  content: '';
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #e53935;
+}
 
 .presence-bar {
   display: flex;
@@ -432,13 +471,17 @@ body {
 .chat-panel {
   width: 280px;
   min-width: 240px;
-  display: flex;
+  display: none;
   flex-direction: column;
   background: var(--white);
   border: 1px solid #ddd;
   border-radius: 6px;
   overflow: hidden;
   max-height: 100%;
+}
+
+.chat-open .chat-panel {
+  display: flex;
 }
 
 .chat-header {
@@ -858,6 +901,8 @@ body.mobile .calendar-nav { padding: 10px; gap: 6px; }
 body.mobile .calendar-nav h1 { font-size: 1rem; margin-right: 6px; }
 body.mobile .calendar-nav button, body.mobile .calendar-nav select { padding: 5px 8px; font-size: 0.78rem; }
 body.mobile .user-badge { font-size: 0.72rem; padding: 3px 8px; }
+body.mobile .mode-toggle { order: 10; width: 100%; justify-content: center; }
+body.mobile .mode-toggle-btn { flex: 1; text-align: center; }
 
 body.mobile .calendar-day-headers, body.mobile .calendar-grid { max-width: 100%; padding: 0 6px; gap: 4px; }
 body.mobile .cal-day .day-number { font-size: 0.55rem; }
@@ -907,16 +952,6 @@ body.mobile .toolbar button#btn-chat {
   position: relative;
 }
 body.mobile .toolbar button#btn-chat::before { content: '\1F4AC'; font-size: 0.95rem; }
-body.mobile .toolbar button#btn-chat.has-unread::after {
-  content: '';
-  position: absolute;
-  top: 6px;
-  right: 5px;
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: #e53935;
-}
 body.mobile.chat-open .toolbar button#btn-chat {
   color: #2a6dd4;
 }
@@ -1341,6 +1376,10 @@ body.mobile.chat-open .mobile-keyboard { display: none; }
     <h1>NYT Crossword</h1>
     <a href="/jeopardy" style="padding:6px 14px; border-radius:4px; background:#060CE9; color:#D7A32A; text-decoration:none; font-weight:700; font-size:0.85rem; transition:opacity 0.15s;" onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'">Jeopardy!</a>
     <span class="user-badge" id="user-badge" title="Click to change name"></span>
+    <div class="mode-toggle" id="mode-toggle">
+      <button class="mode-toggle-btn active" id="mode-multiplayer" type="button">Multiplayer</button>
+      <button class="mode-toggle-btn" id="mode-solo" type="button">Solo</button>
+    </div>
     <button id="cal-prev">&lt;</button>
     <select id="cal-month"></select>
     <select id="cal-year"></select>
@@ -1630,10 +1669,158 @@ function getDeviceId() {
   return id;
 }
 const DEVICE_ID = getDeviceId();
+const PLAY_MODE_KEY = 'crossword-play-mode';
+const SOLO_STATE_KEY_PREFIX = 'crossword-solo-state:';
+const playModeButtons = {
+  multiplayer: document.getElementById('mode-multiplayer'),
+  solo: document.getElementById('mode-solo'),
+};
+
+let playMode = localStorage.getItem(PLAY_MODE_KEY) === 'solo' ? 'solo' : 'multiplayer';
+
+function isLocalSoloMode() {
+  return playMode === 'solo';
+}
+
+function getSoloStateKey(puzzleDate) {
+  return `${SOLO_STATE_KEY_PREFIX}${puzzleDate}`;
+}
+
+function loadSoloState(puzzleDate) {
+  try {
+    const raw = localStorage.getItem(getSoloStateKey(puzzleDate));
+    if (!raw) return null;
+    return JSON.parse(raw);
+  } catch (err) {
+    return null;
+  }
+}
+
+function saveSoloState(puzzleDate) {
+  if (!isLocalSoloMode() || !PUZZLE || !puzzleDate) return;
+  const state = {
+    userGrid: getCurrentUserGridMap(),
+    timerSeconds: getTimerSeconds(),
+    updatedAt: new Date().toISOString(),
+  };
+  localStorage.setItem(getSoloStateKey(puzzleDate), JSON.stringify(state));
+  updateCalendarSummaryForCurrentPuzzle();
+}
+
+function clearSoloState(puzzleDate) {
+  localStorage.removeItem(getSoloStateKey(puzzleDate));
+  if (calendarData.has(puzzleDate) && PUZZLE && currentDate === puzzleDate) {
+    updateCalendarSummaryForCurrentPuzzle();
+  }
+}
+
+function buildSoloProgressInfo(date, puzzleData, soloState) {
+  const dims = puzzleData.dimensions;
+  const grid = puzzleData.grid;
+  const rebus = puzzleData.rebus || {};
+  const storedGrid = soloState?.userGrid || {};
+  const cells = [];
+  let filledCount = 0;
+  let totalWhite = 0;
+  let isComplete = true;
+
+  for (let r = 0; r < dims.rows; r++) {
+    for (let c = 0; c < dims.cols; c++) {
+      if (grid[r][c] === '.') {
+        cells.push(0);
+        continue;
+      }
+      totalWhite++;
+      const key = `${r},${c}`;
+      const correct = rebus[key] || grid[r][c];
+      const userLetter = storedGrid[key] || '';
+      if (userLetter) {
+        cells.push(2);
+        filledCount++;
+        if (userLetter !== correct) isComplete = false;
+      } else {
+        cells.push(1);
+        isComplete = false;
+      }
+    }
+  }
+
+  if (totalWhite === 0) isComplete = false;
+
+  return {
+    date,
+    rows: dims.rows,
+    cols: dims.cols,
+    cells,
+    filledCount,
+    totalWhite,
+    isComplete,
+  };
+}
+
+function getCurrentUserGridMap() {
+  const map = {};
+  for (let r = 0; r < ROWS; r++) {
+    for (let c = 0; c < COLS; c++) {
+      const val = userGrid[r]?.[c];
+      if (val) map[`${r},${c}`] = val;
+    }
+  }
+  return map;
+}
+
+function updateCalendarSummaryForCurrentPuzzle() {
+  if (!isLocalSoloMode() || !PUZZLE || !currentDate) return;
+  const summary = buildSoloProgressInfo(currentDate, {
+    dimensions: { rows: ROWS, cols: COLS },
+    grid: PUZZLE.grid,
+    rebus: PUZZLE.rebus,
+  }, {
+    userGrid: getCurrentUserGridMap(),
+  });
+  calendarData.set(currentDate, summary);
+  const dayEl = document.querySelector(`.cal-day[data-date="${currentDate}"]`);
+  if (dayEl && !dayEl.classList.contains('no-puzzle')) {
+    dayEl.classList.toggle('complete', summary.isComplete);
+    const canvas = dayEl.querySelector('canvas');
+    if (canvas) drawThumbnail(canvas, summary);
+  }
+}
+
+function populateSoloFillersFromGrid() {
+  cellFillers.clear();
+  for (let r = 0; r < ROWS; r++) {
+    for (let c = 0; c < COLS; c++) {
+      if (userGrid[r]?.[c]) {
+        cellFillers.set(`${r},${c}`, { userName: myName || 'You', color: myColor });
+      }
+    }
+  }
+}
 
 let myName = '';
 let myColor = '#90EE90';
 let socket = null;
+
+function bootAppIfNeeded() {
+  if (!appStarted) {
+    appStarted = true;
+    startApp();
+  }
+}
+
+function ensureSocketState() {
+  if (isLocalSoloMode()) {
+    if (socket) {
+      socket.disconnect();
+      socket = null;
+    }
+    return;
+  }
+  if (!socket && myName) {
+    connectSocket();
+  }
+}
 
 async function initIdentity() {
   try {
@@ -1642,7 +1829,9 @@ async function initIdentity() {
     if (data.name) {
       myName = data.name;
       myColor = data.color;
-      connectSocket();
+      updateUserBadge();
+      ensureSocketState();
+      bootAppIfNeeded();
       return;
     }
   } catch (e) {
@@ -1723,16 +1912,13 @@ function showNameModal(isChange) {
       myColor = data.color;
       modal.classList.remove('show');
       updateUserBadge();
-      if (!isChange) {
-        connectSocket();
-      } else {
-        // Reconnect socket with new name/color
-        if (socket) {
-          socket.disconnect();
-          socket = null;
-        }
-        connectSocket();
+      if (socket) {
+        socket.disconnect();
+        socket = null;
       }
+      ensureSocketState();
+      bootAppIfNeeded();
+      if (PUZZLE) render({ scrollClues: false });
     } catch (e) {
       newBtn.disabled = false;
       alert('Failed to save, please try again.');
@@ -1773,10 +1959,7 @@ function connectSocket() {
 
   updateUserBadge();
   setupSocketHandlers();
-  if (!appStarted) {
-    appStarted = true;
-    startApp();
-  }
+  bootAppIfNeeded();
 }
 
 // ─── Device detection ─────────────────────────────────────────
@@ -1848,6 +2031,8 @@ function startTimerTick() {
 }
 
 function stopTimerTick() {
+  timerBaseSeconds = getTimerSeconds();
+  timerBaseTime = 0;
   if (timerInterval) {
     clearInterval(timerInterval);
     timerInterval = null;
@@ -1890,7 +2075,7 @@ let hintVoted = false; // whether this player has voted for current hint
 
 // Chat state
 const chatMessages = [];
-let mobileChatOpen = false;
+let chatOpen = false;
 let hasUnreadChat = false;
 
 // ─── DOM refs ──────────────────────────────────────────────────
@@ -1923,6 +2108,60 @@ const MONTH_NAMES = ['January','February','March','April','May','June','July','A
 
 let calendarYear, calendarMonth; // calendarMonth is 0-indexed
 const calendarData = new Map(); // date → {date, rows, cols, cells, filledCount, totalWhite, isComplete}
+let puzzleIndexCache = null;
+const puzzleDataCache = new Map();
+
+async function getPuzzleIndex() {
+  if (puzzleIndexCache) return puzzleIndexCache;
+  const res = await fetch('/api/puzzles');
+  puzzleIndexCache = await res.json();
+  return puzzleIndexCache;
+}
+
+async function getPuzzleDataForDate(dateStr) {
+  if (puzzleDataCache.has(dateStr)) return puzzleDataCache.get(dateStr);
+  const res = await fetch(`/api/puzzles/${dateStr}`);
+  if (!res.ok) return null;
+  const data = await res.json();
+  puzzleDataCache.set(dateStr, data);
+  return data;
+}
+
+function updateModeToggle() {
+  playModeButtons.multiplayer.classList.toggle('active', !isLocalSoloMode());
+  playModeButtons.solo.classList.toggle('active', isLocalSoloMode());
+}
+
+function updateModeUI() {
+  updateModeToggle();
+  btnChat.style.display = isLocalSoloMode() ? 'none' : '';
+  if (isLocalSoloMode()) setChatOpen(false);
+  updateChatComposerState();
+  roomCounts.clear();
+  if (isLocalSoloMode()) {
+    aiBotList = [];
+    remoteUsers.clear();
+  }
+  if (PUZZLE) {
+    renderPresenceBar();
+    render({ scrollClues: false });
+  }
+}
+
+function setPlayMode(nextMode, { rerenderCalendar = true } = {}) {
+  playMode = nextMode === 'solo' ? 'solo' : 'multiplayer';
+  localStorage.setItem(PLAY_MODE_KEY, playMode);
+
+  if (currentDate && socket) {
+    socket.emit('leave-puzzle');
+  }
+  ensureSocketState();
+  updateModeUI();
+
+  if (rerenderCalendar) {
+    fetchAndRenderCalendar();
+  }
+}
 
 function todayET() {
   return new Date().toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
@@ -1934,7 +2173,7 @@ function formatChatTime(sentAt) {
 }
 
 function updateChatUnreadIndicator() {
-  btnChat.classList.toggle('has-unread', IS_MOBILE && hasUnreadChat && !mobileChatOpen);
+  btnChat.classList.toggle('has-unread', hasUnreadChat && !chatOpen);
 }
 
 function updateChatComposerState() {
@@ -1987,12 +2226,15 @@ function renderChatMessages() {
   updateChatComposerState();
 }
 
-function setMobileChatOpen(open, { focusInput = false } = {}) {
-  mobileChatOpen = IS_MOBILE ? !!open : false;
-  document.body.classList.toggle('chat-open', mobileChatOpen);
-  btnChat.setAttribute('aria-pressed', mobileChatOpen ? 'true' : 'false');
+function setChatOpen(open, { focusInput = false } = {}) {
+  chatOpen = !!open;
+  document.body.classList.toggle('chat-open', chatOpen);
+  btnChat.setAttribute('aria-pressed', chatOpen ? 'true' : 'false');
+  btnChat.title = chatOpen ? 'Close chat' : 'Open chat';
+  btnChat.setAttribute('aria-label', chatOpen ? 'Close chat' : 'Open chat');
+  btnChat.classList.toggle('active', chatOpen);
 
-  if (mobileChatOpen) {
+  if (chatOpen) {
     hasUnreadChat = false;
     updateChatUnreadIndicator();
     if (PUZZLE) computeAndApplyCellSize();
@@ -2008,7 +2250,7 @@ function resetChatState() {
   chatMessages.length = 0;
   hasUnreadChat = false;
   chatInputEl.value = '';
-  setMobileChatOpen(false);
+  setChatOpen(false);
   renderChatMessages();
   updateChatUnreadIndicator();
 }
@@ -2018,7 +2260,7 @@ function appendChatMessage(message) {
   if (chatMessages.length > 50) chatMessages.shift();
 
   const isRemote = !socket || message.socketId !== socket.id;
-  if (IS_MOBILE && !mobileChatOpen && isRemote) {
+  if (!chatOpen && isRemote) {
     hasUnreadChat = true;
     updateChatUnreadIndicator();
   }
@@ -2038,6 +2280,16 @@ function submitChatMessage() {
 function initCalendarNav() {
   const monthSel = document.getElementById('cal-month');
   const yearSel = document.getElementById('cal-year');
+
+  playModeButtons.multiplayer.addEventListener('click', () => {
+    if (!isLocalSoloMode()) return;
+    setPlayMode('multiplayer');
+  });
+  playModeButtons.solo.addEventListener('click', () => {
+    if (isLocalSoloMode()) return;
+    setPlayMode('solo');
+  });
+  updateModeToggle();
 
   for (let m = 0; m < 12; m++) {
     const opt = document.createElement('option');
@@ -2111,15 +2363,29 @@ async function fetchAndRenderCalendar() {
   // Persist selected month
   localStorage.setItem('crossword-calendar-month', `${calendarYear}-${calendarMonth}`);
   const ym = `${calendarYear}-${String(calendarMonth + 1).padStart(2, '0')}`;
+  for (const [key] of calendarData) {
+    if (key.startsWith(ym)) calendarData.delete(key);
+  }
+
   try {
-    const res = await fetch(`/api/calendar/${ym}`);
-    const data = await res.json();
-    // Clear old month data from map, add new
-    for (const [key] of calendarData) {
-      if (key.startsWith(ym)) calendarData.delete(key);
-    }
-    for (const item of data) {
-      calendarData.set(item.date, item);
+    if (isLocalSoloMode()) {
+      const puzzles = await getPuzzleIndex();
+      const monthDates = puzzles
+        .filter(p => p.date.startsWith(ym))
+        .map(p => p.date);
+      const monthPuzzles = await Promise.all(monthDates.map(date => getPuzzleDataForDate(date)));
+      for (let i = 0; i < monthDates.length; i++) {
+        const puzzleData = monthPuzzles[i];
+        if (!puzzleData) continue;
+        const state = loadSoloState(monthDates[i]);
+        calendarData.set(monthDates[i], buildSoloProgressInfo(monthDates[i], puzzleData, state));
+      }
+    } else {
+      const res = await fetch(`/api/calendar/${ym}`);
+      const data = await res.json();
+      for (const item of data) {
+        calendarData.set(item.date, item);
+      }
     }
   } catch (e) {
     // Silently ignore fetch errors
@@ -2178,7 +2444,7 @@ function renderCalendar() {
 
     // Player count badge
     const playerCount = roomCounts.get(dateStr);
-    if (playerCount > 0) {
+    if (!isLocalSoloMode() && playerCount > 0) {
       const badge = document.createElement('div');
       badge.className = 'player-count-badge';
       badge.textContent = playerCount;
@@ -2224,11 +2490,14 @@ function showCalendar(pushState = true) {
   document.title = 'NYT Crossword';
   resetChatState();
 
+  stopTimerTick();
+  if (isLocalSoloMode() && currentDate && PUZZLE) {
+    saveSoloState(currentDate);
+  }
   if (currentDate) {
     if (socket) socket.emit('leave-puzzle');
     currentDate = null;
   }
-  stopTimerTick();
   timerBaseSeconds = 0;
   timerBaseTime = 0;
   updateTimerDisplay();
@@ -2251,7 +2520,7 @@ function showPuzzle(dateStr, pushState = true, showEntry = false) {
   // Always load the puzzle first so grid renders behind overlay
   loadPuzzle(dateStr);
 
-  if (showEntry) {
+  if (showEntry && !isLocalSoloMode()) {
     showPuzzleEntryOverlay(dateStr);
   }
 }
@@ -2287,6 +2556,7 @@ function showPuzzleEntryOverlay(dateStr, paused) {
   const userPreviewEl = document.getElementById('entry-user-preview');
   const startBtn = document.getElementById('entry-start-btn');
   const changeNameBtn = document.getElementById('entry-change-name');
+  const aiSectionEl = document.getElementById('entry-ai-section');
   startBtn.textContent = paused ? 'Resume' : 'Start Solving';
 
   // Parse date for display
@@ -2309,21 +2579,26 @@ function showPuzzleEntryOverlay(dateStr, paused) {
 
   // Show current players
   playersEl.innerHTML = '';
-  const count = roomCounts.get(dateStr) || 0;
-  if (count > 0) {
-    const el = document.createElement('div');
-    el.className = 'entry-player';
-    el.innerHTML = `<span class="entry-player-dot" style="background:#2a6dd4"></span>${count} player${count > 1 ? 's' : ''} solving`;
-    playersEl.appendChild(el);
+  if (isLocalSoloMode()) {
+    playersEl.innerHTML = '<div class="entry-no-players">Solo mode saves progress in this browser only</div>';
   } else {
-    playersEl.innerHTML = '<div class="entry-no-players">No one here yet</div>';
+    const count = roomCounts.get(dateStr) || 0;
+    if (count > 0) {
+      const el = document.createElement('div');
+      el.className = 'entry-player';
+      el.innerHTML = `<span class="entry-player-dot" style="background:#2a6dd4"></span>${count} player${count > 1 ? 's' : ''} solving`;
+      playersEl.appendChild(el);
+    } else {
+      playersEl.innerHTML = '<div class="entry-no-players">No one here yet</div>';
+    }
   }
 
   // Show overlay immediately
   overlay.classList.add('show');
+  aiSectionEl.style.display = isLocalSoloMode() ? 'none' : '';
 
   // Sync AI bot list from server
-  if (socket && dateStr) {
+  if (!isLocalSoloMode() && socket && dateStr) {
     socket.emit('get-ai-bots', { puzzleDate: dateStr });
   }
 
@@ -2331,7 +2606,7 @@ function showPuzzleEntryOverlay(dateStr, paused) {
   const addBotBtn = document.getElementById('entry-ai-add-btn');
   const diffSelect = document.getElementById('entry-ai-difficulty');
   const handleAddBot = () => {
-    if (socket && dateStr) {
+    if (!isLocalSoloMode() && socket && dateStr) {
       socket.emit('add-ai', { puzzleDate: dateStr, difficultyIndex: parseInt(diffSelect.value, 10) });
     }
   };
@@ -2354,13 +2629,16 @@ function showPuzzleEntryOverlay(dateStr, paused) {
     startBtn.removeEventListener('click', handleStart);
     changeNameBtn.removeEventListener('click', handleChangeName);
     addBotBtn.removeEventListener('click', handleAddBot);
-    if (paused && socket && currentDate) {
+    if (paused && isLocalSoloMode()) {
+      timerBaseTime = Date.now();
+      startTimerTick();
+    } else if (paused && socket && currentDate) {
       // Resume: unpause bots and restart timer (resume-puzzle handles bot restart)
       socket.emit('resume-puzzle', { puzzleDate: currentDate });
       startTimerTick();
     } else {
       // Fresh start: kick off AI solving
-      if (socket && dateStr && aiBotList.length > 0) {
+      if (!isLocalSoloMode() && socket && dateStr && aiBotList.length > 0) {
         socket.emit('start-ai', { puzzleDate: dateStr });
       }
     }
@@ -2400,7 +2678,7 @@ function computeAndApplyCellSize() {
     const presenceH = measure('.presence-bar');
     const fireBarH = 22; // always reserve even when hidden
     const clueBarH = measure('.current-clue-bar') || 32;
-    const keyboardH = measure('.mobile-keyboard') || (mobileChatOpen ? 0 : 120);
+    const keyboardH = measure('.mobile-keyboard') || (chatOpen ? 0 : 120);
     const chatH = measure('.chat-panel');
     const gridBorder = 4;
     const overhead = toolbarH + presenceH + fireBarH + clueBarH + keyboardH + chatH + gridBorder + 4;
@@ -2436,16 +2714,23 @@ async function loadPuzzle(dateStr) {
   hideHintBtn();
   if (hintCheckInterval) clearInterval(hintCheckInterval);
 
-  // Fetch puzzle data and shared state in parallel
+  // Fetch puzzle data and mode-specific state in parallel
   let data, stateData;
   try {
-    const [puzzleRes, stateRes] = await Promise.all([
-      fetch(`/api/puzzles/${dateStr}`),
-      fetch(`/api/state/${dateStr}`),
-    ]);
-    if (!puzzleRes.ok) { alert('Puzzle not found'); showCalendar(); return; }
-    data = await puzzleRes.json();
-    stateData = await stateRes.json();
+    if (isLocalSoloMode()) {
+      const puzzleRes = await fetch(`/api/puzzles/${dateStr}`);
+      if (!puzzleRes.ok) { alert('Puzzle not found'); showCalendar(); return; }
+      data = await puzzleRes.json();
+      stateData = loadSoloState(dateStr) || {};
+    } else {
+      const [puzzleRes, stateRes] = await Promise.all([
+        fetch(`/api/puzzles/${dateStr}`),
+        fetch(`/api/state/${dateStr}`),
+      ]);
+      if (!puzzleRes.ok) { alert('Puzzle not found'); showCalendar(); return; }
+      data = await puzzleRes.json();
+      stateData = await stateRes.json();
+    }
   } catch (e) {
     alert('Failed to load puzzle');
     showCalendar();
@@ -2482,6 +2767,7 @@ async function loadPuzzle(dateStr) {
       down: mapClues(data.clues.down),
     },
   };
+  puzzleDataCache.set(dateStr, data);
 
   // Reset state
   userGrid = Array.from({length: ROWS}, () => Array(COLS).fill(''));
@@ -2498,6 +2784,13 @@ async function loadPuzzle(dateStr) {
 
   // Apply shared state
   applySharedState(stateData.userGrid || {}, stateData.cellFillers || {}, stateData.points || {}, stateData.userColors || {}, stateData.guesses || {});
+  if (isLocalSoloMode()) {
+    populateSoloFillersFromGrid();
+    timerBaseSeconds = stateData.timerSeconds || 0;
+    timerBaseTime = Date.now();
+    updateTimerDisplay();
+    startTimerTick();
+  }
 
   // Mark all correct letters as checked (auto-check is always on)
   for (let r = 0; r < ROWS; r++)
@@ -2536,7 +2829,7 @@ async function loadPuzzle(dateStr) {
   focusGrid();
 
   // Join puzzle room via Socket.IO
-  if (socket) socket.emit('join-puzzle', dateStr);
+  if (!isLocalSoloMode() && socket) socket.emit('join-puzzle', dateStr);
 
   // Start hint timer
   startHintTimer();
@@ -2639,7 +2932,7 @@ function triggerWordWave(row, col, completerColor) {
 }
 
 function sendCellUpdate(row, col, letter) {
-  if (!currentDate || !socket) return;
+  if (!currentDate) return;
   const key = `${row},${col}`;
   // Prevent modifying hint cells (cannot delete or overwrite)
   if (hintCells.has(key)) return;
@@ -2703,7 +2996,11 @@ function sendCellUpdate(row, col, letter) {
     cellFillers.delete(key);
     // Deleting a letter does NOT break fire or count toward streak
   }
-  socket.emit('cell-update', { puzzleDate: currentDate, row, col, letter });
+  if (isLocalSoloMode()) {
+    saveSoloState(currentDate);
+    return;
+  }
+  if (socket) socket.emit('cell-update', { puzzleDate: currentDate, row, col, letter });
 }
 
 // ─── Hint system ─────────────────────────────────────────────────
@@ -2717,7 +3014,7 @@ function startHintTimer() {
     if (elapsed >= 60000) {
       showHintBtn();
       // Notify server that hint is available (so all clients can see it)
-      if (socket && currentDate) socket.emit('hint-available', { puzzleDate: currentDate });
+      if (!isLocalSoloMode() && socket && currentDate) socket.emit('hint-available', { puzzleDate: currentDate });
     }
   }, 5000);
 }
@@ -2757,11 +3054,31 @@ function updateHintVoteText(votes, total) {
 }
 
 function voteForHint() {
-  if (!PUZZLE || !socket || !currentDate || hintVoted) return;
+  if (!PUZZLE || !currentDate || hintVoted) return;
   hintVoted = true;
   const btn = document.getElementById('hint-btn');
   if (btn) btn.classList.add('voted');
-  socket.emit('hint-vote', { puzzleDate: currentDate });
+  if (isLocalSoloMode()) {
+    const candidates = [];
+    for (let r = 0; r < ROWS; r++) {
+      for (let c = 0; c < COLS; c++) {
+        if (isBlack(r, c)) continue;
+        const key = `${r},${c}`;
+        if (hintCells.has(key)) continue;
+        const correct = getCorrectAnswer(r, c);
+        if (userGrid[r][c] !== correct) {
+          candidates.push({ row: r, col: c, letter: correct });
+        }
+      }
+    }
+    for (let i = candidates.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [candidates[i], candidates[j]] = [candidates[j], candidates[i]];
+    }
+    applyHintReveal(candidates.slice(0, 5));
+    return;
+  }
+  if (socket) socket.emit('hint-vote', { puzzleDate: currentDate });
 }
 
 function applyHintReveal(cells) {
@@ -2841,6 +3158,10 @@ function applyHintReveal(cells) {
 
   // Final render + completion check after all animations
   setTimeout(() => {
+    if (isLocalSoloMode()) {
+      populateSoloFillersFromGrid();
+      saveSoloState(currentDate);
+    }
     render();
     checkCompletion();
   }, cells.length * 100 + 700);
@@ -3974,13 +4295,14 @@ function checkCompletion() {
   }
   solved = true;
   stopTimerTick();
+  if (isLocalSoloMode()) saveSoloState(currentDate);
   showLeaderboard();
   congratsEl.classList.add('show');
 }
 
 const mobileInput = document.getElementById('mobile-input');
 function focusGrid() {
-  if (IS_MOBILE && mobileChatOpen) {
+  if (IS_MOBILE && chatOpen) {
     chatInputEl.focus();
     return;
   }
@@ -4184,22 +4506,21 @@ gridEl.addEventListener('keydown', (e) => {
 btnBack.addEventListener('click', () => showCalendar());
 document.getElementById('btn-back-mobile').addEventListener('click', () => showCalendar());
 btnChat.addEventListener('click', () => {
-  if (!IS_MOBILE) return;
-  setMobileChatOpen(!mobileChatOpen, { focusInput: !mobileChatOpen });
+  setChatOpen(!chatOpen, { focusInput: !chatOpen });
 });
 
 chatInputEl.addEventListener('input', updateChatComposerState);
 chatInputEl.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape' && IS_MOBILE && mobileChatOpen) {
+  if (e.key === 'Escape' && chatOpen) {
     e.preventDefault();
-    setMobileChatOpen(false);
+    setChatOpen(false);
     focusGrid();
   }
 });
 chatFormEl.addEventListener('submit', (e) => {
   e.preventDefault();
   submitChatMessage();
-  if (IS_MOBILE && mobileChatOpen) {
+  if (chatOpen) {
     chatInputEl.focus();
   }
 });
@@ -4208,8 +4529,12 @@ updateChatComposerState();
 // Pause: show overlay and notify server
 function pausePuzzle() {
   if (!currentDate || solved) return;
-  if (socket) socket.emit('pause-puzzle', { puzzleDate: currentDate });
   stopTimerTick();
+  if (isLocalSoloMode()) {
+    saveSoloState(currentDate);
+  } else if (socket) {
+    socket.emit('pause-puzzle', { puzzleDate: currentDate });
+  }
   showPuzzleEntryOverlay(currentDate, true);
 }
 document.getElementById('btn-pause').addEventListener('click', pausePuzzle);
@@ -4228,6 +4553,8 @@ document.addEventListener('visibilitychange', () => {
   if (document.hidden && currentDate && !solved) {
     const overlay = document.getElementById('puzzle-entry-overlay');
     if (!overlay.classList.contains('show')) pausePuzzle();
+  } else if (document.visibilityState === 'visible' && isLocalSoloMode() && currentDate && !solved) {
+    updateTimerDisplay();
   }
 });
 
@@ -4243,9 +4570,19 @@ btnClear.addEventListener('click', () => {
   cellFillers.clear();
   persistedPoints.clear();
   guessStats.clear();
+  hintCells.clear();
+  hideHintBtn();
+  resetFireState();
   solved = false;
   congratsEl.classList.remove('show');
-  if (currentDate && socket) {
+  if (isLocalSoloMode()) {
+    timerBaseSeconds = 0;
+    timerBaseTime = Date.now();
+    updateTimerDisplay();
+    startTimerTick();
+    clearSoloState(currentDate);
+    updateCalendarSummaryForCurrentPuzzle();
+  } else if (currentDate && socket) {
     socket.emit('clear-puzzle', { puzzleDate: currentDate });
   }
   render();
@@ -4349,7 +4686,7 @@ function handleBackspace() {
 const origFocusGrid = focusGrid;
 focusGrid = function() {
   if (IS_MOBILE) {
-    if (mobileChatOpen) {
+    if (chatOpen) {
       chatInputEl.focus();
       return;
     }
@@ -4496,6 +4833,7 @@ document.getElementById('clue-next').addEventListener('click', () => {
 // ─── Init ──────────────────────────────────────────────────────
 function startApp() {
   initCalendarNav();
+  updateModeUI();
 
   // Check URL path for a puzzle date (e.g. /2025-02-15)
   const urlPath = window.location.pathname.slice(1); // strip leading /

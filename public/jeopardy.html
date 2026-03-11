@@ -1867,8 +1867,9 @@ body {
     }
     $resultLabel.className = `result-label ${correct ? 'correct' : 'incorrect'}`;
 
-    // Show correct answer on incorrect responses (only if server sent it)
-    $resultAnswer.textContent = (!correct && correctAnswer) ? correctAnswer : '';
+    // Show the correct answer whenever the clue is actually over.
+    // The server only includes it when revealing it won't spoil a rebuzz.
+    $resultAnswer.textContent = correctAnswer || '';
 
     const sign = scoreChange >= 0 ? '+' : '';
     $resultScoreChange.textContent = `${esc(playerName)}: ${sign}$${Math.abs(scoreChange)}`;
