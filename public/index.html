@@ -1671,6 +1671,7 @@ function getDeviceId() {
 const DEVICE_ID = getDeviceId();
 const PLAY_MODE_KEY = 'crossword-play-mode';
 const SOLO_STATE_KEY_PREFIX = 'crossword-solo-state:';
+const SOLO_CALENDAR_TEMPLATE_KEY_PREFIX = 'crossword-solo-calendar-template:';
 const playModeButtons = {
   multiplayer: document.getElementById('mode-multiplayer'),
   solo: document.getElementById('mode-solo'),
@@ -1684,6 +1685,10 @@ function isLocalSoloMode() {
 
 function getSoloStateKey(puzzleDate) {
   return `${SOLO_STATE_KEY_PREFIX}${puzzleDate}`;
+}
+
+function getSoloCalendarTemplateKey(yearMonth) {
+  return `${SOLO_CALENDAR_TEMPLATE_KEY_PREFIX}${yearMonth}`;
 }
 
 function loadSoloState(puzzleDate) {
@@ -1702,6 +1707,13 @@ function saveSoloState(puzzleDate) {
     userGrid: getCurrentUserGridMap(),
     timerSeconds: getTimerSeconds(),
     updatedAt: new Date().toISOString(),
+    summary: buildSoloProgressInfo(puzzleDate, {
+      dimensions: { rows: ROWS, cols: COLS },
+      grid: PUZZLE.grid,
+      rebus: PUZZLE.rebus,
+    }, {
+      userGrid: getCurrentUserGridMap(),
+    }),
   };
   localStorage.setItem(getSoloStateKey(puzzleDate), JSON.stringify(state));
   updateCalendarSummaryForCurrentPuzzle();
@@ -2108,23 +2120,49 @@ const MONTH_NAMES = ['January','February','March','April','May','June','July','A
 
 let calendarYear, calendarMonth; // calendarMonth is 0-indexed
 const calendarData = new Map(); // date → {date, rows, cols, cells, filledCount, totalWhite, isComplete}
-let puzzleIndexCache = null;
-const puzzleDataCache = new Map();
+const soloCalendarTemplateCache = new Map();
 
-async function getPuzzleIndex() {
-  if (puzzleIndexCache) return puzzleIndexCache;
-  const res = await fetch('/api/puzzles');
-  puzzleIndexCache = await res.json();
-  return puzzleIndexCache;
+function cloneCalendarSummary(summary) {
+  return {
+    ...summary,
+    cells: Array.isArray(summary.cells) ? summary.cells.slice() : [],
+  };
 }
 
-async function getPuzzleDataForDate(dateStr) {
-  if (puzzleDataCache.has(dateStr)) return puzzleDataCache.get(dateStr);
-  const res = await fetch(`/api/puzzles/${dateStr}`);
-  if (!res.ok) return null;
+function normalizeSoloCalendarTemplateItem(item) {
+  return {
+    date: item.date,
+    rows: item.rows,
+    cols: item.cols,
+    cells: item.cells.map(cell => cell === 0 ? 0 : 1),
+    filledCount: 0,
+    totalWhite: item.totalWhite,
+    isComplete: false,
+  };
+}
+
+async function getSoloCalendarTemplate(yearMonth) {
+  if (soloCalendarTemplateCache.has(yearMonth)) {
+    return soloCalendarTemplateCache.get(yearMonth);
+  }
+
+  const stored = localStorage.getItem(getSoloCalendarTemplateKey(yearMonth));
+  if (stored) {
+    try {
+      const parsed = JSON.parse(stored);
+      soloCalendarTemplateCache.set(yearMonth, parsed);
+      return parsed;
+    } catch (err) {
+      localStorage.removeItem(getSoloCalendarTemplateKey(yearMonth));
+    }
+  }
+
+  const res = await fetch(`/api/calendar/${yearMonth}`);
   const data = await res.json();
-  puzzleDataCache.set(dateStr, data);
-  return data;
+  const normalized = data.map(normalizeSoloCalendarTemplateItem);
+  soloCalendarTemplateCache.set(yearMonth, normalized);
+  localStorage.setItem(getSoloCalendarTemplateKey(yearMonth), JSON.stringify(normalized));
+  return normalized;
 }
 
 function updateModeToggle() {
@@ -2369,16 +2407,10 @@ async function fetchAndRenderCalendar() {
 
   try {
     if (isLocalSoloMode()) {
-      const puzzles = await getPuzzleIndex();
-      const monthDates = puzzles
-        .filter(p => p.date.startsWith(ym))
-        .map(p => p.date);
-      const monthPuzzles = await Promise.all(monthDates.map(date => getPuzzleDataForDate(date)));
-      for (let i = 0; i < monthDates.length; i++) {
-        const puzzleData = monthPuzzles[i];
-        if (!puzzleData) continue;
-        const state = loadSoloState(monthDates[i]);
-        calendarData.set(monthDates[i], buildSoloProgressInfo(monthDates[i], puzzleData, state));
+      const template = await getSoloCalendarTemplate(ym);
+      for (const item of template) {
+        const localSummary = loadSoloState(item.date)?.summary;
+        calendarData.set(item.date, cloneCalendarSummary(localSummary || item));
       }
     } else {
       const res = await fetch(`/api/calendar/${ym}`);
@@ -2767,7 +2799,6 @@ async function loadPuzzle(dateStr) {
       down: mapClues(data.clues.down),
     },
   };
-  puzzleDataCache.set(dateStr, data);
 
   // Reset state
   userGrid = Array.from({length: ROWS}, () => Array(COLS).fill(''));
@@ -2790,6 +2821,9 @@ async function loadPuzzle(dateStr) {
     timerBaseTime = Date.now();
     updateTimerDisplay();
     startTimerTick();
+    if (Object.keys(stateData.userGrid || {}).length > 0 && !stateData.summary) {
+      saveSoloState(dateStr);
+    }
   }
 
   // Mark all correct letters as checked (auto-check is always on)
