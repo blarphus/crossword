@@ -195,6 +195,7 @@ body {
 }
 .toolbar button:hover { background: #eee; }
 .toolbar button#btn-trails.trails-off { opacity: 0.4; }
+#btn-chat { display: none; }
 
 .presence-bar {
   display: flex;
@@ -411,13 +412,181 @@ body {
 .clue-panel {
   display: flex;
   gap: 0;
-  flex: 1;
-  max-width: 700px;
+  flex: 1 1 auto;
+  min-width: 0;
   background: var(--white);
   border: 1px solid #ddd;
   border-radius: 6px;
   overflow: hidden;
   max-height: 100%;
+}
+
+.sidebar-layout {
+  display: flex;
+  gap: 12px;
+  flex: 1 1 auto;
+  min-width: 0;
+  max-height: 100%;
+}
+
+.chat-panel {
+  width: 280px;
+  min-width: 240px;
+  display: flex;
+  flex-direction: column;
+  background: var(--white);
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  overflow: hidden;
+  max-height: 100%;
+}
+
+.chat-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 12px 8px;
+  border-bottom: 1px solid #e7ebef;
+}
+
+.chat-header h2 {
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #44515f;
+}
+
+.chat-note {
+  font-size: 0.7rem;
+  color: #7c8794;
+  text-align: right;
+}
+
+.chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 10px 12px;
+  background: #f8fafc;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 180px;
+}
+
+.chat-empty {
+  margin: auto 0;
+  font-size: 0.82rem;
+  line-height: 1.4;
+  color: #7c8794;
+  text-align: center;
+}
+
+.chat-message {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: flex-start;
+}
+
+.chat-message.self {
+  align-items: flex-end;
+}
+
+.chat-message-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.72rem;
+  color: #6d7784;
+}
+
+.chat-message.self .chat-message-meta {
+  flex-direction: row-reverse;
+}
+
+.chat-author-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.chat-author {
+  font-weight: 700;
+  color: #36414c;
+}
+
+.chat-time {
+  color: #8b95a1;
+}
+
+.chat-bubble {
+  max-width: 100%;
+  padding: 8px 10px;
+  border-radius: 12px;
+  background: #e9eef3;
+  color: #1f2933;
+  font-size: 0.84rem;
+  line-height: 1.35;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.chat-message.self .chat-bubble {
+  background: #d9ebff;
+}
+
+.chat-form {
+  display: flex;
+  gap: 8px;
+  padding: 10px 12px 12px;
+  border-top: 1px solid #e7ebef;
+  background: var(--white);
+}
+
+.chat-input {
+  flex: 1;
+  min-width: 0;
+  border: 1px solid #cbd5df;
+  border-radius: 999px;
+  padding: 9px 12px;
+  font-size: 0.84rem;
+  outline: none;
+}
+
+.chat-input:focus {
+  border-color: #2a6dd4;
+  box-shadow: 0 0 0 2px rgba(42,109,212,0.12);
+}
+
+.chat-send {
+  border: none;
+  border-radius: 999px;
+  background: #2a6dd4;
+  color: #fff;
+  padding: 0 14px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.chat-send:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+@media (max-width: 1300px) {
+  .sidebar-layout {
+    flex-direction: column;
+    max-width: 520px;
+  }
+
+  .chat-panel {
+    width: 100%;
+    min-width: 0;
+    min-height: 220px;
+  }
 }
 
 .clue-section {
@@ -731,6 +900,26 @@ body.mobile .toolbar button#btn-reveal::before { content: '\2714'; }
 body.mobile .toolbar button#btn-rebus::before { content: 'R'; font-size: 0.85rem; font-weight: 700; }
 body.mobile .toolbar button#btn-trails::before { content: '\1F441'; font-size: 0.95rem; }
 body.mobile .toolbar button#btn-trails.trails-off { opacity: 0.4; }
+body.mobile .toolbar button#btn-chat {
+  width: 32px; height: 32px; padding: 0; border: none;
+  background: none; font-size: 1rem; color: #555; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  position: relative;
+}
+body.mobile .toolbar button#btn-chat::before { content: '\1F4AC'; font-size: 0.95rem; }
+body.mobile .toolbar button#btn-chat.has-unread::after {
+  content: '';
+  position: absolute;
+  top: 6px;
+  right: 5px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #e53935;
+}
+body.mobile.chat-open .toolbar button#btn-chat {
+  color: #2a6dd4;
+}
 
 body.mobile .presence-bar { flex-shrink: 0; padding: 3px 8px; min-height: 22px; font-size: 0.72rem; gap: 8px; }
 body.mobile .fire-bar { flex-shrink: 0; }
@@ -756,10 +945,36 @@ body.mobile .toolbar button#hint-btn {
 }
 body.mobile .toolbar button#hint-btn .hint-icon { font-size: 0.95rem; }
 body.mobile .toolbar button#hint-btn .hint-votes { font-size: 0.65rem; }
+body.mobile .sidebar-layout { width: 0; min-width: 0; }
 body.mobile .clue-panel { display: none; }
+body.mobile .chat-panel {
+  display: none;
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: auto;
+  min-width: 0;
+  min-height: 0;
+  height: min(280px, 42vh);
+  border-radius: 14px 14px 0 0;
+  box-shadow: 0 -8px 24px rgba(0,0,0,0.18);
+  z-index: 40;
+}
+body.mobile.chat-open .chat-panel { display: flex; }
+body.mobile .chat-header {
+  padding-top: 12px;
+}
+body.mobile .chat-messages {
+  min-height: 0;
+}
+body.mobile .chat-form {
+  padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+}
 
 /* Keyboard at bottom of flex column, after clue bar */
 body.mobile .mobile-keyboard { display: block; position: static; flex-shrink: 0; order: 11; padding: 4px 3px; padding-bottom: env(safe-area-inset-bottom, 0px); }
+body.mobile.chat-open .mobile-keyboard { display: none; }
 
 
 /* Fire bar (legacy global bar — hidden, replaced by per-user presence fire) */
@@ -1156,6 +1371,7 @@ body.mobile .mobile-keyboard { display: block; position: static; flex-shrink: 0;
       <button id="btn-reveal" title="Reveal Puzzle"><span class="btn-label">Reveal Puzzle</span></button>
       <button id="btn-rebus" style="display:none"><span class="btn-label">Rebus</span></button>
       <button id="btn-trails" title="Toggle other players' highlights"><span class="btn-label">Trails</span></button>
+      <button id="btn-chat" title="Open chat" aria-label="Open chat"><span class="btn-label">Chat</span></button>
       <button class="hint-btn" id="hint-btn" title="Vote for a hint"><span class="hint-icon">💡</span><span class="hint-votes" id="hint-votes"></span></button>
     </div>
   </div>
@@ -1178,7 +1394,24 @@ body.mobile .mobile-keyboard { display: block; position: static; flex-shrink: 0;
       <div class="grid" id="grid" tabindex="0"></div>
       <input type="text" id="mobile-input" class="mobile-input" autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false">
     </div>
-    <div class="clue-panel" id="clue-panel"></div>
+    <div class="sidebar-layout">
+      <div class="clue-panel" id="clue-panel"></div>
+      <div class="chat-panel" id="chat-panel">
+        <div class="chat-header">
+          <div>
+            <h2>Chat</h2>
+          </div>
+          <div class="chat-note">Temporary room chat</div>
+        </div>
+        <div class="chat-messages" id="chat-messages">
+          <div class="chat-empty" id="chat-empty">Messages disappear when you leave or refresh. Say something when someone else joins.</div>
+        </div>
+        <form class="chat-form" id="chat-form">
+          <input class="chat-input" id="chat-input" type="text" maxlength="240" placeholder="Message the room" autocomplete="off" spellcheck="false">
+          <button class="chat-send" id="chat-send" type="submit">Send</button>
+        </form>
+      </div>
+    </div>
   </div>
 
   <div class="mobile-keyboard" id="mobile-keyboard"></div>
@@ -1532,7 +1765,10 @@ function connectSocket() {
   socket = io({ query: { userId: myName, deviceId: DEVICE_ID } });
 
   socket.on('connect', () => {
-    if (currentDate) socket.emit('join-puzzle', currentDate);
+    if (currentDate) {
+      resetChatState();
+      socket.emit('join-puzzle', currentDate);
+    }
   });
 
   updateUserBadge();
@@ -1652,17 +1888,30 @@ let lastWordCompletionTime = Date.now();
 let hintCheckInterval = null;
 let hintVoted = false; // whether this player has voted for current hint
 
+// Chat state
+const chatMessages = [];
+let mobileChatOpen = false;
+let hasUnreadChat = false;
+
 // ─── DOM refs ──────────────────────────────────────────────────
 const calendarView = document.getElementById('calendar-view');
 const puzzleView = document.getElementById('puzzle-view');
 const calendarGridEl = document.getElementById('calendar-grid');
 const gridEl = document.getElementById('grid');
 const cluePanelEl = document.getElementById('clue-panel');
+const sidebarLayoutEl = document.querySelector('.sidebar-layout');
 const clueBarEl = document.getElementById('current-clue-bar');
 const congratsEl = document.getElementById('congrats');
 const titleEl = document.getElementById('puzzle-title');
 const metaEl = document.getElementById('puzzle-meta');
 const presenceBarEl = document.getElementById('presence-bar');
+const chatPanelEl = document.getElementById('chat-panel');
+const chatMessagesEl = document.getElementById('chat-messages');
+const chatEmptyEl = document.getElementById('chat-empty');
+const chatFormEl = document.getElementById('chat-form');
+const chatInputEl = document.getElementById('chat-input');
+const chatSendEl = document.getElementById('chat-send');
+const btnChat = document.getElementById('btn-chat');
 const btnClear = document.getElementById('btn-clear');
 const btnReveal = document.getElementById('btn-reveal');
 const btnRebus = document.getElementById('btn-rebus');
@@ -1677,6 +1926,113 @@ const calendarData = new Map(); // date → {date, rows, cols, cells, filledCoun
 
 function todayET() {
   return new Date().toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
+}
+
+function formatChatTime(sentAt) {
+  const date = new Date(sentAt);
+  return date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+}
+
+function updateChatUnreadIndicator() {
+  btnChat.classList.toggle('has-unread', IS_MOBILE && hasUnreadChat && !mobileChatOpen);
+}
+
+function updateChatComposerState() {
+  chatSendEl.disabled = !currentDate || !socket || !socket.connected || !chatInputEl.value.trim();
+}
+
+function renderChatMessages() {
+  chatMessagesEl.innerHTML = '';
+
+  if (!chatMessages.length) {
+    chatMessagesEl.appendChild(chatEmptyEl);
+    updateChatComposerState();
+    return;
+  }
+
+  for (const msg of chatMessages) {
+    const item = document.createElement('div');
+    const isSelf = socket && msg.socketId === socket.id;
+    item.className = isSelf ? 'chat-message self' : 'chat-message';
+
+    const meta = document.createElement('div');
+    meta.className = 'chat-message-meta';
+
+    const dot = document.createElement('span');
+    dot.className = 'chat-author-dot';
+    dot.style.background = msg.color || '#ccc';
+
+    const author = document.createElement('span');
+    author.className = 'chat-author';
+    author.textContent = isSelf ? 'You' : (msg.userName || 'User');
+
+    const time = document.createElement('span');
+    time.className = 'chat-time';
+    time.textContent = formatChatTime(msg.sentAt);
+
+    meta.appendChild(dot);
+    meta.appendChild(author);
+    meta.appendChild(time);
+
+    const bubble = document.createElement('div');
+    bubble.className = 'chat-bubble';
+    bubble.textContent = msg.text;
+
+    item.appendChild(meta);
+    item.appendChild(bubble);
+    chatMessagesEl.appendChild(item);
+  }
+
+  chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
+  updateChatComposerState();
+}
+
+function setMobileChatOpen(open, { focusInput = false } = {}) {
+  mobileChatOpen = IS_MOBILE ? !!open : false;
+  document.body.classList.toggle('chat-open', mobileChatOpen);
+  btnChat.setAttribute('aria-pressed', mobileChatOpen ? 'true' : 'false');
+
+  if (mobileChatOpen) {
+    hasUnreadChat = false;
+    updateChatUnreadIndicator();
+    if (PUZZLE) computeAndApplyCellSize();
+    if (focusInput) setTimeout(() => chatInputEl.focus(), 0);
+  } else {
+    chatInputEl.blur();
+    updateChatUnreadIndicator();
+    if (PUZZLE) computeAndApplyCellSize();
+  }
+}
+
+function resetChatState() {
+  chatMessages.length = 0;
+  hasUnreadChat = false;
+  chatInputEl.value = '';
+  setMobileChatOpen(false);
+  renderChatMessages();
+  updateChatUnreadIndicator();
+}
+
+function appendChatMessage(message) {
+  chatMessages.push(message);
+  if (chatMessages.length > 50) chatMessages.shift();
+
+  const isRemote = !socket || message.socketId !== socket.id;
+  if (IS_MOBILE && !mobileChatOpen && isRemote) {
+    hasUnreadChat = true;
+    updateChatUnreadIndicator();
+  }
+
+  renderChatMessages();
+}
+
+function submitChatMessage() {
+  if (!socket || !socket.connected || !currentDate) return;
+  const text = chatInputEl.value.trim();
+  if (!text) return;
+  socket.emit('chat-send', { puzzleDate: currentDate, text: text.slice(0, 240) });
+  chatInputEl.value = '';
+  updateChatComposerState();
 }
 
 function initCalendarNav() {
@@ -1866,6 +2222,7 @@ function showCalendar(pushState = true) {
   document.body.style.overflow = '';
   document.getElementById('puzzle-entry-overlay').classList.remove('show');
   document.title = 'NYT Crossword';
+  resetChatState();
 
   if (currentDate) {
     if (socket) socket.emit('leave-puzzle');
@@ -2043,13 +2400,15 @@ function computeAndApplyCellSize() {
     const presenceH = measure('.presence-bar');
     const fireBarH = 22; // always reserve even when hidden
     const clueBarH = measure('.current-clue-bar') || 32;
-    const keyboardH = measure('.mobile-keyboard') || 120;
+    const keyboardH = measure('.mobile-keyboard') || (mobileChatOpen ? 0 : 120);
+    const chatH = measure('.chat-panel');
     const gridBorder = 4;
-    const overhead = toolbarH + presenceH + fireBarH + clueBarH + keyboardH + gridBorder + 4;
+    const overhead = toolbarH + presenceH + fireBarH + clueBarH + keyboardH + chatH + gridBorder + 4;
     const availH = window.innerHeight - overhead;
     cellSize = Math.max(14, Math.min(40, Math.floor(Math.min(availW / COLS, availH / ROWS))));
   } else {
-    const maxGridW = Math.min(window.innerWidth - 420, 650);
+    const sidebarWidth = sidebarLayoutEl ? sidebarLayoutEl.getBoundingClientRect().width : 420;
+    const maxGridW = Math.min(window.innerWidth - sidebarWidth - 88, 650);
     // Dynamically measure height of fixed elements above .app
     const appEl = document.querySelector('.app');
     const appTop = appEl ? appEl.getBoundingClientRect().top : 200;
@@ -2069,6 +2428,7 @@ async function loadPuzzle(dateStr) {
   cellFillers.clear();
   persistedPoints.clear();
   guessStats.clear();
+  resetChatState();
 
   lastCursorKey = '';
   resetFireState();
@@ -2845,6 +3205,11 @@ function setupSocketHandlers() {
     }
   });
 
+  socket.on('chat-message', (message) => {
+    if (!currentDate || message.puzzleDate !== currentDate) return;
+    appendChatMessage(message);
+  });
+
   // Fire streak: server confirmation for local user
   socket.on('fire-update', (fireEvent) => {
     if (!PUZZLE) return;
@@ -3615,6 +3980,10 @@ function checkCompletion() {
 
 const mobileInput = document.getElementById('mobile-input');
 function focusGrid() {
+  if (IS_MOBILE && mobileChatOpen) {
+    chatInputEl.focus();
+    return;
+  }
   if (IS_MOBILE) {
     mobileInput.focus();
   } else {
@@ -3814,6 +4183,27 @@ gridEl.addEventListener('keydown', (e) => {
 // ─── Toolbar ───────────────────────────────────────────────────
 btnBack.addEventListener('click', () => showCalendar());
 document.getElementById('btn-back-mobile').addEventListener('click', () => showCalendar());
+btnChat.addEventListener('click', () => {
+  if (!IS_MOBILE) return;
+  setMobileChatOpen(!mobileChatOpen, { focusInput: !mobileChatOpen });
+});
+
+chatInputEl.addEventListener('input', updateChatComposerState);
+chatInputEl.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && IS_MOBILE && mobileChatOpen) {
+    e.preventDefault();
+    setMobileChatOpen(false);
+    focusGrid();
+  }
+});
+chatFormEl.addEventListener('submit', (e) => {
+  e.preventDefault();
+  submitChatMessage();
+  if (IS_MOBILE && mobileChatOpen) {
+    chatInputEl.focus();
+  }
+});
+updateChatComposerState();
 
 // Pause: show overlay and notify server
 function pausePuzzle() {
@@ -3959,6 +4349,10 @@ function handleBackspace() {
 const origFocusGrid = focusGrid;
 focusGrid = function() {
   if (IS_MOBILE) {
+    if (mobileChatOpen) {
+      chatInputEl.focus();
+      return;
+    }
     // Don't focus the hidden input — custom keyboard handles input
     gridEl.focus();
   } else {

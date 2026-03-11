@@ -306,6 +306,7 @@ async function checkWordCompletions(puzzleDate, row, col, pData) {
 const puzzleRooms = new Map(); // puzzleDate → Map<socketId, {userId, userName, color, row, col, direction}>
 const socketPuzzle = new Map(); // socketId → puzzleDate (which puzzle they're in)
 const COLOR_POOL = ['#4CAF50','#FF9800','#E91E63','#9C27B0','#FF00FF','#2a6dd4'];
+const chatThrottle = new Map(); // socketId → last chat send timestamp
 
 // Fire streak state (ephemeral, in-memory only)
 // socketId → { puzzleDate, userName, color, recentWordCompletions: [{timestamp,row,col},...],
@@ -480,6 +481,7 @@ function leaveCurrentPuzzle(socket) {
     });
   }
   fireStreaks.delete(socket.id);
+  chatThrottle.delete(socket.id);
 
   socket.leave(`puzzle:${puzzleDate}`);
   socketPuzzle.delete(socket.id);
@@ -1316,6 +1318,32 @@ io.on('connection', async (socket) => {
     }
   });
 
+  socket.on('chat-send', ({ puzzleDate, text }) => {
+    if (socketPuzzle.get(socket.id) !== puzzleDate) return;
+
+    const room = puzzleRooms.get(puzzleDate);
+    if (!room || !room.has(socket.id)) return;
+
+    const trimmed = typeof text === 'string' ? text.trim() : '';
+    if (!trimmed) return;
+    if (trimmed.length > 240) return;
+
+    const now = Date.now();
+    const lastSentAt = chatThrottle.get(socket.id) || 0;
+    if (now - lastSentAt < 750) return;
+    chatThrottle.set(socket.id, now);
+
+    const sender = room.get(socket.id);
+    io.to(`puzzle:${puzzleDate}`).emit('chat-message', {
+      puzzleDate,
+      socketId: socket.id,
+      userName: sender?.userName || socket.userName || 'Anonymous',
+      color: sender?.color || socket.userColor || '#ccc',
+      text: trimmed,
+      sentAt: now,
+    });
+  });
+
   socket.on('clear-puzzle', async ({ puzzleDate }) => {
     try {
       removeAllAiBots(puzzleDate);
@@ -1361,6 +1389,7 @@ io.on('connection', async (socket) => {
   });
 
   socket.on('disconnect', () => {
+    chatThrottle.delete(socket.id);
     leaveCurrentPuzzle(socket);
   });
 });
