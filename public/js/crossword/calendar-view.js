@@ -2,6 +2,8 @@ function todayET() {
   return new Date().toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
 }
 
+const communalCalendarSummaryCache = new Map();
+
 function syncCalendarModeTabs() {
   const isCommunal = homeSolveMode === 'communal';
   calendarModeLocalEl.classList.toggle('active', !isCommunal);
@@ -38,6 +40,36 @@ function normalizeSoloCalendarTemplateItem(item) {
   };
 }
 
+function buildCommunalProgressInfo(templateItem, sharedState) {
+  const userGrid = sharedState?.userGrid || {};
+  const cells = [];
+  let filledCount = 0;
+
+  for (let i = 0; i < templateItem.cells.length; i++) {
+    const baseCell = templateItem.cells[i];
+    if (baseCell === 0) {
+      cells.push(0);
+      continue;
+    }
+    const row = Math.floor(i / templateItem.cols);
+    const col = i % templateItem.cols;
+    const hasLetter = !!userGrid[`${row},${col}`];
+    cells.push(hasLetter ? 2 : 1);
+    if (hasLetter) filledCount++;
+  }
+
+  return {
+    date: templateItem.date,
+    rows: templateItem.rows,
+    cols: templateItem.cols,
+    cells,
+    filledCount,
+    totalWhite: templateItem.totalWhite,
+    isComplete: templateItem.totalWhite > 0 && filledCount >= templateItem.totalWhite,
+    updatedAt: sharedState?.updatedAt || null,
+  };
+}
+
 async function getSoloCalendarTemplate(yearMonth) {
   if (soloCalendarTemplateCache.has(yearMonth)) {
     return soloCalendarTemplateCache.get(yearMonth);
@@ -60,6 +92,54 @@ async function getSoloCalendarTemplate(yearMonth) {
   soloCalendarTemplateCache.set(yearMonth, normalized);
   localStorage.setItem(getSoloCalendarTemplateKey(yearMonth), JSON.stringify(normalized));
   return normalized;
+}
+
+async function getCommunalCalendarSummary(yearMonth, { forceRefresh = false } = {}) {
+  if (!forceRefresh && communalCalendarSummaryCache.has(yearMonth)) {
+    return communalCalendarSummaryCache.get(yearMonth);
+  }
+
+  const stored = localStorage.getItem(getCommunalCalendarSummaryKey(yearMonth));
+  if (!forceRefresh && stored) {
+    try {
+      const parsed = JSON.parse(stored);
+      communalCalendarSummaryCache.set(yearMonth, parsed);
+      return parsed;
+    } catch (err) {
+      localStorage.removeItem(getCommunalCalendarSummaryKey(yearMonth));
+    }
+  }
+
+  try {
+    const template = await getSoloCalendarTemplate(yearMonth);
+    const summaries = await Promise.all(template.map(async (item) => {
+      try {
+        const res = await fetch(`/api/state/${item.date}`);
+        if (!res.ok) {
+          return cloneCalendarSummary(item);
+        }
+        const sharedState = await res.json();
+        return buildCommunalProgressInfo(item, sharedState);
+      } catch (err) {
+        return cloneCalendarSummary(item);
+      }
+    }));
+
+    communalCalendarSummaryCache.set(yearMonth, summaries);
+    localStorage.setItem(getCommunalCalendarSummaryKey(yearMonth), JSON.stringify(summaries));
+    return summaries;
+  } catch (err) {
+    if (stored) {
+      try {
+        const parsed = JSON.parse(stored);
+        communalCalendarSummaryCache.set(yearMonth, parsed);
+        return parsed;
+      } catch (parseErr) {
+        localStorage.removeItem(getCommunalCalendarSummaryKey(yearMonth));
+      }
+    }
+    throw err;
+  }
 }
 
 function initCalendarNav() {
@@ -95,8 +175,14 @@ function initCalendarNav() {
   yearSel.value = calendarYear;
   syncCalendarModeTabs();
 
-  calendarModeLocalEl.addEventListener('click', () => setHomeSolveMode('local'));
-  calendarModeCommunalEl.addEventListener('click', () => setHomeSolveMode('communal'));
+  calendarModeLocalEl.addEventListener('click', () => {
+    setHomeSolveMode('local');
+    fetchAndRenderCalendar();
+  });
+  calendarModeCommunalEl.addEventListener('click', () => {
+    setHomeSolveMode('communal');
+    fetchAndRenderCalendar();
+  });
 
   monthSel.addEventListener('change', () => {
     calendarMonth = parseInt(monthSel.value, 10);
@@ -173,10 +259,17 @@ async function fetchAndRenderCalendar() {
   }
 
   try {
-    const template = await getSoloCalendarTemplate(ym);
-    for (const item of template) {
-      const localSummary = loadSoloState(item.date)?.summary;
-      calendarData.set(item.date, cloneCalendarSummary(localSummary || item));
+    if (homeSolveMode === 'communal') {
+      const communalSummary = await getCommunalCalendarSummary(ym, { forceRefresh: true });
+      for (const item of communalSummary) {
+        calendarData.set(item.date, cloneCalendarSummary(item));
+      }
+    } else {
+      const template = await getSoloCalendarTemplate(ym);
+      for (const item of template) {
+        const localSummary = loadSoloState(item.date)?.summary;
+        calendarData.set(item.date, cloneCalendarSummary(localSummary || item));
+      }
     }
   } catch (e) {
     // Ignore calendar fetch failures so the rest of the app can still render.

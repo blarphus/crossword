@@ -19,6 +19,10 @@ function getSoloCalendarTemplateKey(yearMonth) {
   return `${SOLO_CALENDAR_TEMPLATE_KEY_PREFIX}${yearMonth}`;
 }
 
+function getCommunalCalendarSummaryKey(yearMonth) {
+  return `${COMMUNAL_CALENDAR_SUMMARY_KEY_PREFIX}${yearMonth}`;
+}
+
 function loadSoloState(puzzleDate) {
   try {
     const raw = localStorage.getItem(getSoloStateKey(puzzleDate));
