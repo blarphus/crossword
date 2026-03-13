@@ -58,32 +58,28 @@ body {
 .calendar-nav button:disabled { opacity: 0.4; cursor: default; }
 .calendar-nav select { font-size: 0.85rem; }
 
-.mode-toggle {
+.room-join {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  padding: 4px;
-  background: #eef3f8;
-  border-radius: 999px;
-  border: 1px solid #d7dee6;
+  gap: 8px;
 }
-
-.mode-toggle-btn {
-  border: none;
-  background: transparent;
-  color: #5b6570;
-  font-size: 0.78rem;
-  font-weight: 700;
-  padding: 7px 12px;
-  border-radius: 999px;
+.room-join input {
+  width: 104px;
+  padding: 6px 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+}
+.room-join button {
+  padding: 6px 12px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  background: #fff;
   cursor: pointer;
-  transition: background 0.15s, color 0.15s;
+  font-size: 0.82rem;
 }
-
-.mode-toggle-btn.active {
-  background: #2a6dd4;
-  color: #fff;
-}
+.room-join button:hover { background: #eee; }
 
 .calendar-day-headers {
   display: grid;
@@ -901,8 +897,9 @@ body.mobile .calendar-nav { padding: 10px; gap: 6px; }
 body.mobile .calendar-nav h1 { font-size: 1rem; margin-right: 6px; }
 body.mobile .calendar-nav button, body.mobile .calendar-nav select { padding: 5px 8px; font-size: 0.78rem; }
 body.mobile .user-badge { font-size: 0.72rem; padding: 3px 8px; }
-body.mobile .mode-toggle { order: 10; width: 100%; justify-content: center; }
-body.mobile .mode-toggle-btn { flex: 1; text-align: center; }
+body.mobile .room-join { order: 10; width: 100%; }
+body.mobile .room-join input { flex: 1; width: auto; font-size: 0.78rem; }
+body.mobile .room-join button { font-size: 0.78rem; }
 
 body.mobile .calendar-day-headers, body.mobile .calendar-grid { max-width: 100%; padding: 0 6px; gap: 4px; }
 body.mobile .cal-day .day-number { font-size: 0.55rem; }
@@ -1265,6 +1262,13 @@ body.mobile.chat-open .mobile-keyboard { display: none; }
   height: 8px;
   border-radius: 50%;
 }
+.puzzle-entry-card .entry-room-code {
+  font-size: 0.92rem;
+  font-weight: 800;
+  color: #2a6dd4;
+  letter-spacing: 0.08em;
+  margin: -4px 0 12px;
+}
 
 /* ─── AI Opponents Section ──────────────────────────────────── */
 .entry-ai-section {
@@ -1378,9 +1382,9 @@ body.mobile.chat-open .mobile-keyboard { display: none; }
     <h1>NYT Crossword</h1>
     <a href="/jeopardy" style="padding:6px 14px; border-radius:4px; background:#060CE9; color:#D7A32A; text-decoration:none; font-weight:700; font-size:0.85rem; transition:opacity 0.15s;" onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'">Jeopardy!</a>
     <span class="user-badge" id="user-badge" title="Click to change name"></span>
-    <div class="mode-toggle" id="mode-toggle">
-      <button class="mode-toggle-btn active" id="mode-multiplayer" type="button">Multiplayer</button>
-      <button class="mode-toggle-btn" id="mode-solo" type="button">Solo</button>
+    <div class="room-join">
+      <input id="room-code-input" type="text" maxlength="6" placeholder="Room code" autocomplete="off" spellcheck="false">
+      <button id="room-code-submit" type="button">Join Room</button>
     </div>
     <button id="cal-prev">&lt;</button>
     <select id="cal-month"></select>
@@ -1488,6 +1492,7 @@ body.mobile.chat-open .mobile-keyboard { display: none; }
     <div class="entry-user-preview" id="entry-user-preview"></div>
     <div class="entry-players-label">PLAYERS SOLVING</div>
     <div class="entry-players" id="entry-players"></div>
+    <div class="entry-room-code" id="entry-room-code" style="display:none"></div>
     <div class="entry-ai-section" id="entry-ai-section">
       <div class="entry-ai-label">AI OPPONENTS</div>
       <div class="entry-ai-list" id="entry-ai-list"></div>
@@ -1503,11 +1508,23 @@ body.mobile.chat-open .mobile-keyboard { display: none; }
       </div>
     </div>
     <button class="entry-start-btn" id="entry-start-btn">Start Solving</button>
+    <button class="entry-change-name" id="entry-multiplayer-btn" type="button">Make Multiplayer</button>
+    <button class="entry-change-name" id="entry-mark-complete" type="button">Mark Complete</button>
+    <button class="entry-change-name" id="entry-copy-code" type="button" style="display:none">Copy Room Code</button>
     <button class="entry-change-name" id="entry-change-name">Change Name / Color</button>
   </div>
 </div>
 
 <script src="/socket.io/socket.io.js"></script>
+<script src="/js/crossword/store.js"></script>
+<script src="/js/crossword/calendar-view.js"></script>
+<script src="/js/crossword/entry-overlay.js"></script>
+<script src="/js/crossword/puzzle-state.js"></script>
+<script src="/js/crossword/features/chat.js"></script>
+<script src="/js/crossword/features/hints.js"></script>
+<script src="/js/crossword/features/fire.js"></script>
+<script src="/js/crossword/puzzle-render.js"></script>
+<script src="/js/crossword/puzzle-input.js"></script>
 <script>
 // ─── Sound Effects (Web Audio API) ─────────────────────────────
 const AudioCtx = window.AudioContext || window.webkitAudioContext;
@@ -1663,171 +1680,22 @@ function sfxVictory() {
 // Fire sprite is now a pre-rendered animated WebP at /fire.webp
 
 // ─── Device identity ────────────────────────────────────────────
-function getDeviceId() {
-  let id = localStorage.getItem('crossword-device-id');
-  if (!id) {
-    id = crypto.randomUUID();
-    localStorage.setItem('crossword-device-id', id);
-  }
-  return id;
-}
 const DEVICE_ID = getDeviceId();
-const PLAY_MODE_KEY = 'crossword-play-mode';
 const SOLO_AUTO_CHECK_KEY = 'crossword-solo-auto-check';
 const SOLO_STATE_KEY_PREFIX = 'crossword-solo-state:';
 const SOLO_CALENDAR_TEMPLATE_KEY_PREFIX = 'crossword-solo-calendar-template:';
-const playModeButtons = {
-  multiplayer: document.getElementById('mode-multiplayer'),
-  solo: document.getElementById('mode-solo'),
-};
-
-let playMode = localStorage.getItem(PLAY_MODE_KEY) === 'solo' ? 'solo' : 'multiplayer';
+const ACTIVE_ROOM_CODE_KEY = 'crossword-active-room-code';
+const ACTIVE_ROOM_PUZZLE_KEY = 'crossword-active-room-puzzle';
 let soloAutoCheck = localStorage.getItem(SOLO_AUTO_CHECK_KEY) !== 'false';
+let activeRoomCode = String(localStorage.getItem(ACTIVE_ROOM_CODE_KEY) || '').trim().toUpperCase();
+let activeRoomPuzzleDate = localStorage.getItem(ACTIVE_ROOM_PUZZLE_KEY) || '';
 
 function isLocalSoloMode() {
-  return playMode === 'solo';
+  return !activeRoomCode;
 }
 
 function isAutoCheckEnabled() {
   return !isLocalSoloMode() || soloAutoCheck;
-}
-
-function getSoloStateKey(puzzleDate) {
-  return `${SOLO_STATE_KEY_PREFIX}${puzzleDate}`;
-}
-
-function getSoloCalendarTemplateKey(yearMonth) {
-  return `${SOLO_CALENDAR_TEMPLATE_KEY_PREFIX}${yearMonth}`;
-}
-
-function loadSoloState(puzzleDate) {
-  try {
-    const raw = localStorage.getItem(getSoloStateKey(puzzleDate));
-    if (!raw) return null;
-    return JSON.parse(raw);
-  } catch (err) {
-    return null;
-  }
-}
-
-function saveSoloState(puzzleDate) {
-  if (!isLocalSoloMode() || !PUZZLE || !puzzleDate) return;
-  const state = {
-    userGrid: getCurrentUserGridMap(),
-    checkedCells: getCurrentCheckedCellMap(),
-    timerSeconds: getTimerSeconds(),
-    updatedAt: new Date().toISOString(),
-    summary: buildSoloProgressInfo(puzzleDate, {
-      dimensions: { rows: ROWS, cols: COLS },
-      grid: PUZZLE.grid,
-      rebus: PUZZLE.rebus,
-    }, {
-      userGrid: getCurrentUserGridMap(),
-    }),
-  };
-  localStorage.setItem(getSoloStateKey(puzzleDate), JSON.stringify(state));
-  updateCalendarSummaryForCurrentPuzzle();
-}
-
-function clearSoloState(puzzleDate) {
-  localStorage.removeItem(getSoloStateKey(puzzleDate));
-  if (calendarData.has(puzzleDate) && PUZZLE && currentDate === puzzleDate) {
-    updateCalendarSummaryForCurrentPuzzle();
-  }
-}
-
-function buildSoloProgressInfo(date, puzzleData, soloState) {
-  const dims = puzzleData.dimensions;
-  const grid = puzzleData.grid;
-  const rebus = puzzleData.rebus || {};
-  const storedGrid = soloState?.userGrid || {};
-  const cells = [];
-  let filledCount = 0;
-  let totalWhite = 0;
-  let isComplete = true;
-
-  for (let r = 0; r < dims.rows; r++) {
-    for (let c = 0; c < dims.cols; c++) {
-      if (grid[r][c] === '.') {
-        cells.push(0);
-        continue;
-      }
-      totalWhite++;
-      const key = `${r},${c}`;
-      const correct = rebus[key] || grid[r][c];
-      const userLetter = storedGrid[key] || '';
-      if (userLetter) {
-        cells.push(2);
-        filledCount++;
-        if (userLetter !== correct) isComplete = false;
-      } else {
-        cells.push(1);
-        isComplete = false;
-      }
-    }
-  }
-
-  if (totalWhite === 0) isComplete = false;
-
-  return {
-    date,
-    rows: dims.rows,
-    cols: dims.cols,
-    cells,
-    filledCount,
-    totalWhite,
-    isComplete,
-  };
-}
-
-function getCurrentUserGridMap() {
-  const map = {};
-  for (let r = 0; r < ROWS; r++) {
-    for (let c = 0; c < COLS; c++) {
-      const val = userGrid[r]?.[c];
-      if (val) map[`${r},${c}`] = val;
-    }
-  }
-  return map;
-}
-
-function getCurrentCheckedCellMap() {
-  const map = {};
-  for (let r = 0; r < ROWS; r++) {
-    for (let c = 0; c < COLS; c++) {
-      if (checkedCells[r]?.[c]) map[`${r},${c}`] = true;
-    }
-  }
-  return map;
-}
-
-function updateCalendarSummaryForCurrentPuzzle() {
-  if (!isLocalSoloMode() || !PUZZLE || !currentDate) return;
-  const summary = buildSoloProgressInfo(currentDate, {
-    dimensions: { rows: ROWS, cols: COLS },
-    grid: PUZZLE.grid,
-    rebus: PUZZLE.rebus,
-  }, {
-    userGrid: getCurrentUserGridMap(),
-  });
-  calendarData.set(currentDate, summary);
-  const dayEl = document.querySelector(`.cal-day[data-date="${currentDate}"]`);
-  if (dayEl && !dayEl.classList.contains('no-puzzle')) {
-    dayEl.classList.toggle('complete', summary.isComplete);
-    const canvas = dayEl.querySelector('canvas');
-    if (canvas) drawThumbnail(canvas, summary);
-  }
-}
-
-function populateSoloFillersFromGrid() {
-  cellFillers.clear();
-  for (let r = 0; r < ROWS; r++) {
-    for (let c = 0; c < COLS; c++) {
-      if (userGrid[r]?.[c]) {
-        cellFillers.set(`${r},${c}`, { userName: myName || 'You', color: myColor });
-      }
-    }
-  }
 }
 
 let myName = '';
@@ -1842,13 +1710,6 @@ function bootAppIfNeeded() {
 }
 
 function ensureSocketState() {
-  if (isLocalSoloMode()) {
-    if (socket) {
-      socket.disconnect();
-      socket = null;
-    }
-    return;
-  }
   if (!socket && myName) {
     connectSocket();
   }
@@ -1983,9 +1844,9 @@ function connectSocket() {
   socket = io({ query: { userId: myName, deviceId: DEVICE_ID } });
 
   socket.on('connect', () => {
-    if (currentDate) {
+    if (currentDate && activeRoomCode) {
       resetChatState();
-      socket.emit('join-puzzle', currentDate);
+      socket.emit('join-room', { roomCode: activeRoomCode });
     }
   });
 
@@ -2012,58 +1873,6 @@ let rebusMode = false;
 let rebusBuffer = '';
 let showTrails = localStorage.getItem('crossword-show-trails') !== 'false';
 
-function getCorrectAnswer(r, c) {
-  if (!PUZZLE) return '';
-  const key = `${r},${c}`;
-  return PUZZLE.rebus[key] || PUZZLE.grid[r]?.[c] || '';
-}
-
-// Check if cell value matches the correct answer (rebus requires full answer)
-function isCellCorrect(r, c, val) {
-  const v = val !== undefined ? val : userGrid[r]?.[c];
-  if (!v) return false;
-  return v === getCorrectAnswer(r, c);
-}
-
-function hasRebus() {
-  return PUZZLE && Object.keys(PUZZLE.rebus).length > 0;
-}
-
-function applyCheckedCellMap(checkedMap) {
-  checkedCells = Array.from({length: ROWS}, () => Array(COLS).fill(false));
-  if (!PUZZLE || !checkedMap) return;
-  for (const [key, isChecked] of Object.entries(checkedMap)) {
-    if (!isChecked) continue;
-    const [r, c] = key.split(',').map(Number);
-    if (r >= 0 && r < ROWS && c >= 0 && c < COLS && isCellCorrect(r, c)) {
-      checkedCells[r][c] = true;
-    }
-  }
-}
-
-function refreshCheckedCells({ preserveLockedSolo = isLocalSoloMode() } = {}) {
-  const nextChecked = Array.from({length: ROWS}, () => Array(COLS).fill(false));
-  if (!PUZZLE) {
-    checkedCells = nextChecked;
-    return;
-  }
-  if (preserveLockedSolo) {
-    for (let r = 0; r < ROWS; r++) {
-      for (let c = 0; c < COLS; c++) {
-        if (checkedCells[r]?.[c] && isCellCorrect(r, c)) nextChecked[r][c] = true;
-      }
-    }
-  }
-  if (isAutoCheckEnabled()) {
-    for (let r = 0; r < ROWS; r++) {
-      for (let c = 0; c < COLS; c++) {
-        if (isCellCorrect(r, c)) nextChecked[r][c] = true;
-      }
-    }
-  }
-  checkedCells = nextChecked;
-}
-
 // Grid zoom state (mobile pinch-to-zoom)
 let gridScale = 1, gridTx = 0, gridTy = 0;
 
@@ -2073,56 +1882,23 @@ let timerBaseTime = 0;      // Date.now() when we started ticking from timerBase
 let timerInterval = null;
 const timerEl = document.getElementById('solve-timer');
 
-function formatTimer(s) {
-  const hrs = Math.floor(s / 3600);
-  const mins = Math.floor((s % 3600) / 60);
-  const secs = s % 60;
-  if (hrs > 0) return `${hrs}:${String(mins).padStart(2,'0')}:${String(secs).padStart(2,'0')}`;
-  return `${mins}:${String(secs).padStart(2,'0')}`;
-}
-
-function getTimerSeconds() {
-  if (!timerBaseTime) return timerBaseSeconds;
-  return timerBaseSeconds + Math.floor((Date.now() - timerBaseTime) / 1000);
-}
-
-function updateTimerDisplay() {
-  timerEl.textContent = formatTimer(getTimerSeconds());
-}
-
-function startTimerTick() {
-  if (!timerBaseTime) timerBaseTime = Date.now();
-  if (timerInterval) return;
-  timerInterval = setInterval(updateTimerDisplay, 1000);
-}
-
-function stopTimerTick() {
-  timerBaseSeconds = getTimerSeconds();
-  timerBaseTime = 0;
-  if (timerInterval) {
-    clearInterval(timerInterval);
-    timerInterval = null;
-  }
-}
-
 // When tab becomes visible again, immediately update display and re-request state
 document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'visible') {
     updateTimerDisplay();
     // Ask server for fresh state so bot progress catches up
-    if (socket && currentDate) {
-      socket.emit('request-state', { puzzleDate: currentDate });
+    if (socket && currentDate && activeRoomCode) {
+      socket.emit('request-state', { roomCode: activeRoomCode });
     }
   }
 });
 
 // ─── Remote user presence ──────────────────────────────────────
 const remoteUsers = new Map(); // socketId → {userId, userName, color, row, col, direction}
-function isSoloMode() { return remoteUsers.size === 0; }
+function isSoloMode() { return isLocalSoloMode() && remoteUsers.size === 0; }
 const cellFillers = new Map(); // "r,c" → {userName, color} (who filled this cell)
 const guessStats = new Map(); // userName → { total, incorrect }
 const persistedPoints = new Map(); // userName → number (base points from DB, excludes word bonuses)
-const roomCounts = new Map();  // puzzleDate → player count
 let aiBotList = [];  // synced from server via ai-bot-list events
 let lastCursorKey = '';
 
@@ -2168,6 +1944,8 @@ const btnClear = document.getElementById('btn-clear');
 const btnReveal = document.getElementById('btn-reveal');
 const btnRebus = document.getElementById('btn-rebus');
 const btnBack = document.getElementById('btn-back');
+const roomCodeInputEl = document.getElementById('room-code-input');
+const roomCodeSubmitEl = document.getElementById('room-code-submit');
 
 // ─── Calendar state ────────────────────────────────────────────
 const DAYS = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
@@ -2176,54 +1954,6 @@ const MONTH_NAMES = ['January','February','March','April','May','June','July','A
 let calendarYear, calendarMonth; // calendarMonth is 0-indexed
 const calendarData = new Map(); // date → {date, rows, cols, cells, filledCount, totalWhite, isComplete}
 const soloCalendarTemplateCache = new Map();
-
-function cloneCalendarSummary(summary) {
-  return {
-    ...summary,
-    cells: Array.isArray(summary.cells) ? summary.cells.slice() : [],
-  };
-}
-
-function normalizeSoloCalendarTemplateItem(item) {
-  return {
-    date: item.date,
-    rows: item.rows,
-    cols: item.cols,
-    cells: item.cells.map(cell => cell === 0 ? 0 : 1),
-    filledCount: 0,
-    totalWhite: item.totalWhite,
-    isComplete: false,
-  };
-}
-
-async function getSoloCalendarTemplate(yearMonth) {
-  if (soloCalendarTemplateCache.has(yearMonth)) {
-    return soloCalendarTemplateCache.get(yearMonth);
-  }
-
-  const stored = localStorage.getItem(getSoloCalendarTemplateKey(yearMonth));
-  if (stored) {
-    try {
-      const parsed = JSON.parse(stored);
-      soloCalendarTemplateCache.set(yearMonth, parsed);
-      return parsed;
-    } catch (err) {
-      localStorage.removeItem(getSoloCalendarTemplateKey(yearMonth));
-    }
-  }
-
-  const res = await fetch(`/api/calendar/${yearMonth}`);
-  const data = await res.json();
-  const normalized = data.map(normalizeSoloCalendarTemplateItem);
-  soloCalendarTemplateCache.set(yearMonth, normalized);
-  localStorage.setItem(getSoloCalendarTemplateKey(yearMonth), JSON.stringify(normalized));
-  return normalized;
-}
-
-function updateModeToggle() {
-  playModeButtons.multiplayer.classList.toggle('active', !isLocalSoloMode());
-  playModeButtons.solo.classList.toggle('active', isLocalSoloMode());
-}
 
 function updateAutoCheckButton() {
   const isSolo = isLocalSoloMode();
@@ -2244,18 +1974,17 @@ function setSoloAutoCheck(enabled, { rerender = true } = {}) {
   refreshCheckedCells();
   updateAutoCheckButton();
   if (PUZZLE && rerender) {
-    if (isLocalSoloMode()) saveSoloState(currentDate);
+    saveSoloState(currentDate);
     render({ scrollClues: false });
   }
 }
 
 function updateModeUI() {
-  updateModeToggle();
   btnChat.style.display = isLocalSoloMode() ? 'none' : '';
+  trailsBtn.style.display = isLocalSoloMode() ? 'none' : '';
   if (isLocalSoloMode()) setChatOpen(false);
   updateAutoCheckButton();
   updateChatComposerState();
-  roomCounts.clear();
   if (isLocalSoloMode()) {
     aiBotList = [];
     remoteUsers.clear();
@@ -2264,333 +1993,6 @@ function updateModeUI() {
     refreshCheckedCells();
     renderPresenceBar();
     render({ scrollClues: false });
-  }
-}
-
-function setPlayMode(nextMode, { rerenderCalendar = true } = {}) {
-  playMode = nextMode === 'solo' ? 'solo' : 'multiplayer';
-  localStorage.setItem(PLAY_MODE_KEY, playMode);
-
-  if (currentDate && socket) {
-    socket.emit('leave-puzzle');
-  }
-  ensureSocketState();
-  updateModeUI();
-
-  if (rerenderCalendar) {
-    fetchAndRenderCalendar();
-  }
-}
-
-function todayET() {
-  return new Date().toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
-}
-
-function formatChatTime(sentAt) {
-  const date = new Date(sentAt);
-  return date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
-}
-
-function updateChatUnreadIndicator() {
-  btnChat.classList.toggle('has-unread', hasUnreadChat && !chatOpen);
-}
-
-function updateChatComposerState() {
-  chatSendEl.disabled = !currentDate || !socket || !socket.connected || !chatInputEl.value.trim();
-}
-
-function renderChatMessages() {
-  chatMessagesEl.innerHTML = '';
-
-  if (!chatMessages.length) {
-    chatMessagesEl.appendChild(chatEmptyEl);
-    updateChatComposerState();
-    return;
-  }
-
-  for (const msg of chatMessages) {
-    const item = document.createElement('div');
-    const isSelf = socket && msg.socketId === socket.id;
-    item.className = isSelf ? 'chat-message self' : 'chat-message';
-
-    const meta = document.createElement('div');
-    meta.className = 'chat-message-meta';
-
-    const dot = document.createElement('span');
-    dot.className = 'chat-author-dot';
-    dot.style.background = msg.color || '#ccc';
-
-    const author = document.createElement('span');
-    author.className = 'chat-author';
-    author.textContent = isSelf ? 'You' : (msg.userName || 'User');
-
-    const time = document.createElement('span');
-    time.className = 'chat-time';
-    time.textContent = formatChatTime(msg.sentAt);
-
-    meta.appendChild(dot);
-    meta.appendChild(author);
-    meta.appendChild(time);
-
-    const bubble = document.createElement('div');
-    bubble.className = 'chat-bubble';
-    bubble.textContent = msg.text;
-
-    item.appendChild(meta);
-    item.appendChild(bubble);
-    chatMessagesEl.appendChild(item);
-  }
-
-  chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
-  updateChatComposerState();
-}
-
-function setChatOpen(open, { focusInput = false } = {}) {
-  chatOpen = !!open;
-  document.body.classList.toggle('chat-open', chatOpen);
-  btnChat.setAttribute('aria-pressed', chatOpen ? 'true' : 'false');
-  btnChat.title = chatOpen ? 'Close chat' : 'Open chat';
-  btnChat.setAttribute('aria-label', chatOpen ? 'Close chat' : 'Open chat');
-  btnChat.classList.toggle('active', chatOpen);
-
-  if (chatOpen) {
-    hasUnreadChat = false;
-    updateChatUnreadIndicator();
-    if (PUZZLE) computeAndApplyCellSize();
-    if (focusInput) setTimeout(() => chatInputEl.focus(), 0);
-  } else {
-    chatInputEl.blur();
-    updateChatUnreadIndicator();
-    if (PUZZLE) computeAndApplyCellSize();
-  }
-}
-
-function resetChatState() {
-  chatMessages.length = 0;
-  hasUnreadChat = false;
-  chatInputEl.value = '';
-  setChatOpen(false);
-  renderChatMessages();
-  updateChatUnreadIndicator();
-}
-
-function appendChatMessage(message) {
-  chatMessages.push(message);
-  if (chatMessages.length > 50) chatMessages.shift();
-
-  const isRemote = !socket || message.socketId !== socket.id;
-  if (!chatOpen && isRemote) {
-    hasUnreadChat = true;
-    updateChatUnreadIndicator();
-  }
-
-  renderChatMessages();
-}
-
-function submitChatMessage() {
-  if (!socket || !socket.connected || !currentDate) return;
-  const text = chatInputEl.value.trim();
-  if (!text) return;
-  socket.emit('chat-send', { puzzleDate: currentDate, text: text.slice(0, 240) });
-  chatInputEl.value = '';
-  updateChatComposerState();
-}
-
-function initCalendarNav() {
-  const monthSel = document.getElementById('cal-month');
-  const yearSel = document.getElementById('cal-year');
-
-  playModeButtons.multiplayer.addEventListener('click', () => {
-    if (!isLocalSoloMode()) return;
-    setPlayMode('multiplayer');
-  });
-  playModeButtons.solo.addEventListener('click', () => {
-    if (isLocalSoloMode()) return;
-    setPlayMode('solo');
-  });
-  updateModeToggle();
-
-  for (let m = 0; m < 12; m++) {
-    const opt = document.createElement('option');
-    opt.value = m;
-    opt.textContent = MONTH_NAMES[m];
-    monthSel.appendChild(opt);
-  }
-
-  const thisYear = new Date().getFullYear();
-  for (let y = thisYear - 5; y <= thisYear + 1; y++) {
-    const opt = document.createElement('option');
-    opt.value = y;
-    opt.textContent = y;
-    yearSel.appendChild(opt);
-  }
-
-  // Restore saved month or default to current
-  const savedYM = localStorage.getItem('crossword-calendar-month');
-  const now = new Date();
-  if (savedYM) {
-    const [sy, sm] = savedYM.split('-').map(Number);
-    calendarYear = sy;
-    calendarMonth = sm;
-  } else {
-    calendarYear = now.getFullYear();
-    calendarMonth = now.getMonth();
-  }
-  monthSel.value = calendarMonth;
-  yearSel.value = calendarYear;
-
-  monthSel.addEventListener('change', () => {
-    calendarMonth = parseInt(monthSel.value);
-    fetchAndRenderCalendar();
-  });
-  yearSel.addEventListener('change', () => {
-    calendarYear = parseInt(yearSel.value);
-    fetchAndRenderCalendar();
-  });
-
-  document.getElementById('cal-prev').addEventListener('click', () => {
-    calendarMonth--;
-    if (calendarMonth < 0) { calendarMonth = 11; calendarYear--; }
-    syncCalendarSelects();
-    fetchAndRenderCalendar();
-  });
-  document.getElementById('cal-next').addEventListener('click', () => {
-    calendarMonth++;
-    if (calendarMonth > 11) { calendarMonth = 0; calendarYear++; }
-    syncCalendarSelects();
-    fetchAndRenderCalendar();
-  });
-  document.getElementById('cal-today').addEventListener('click', () => {
-    const now = new Date();
-    calendarYear = now.getFullYear();
-    calendarMonth = now.getMonth();
-    syncCalendarSelects();
-    fetchAndRenderCalendar();
-  });
-}
-
-function syncCalendarSelects() {
-  document.getElementById('cal-month').value = calendarMonth;
-  document.getElementById('cal-year').value = calendarYear;
-  // Enable/disable today button
-  const now = new Date();
-  const isCurrent = calendarYear === now.getFullYear() && calendarMonth === now.getMonth();
-  document.getElementById('cal-today').disabled = isCurrent;
-}
-
-async function fetchAndRenderCalendar() {
-  // Persist selected month
-  localStorage.setItem('crossword-calendar-month', `${calendarYear}-${calendarMonth}`);
-  const ym = `${calendarYear}-${String(calendarMonth + 1).padStart(2, '0')}`;
-  for (const [key] of calendarData) {
-    if (key.startsWith(ym)) calendarData.delete(key);
-  }
-
-  try {
-    if (isLocalSoloMode()) {
-      const template = await getSoloCalendarTemplate(ym);
-      for (const item of template) {
-        const localSummary = loadSoloState(item.date)?.summary;
-        calendarData.set(item.date, cloneCalendarSummary(localSummary || item));
-      }
-    } else {
-      const res = await fetch(`/api/calendar/${ym}`);
-      const data = await res.json();
-      for (const item of data) {
-        calendarData.set(item.date, item);
-      }
-    }
-  } catch (e) {
-    // Silently ignore fetch errors
-  }
-  renderCalendar();
-  syncCalendarSelects();
-}
-
-function renderCalendar() {
-  calendarGridEl.innerHTML = '';
-
-  const today = todayET();
-  const firstDay = new Date(calendarYear, calendarMonth, 1).getDay();
-  const daysInMonth = new Date(calendarYear, calendarMonth + 1, 0).getDate();
-
-  // Empty cells before first day
-  for (let i = 0; i < firstDay; i++) {
-    const empty = document.createElement('div');
-    empty.className = 'cal-day empty';
-    calendarGridEl.appendChild(empty);
-  }
-
-  for (let day = 1; day <= daysInMonth; day++) {
-    const dateStr = `${calendarYear}-${String(calendarMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-    const info = calendarData.get(dateStr);
-
-    const dayEl = document.createElement('div');
-    dayEl.className = 'cal-day';
-    dayEl.dataset.date = dateStr;
-
-    if (dateStr === today) dayEl.classList.add('today');
-
-    const numEl = document.createElement('span');
-    numEl.className = 'day-number';
-    numEl.textContent = day;
-    dayEl.appendChild(numEl);
-
-    if (info) {
-      if (info.isComplete) dayEl.classList.add('complete');
-
-      const canvas = document.createElement('canvas');
-      canvas.width = info.cols;
-      canvas.height = info.rows;
-      drawThumbnail(canvas, info);
-      dayEl.appendChild(canvas);
-
-      const star = document.createElement('div');
-      star.className = 'star-overlay';
-      star.textContent = '\u2B50';
-      dayEl.appendChild(star);
-
-      dayEl.addEventListener('click', () => showPuzzle(dateStr, true, true));
-    } else {
-      dayEl.classList.add('no-puzzle');
-    }
-
-    // Player count badge
-    const playerCount = roomCounts.get(dateStr);
-    if (!isLocalSoloMode() && playerCount > 0) {
-      const badge = document.createElement('div');
-      badge.className = 'player-count-badge';
-      badge.textContent = playerCount;
-      dayEl.appendChild(badge);
-    }
-
-    calendarGridEl.appendChild(dayEl);
-  }
-}
-
-function drawThumbnail(canvas, info) {
-  const ctx = canvas.getContext('2d');
-  const { rows, cols, cells, filledCount, totalWhite, isComplete } = info;
-  const hasProgress = filledCount > 0;
-
-  for (let r = 0; r < rows; r++) {
-    for (let c = 0; c < cols; c++) {
-      const val = cells[r * cols + c];
-      if (val === 0) {
-        // Black cell
-        ctx.fillStyle = '#4a4a4a';
-      } else if (isComplete) {
-        // Complete puzzle
-        ctx.fillStyle = val === 2 ? '#2a5599' : '#4a7abf';
-      } else if (hasProgress) {
-        // In progress
-        ctx.fillStyle = val === 2 ? '#5b9bd5' : '#ffffff';
-      } else {
-        // No progress — gray palette
-        ctx.fillStyle = val === 1 ? '#c8c8c8' : '#c8c8c8';
-      }
-      ctx.fillRect(c, r, 1, 1);
-    }
   }
 }
 
@@ -2604,13 +2006,14 @@ function showCalendar(pushState = true) {
   resetChatState();
 
   stopTimerTick();
-  if (isLocalSoloMode() && currentDate && PUZZLE) {
+  if (currentDate && PUZZLE) {
     saveSoloState(currentDate);
   }
   if (currentDate) {
     if (socket) socket.emit('leave-puzzle');
     currentDate = null;
   }
+  clearActiveRoomContext();
   timerBaseSeconds = 0;
   timerBaseTime = 0;
   updateTimerDisplay();
@@ -2633,150 +2036,9 @@ function showPuzzle(dateStr, pushState = true, showEntry = false) {
   // Always load the puzzle first so grid renders behind overlay
   loadPuzzle(dateStr);
 
-  if (showEntry && !isLocalSoloMode()) {
+  if (showEntry) {
     showPuzzleEntryOverlay(dateStr);
   }
-}
-
-// ─── AI Bot List Rendering ────────────────────────────────────
-function renderAiBotList() {
-  const listEl = document.getElementById('entry-ai-list');
-  if (!listEl) return;
-  listEl.innerHTML = '';
-  for (const bot of aiBotList) {
-    const item = document.createElement('div');
-    item.className = 'entry-ai-item';
-    item.innerHTML = `<span class="ai-dot" style="background:${bot.color}"></span><span class="ai-name">${bot.name}</span><span class="ai-badge">BOT</span><span class="ai-difficulty">${bot.difficultyLabel}</span><button class="ai-remove" data-bot-id="${bot.botId}">&times;</button>`;
-    listEl.appendChild(item);
-  }
-  // Wire up remove buttons
-  listEl.querySelectorAll('.ai-remove').forEach(btn => {
-    btn.addEventListener('click', () => {
-      if (socket && currentDate) {
-        socket.emit('remove-ai', { puzzleDate: currentDate, botId: btn.dataset.botId });
-      }
-    });
-  });
-}
-
-// ─── Puzzle Entry Overlay ─────────────────────────────────────
-function showPuzzleEntryOverlay(dateStr, paused) {
-  const overlay = document.getElementById('puzzle-entry-overlay');
-  const dateEl = document.getElementById('entry-date');
-  const weekdayEl = document.getElementById('entry-weekday');
-  const metaEl2 = document.getElementById('entry-meta');
-  const playersEl = document.getElementById('entry-players');
-  const userPreviewEl = document.getElementById('entry-user-preview');
-  const startBtn = document.getElementById('entry-start-btn');
-  const changeNameBtn = document.getElementById('entry-change-name');
-  const aiSectionEl = document.getElementById('entry-ai-section');
-  startBtn.textContent = paused ? 'Resume' : 'Start Solving';
-
-  // Parse date for display
-  const [y, m, d] = dateStr.split('-').map(Number);
-  const dateObj = new Date(y, m - 1, d);
-  const weekday = DAYS[dateObj.getDay()];
-  const monthName = MONTH_NAMES[m - 1];
-
-  weekdayEl.textContent = weekday;
-  dateEl.textContent = `${monthName} ${d}, ${y}`;
-  metaEl2.textContent = '';
-
-  // Show user preview
-  if (myName) {
-    userPreviewEl.innerHTML = `<span class="entry-user-dot" style="background:${myColor}"></span>Playing as ${myName}`;
-    userPreviewEl.style.display = '';
-  } else {
-    userPreviewEl.style.display = 'none';
-  }
-
-  // Show current players
-  playersEl.innerHTML = '';
-  if (isLocalSoloMode()) {
-    playersEl.innerHTML = '<div class="entry-no-players">Solo mode saves progress in this browser only</div>';
-  } else {
-    const count = roomCounts.get(dateStr) || 0;
-    if (count > 0) {
-      const el = document.createElement('div');
-      el.className = 'entry-player';
-      el.innerHTML = `<span class="entry-player-dot" style="background:#2a6dd4"></span>${count} player${count > 1 ? 's' : ''} solving`;
-      playersEl.appendChild(el);
-    } else {
-      playersEl.innerHTML = '<div class="entry-no-players">No one here yet</div>';
-    }
-  }
-
-  // Show overlay immediately
-  overlay.classList.add('show');
-  aiSectionEl.style.display = isLocalSoloMode() ? 'none' : '';
-
-  // Sync AI bot list from server
-  if (!isLocalSoloMode() && socket && dateStr) {
-    socket.emit('get-ai-bots', { puzzleDate: dateStr });
-  }
-
-  // Wire up Add Bot button
-  const addBotBtn = document.getElementById('entry-ai-add-btn');
-  const diffSelect = document.getElementById('entry-ai-difficulty');
-  const handleAddBot = () => {
-    if (!isLocalSoloMode() && socket && dateStr) {
-      socket.emit('add-ai', { puzzleDate: dateStr, difficultyIndex: parseInt(diffSelect.value, 10) });
-    }
-  };
-  addBotBtn.addEventListener('click', handleAddBot);
-
-  // Fetch puzzle metadata in the background (non-blocking)
-  fetch('/api/puzzles').then(r => r.json()).then(puzzles => {
-    const puzzle = puzzles.find(p => p.date === dateStr);
-    if (puzzle) {
-      const parts = [];
-      if (puzzle.author) parts.push(`By ${puzzle.author}`);
-      if (puzzle.editor) parts.push(`Edited by ${puzzle.editor}`);
-      metaEl2.textContent = parts.join(' \u00B7 ');
-    }
-  }).catch(() => {});
-
-  // Start button — puzzle is already loaded behind the overlay
-  const handleStart = () => {
-    overlay.classList.remove('show');
-    startBtn.removeEventListener('click', handleStart);
-    changeNameBtn.removeEventListener('click', handleChangeName);
-    addBotBtn.removeEventListener('click', handleAddBot);
-    if (paused && isLocalSoloMode()) {
-      timerBaseTime = Date.now();
-      startTimerTick();
-    } else if (paused && socket && currentDate) {
-      // Resume: unpause bots and restart timer (resume-puzzle handles bot restart)
-      socket.emit('resume-puzzle', { puzzleDate: currentDate });
-      startTimerTick();
-    } else {
-      // Fresh start: kick off AI solving
-      if (!isLocalSoloMode() && socket && dateStr && aiBotList.length > 0) {
-        socket.emit('start-ai', { puzzleDate: dateStr });
-      }
-    }
-    // Auto-focus the grid so typing works immediately
-    setTimeout(() => focusGrid(), 50);
-  };
-
-  // Change name button
-  const handleChangeName = () => {
-    showNameModal(true);
-    // After name changes, update the preview
-    const observer = new MutationObserver(() => {
-      if (!document.getElementById('name-modal').classList.contains('show')) {
-        observer.disconnect();
-        if (myName) {
-          userPreviewEl.innerHTML = `<span class="entry-user-dot" style="background:${myColor}"></span>Playing as ${myName}`;
-          userPreviewEl.style.display = '';
-        }
-      }
-    });
-    observer.observe(document.getElementById('name-modal'), { attributes: true, attributeFilter: ['class'] });
-  };
-
-  startBtn.addEventListener('click', handleStart);
-  changeNameBtn.addEventListener('click', handleChangeName);
 }
 
 // ─── Compute cell size to fit viewport ────────────────────────
@@ -2811,657 +2073,18 @@ function computeAndApplyCellSize() {
   document.documentElement.style.setProperty('--cell-size', cellSize + 'px');
 }
 
-// ─── Load a puzzle (async) ────────────────────────────────────
-async function loadPuzzle(dateStr) {
-  currentDate = dateStr;
-  localStorage.setItem('crossword-current-puzzle', dateStr);
-  remoteUsers.clear();
-  cellFillers.clear();
-  persistedPoints.clear();
-  guessStats.clear();
-  resetChatState();
-
-  lastCursorKey = '';
-  resetFireState();
-  hintCells.clear();
-  hideHintBtn();
-  if (hintCheckInterval) clearInterval(hintCheckInterval);
-
-  // Fetch puzzle data and mode-specific state in parallel
-  let data, stateData;
-  try {
-    if (isLocalSoloMode()) {
-      const puzzleRes = await fetch(`/api/puzzles/${dateStr}`);
-      if (!puzzleRes.ok) { alert('Puzzle not found'); showCalendar(); return; }
-      data = await puzzleRes.json();
-      stateData = loadSoloState(dateStr) || {};
-    } else {
-      const [puzzleRes, stateRes] = await Promise.all([
-        fetch(`/api/puzzles/${dateStr}`),
-        fetch(`/api/state/${dateStr}`),
-      ]);
-      if (!puzzleRes.ok) { alert('Puzzle not found'); showCalendar(); return; }
-      data = await puzzleRes.json();
-      stateData = await stateRes.json();
-    }
-  } catch (e) {
-    alert('Failed to load puzzle');
-    showCalendar();
-    return;
-  }
-
-  ROWS = data.dimensions.rows;
-  COLS = data.dimensions.cols;
-
-  const mapClues = (arr) => arr.map(c => ({
-    n: c.number, clue: c.clue, answer: c.answer, row: c.row, col: c.col
-  }));
-
-  // Build circle and shade lookup sets
-  const circleSet = new Set();
-  if (data.circles) {
-    for (const [r, c] of data.circles) circleSet.add(`${r},${c}`);
-  }
-  const shadeMap = new Map();
-  if (data.shades) {
-    for (const [r, c, color] of data.shades) shadeMap.set(`${r},${c}`, color);
-  }
-
-  PUZZLE = {
-    rows: ROWS,
-    cols: COLS,
-    grid: data.grid,
-    cellNumbers: data.cellNumbers,
-    circles: circleSet,
-    shades: shadeMap,
-    rebus: data.rebus || {},
-    clues: {
-      across: mapClues(data.clues.across),
-      down: mapClues(data.clues.down),
-    },
-  };
-
-  // Reset state
-  userGrid = Array.from({length: ROWS}, () => Array(COLS).fill(''));
-  checkedCells = Array.from({length: ROWS}, () => Array(COLS).fill(false));
-  solved = false;
-  direction = 'across';
-  rebusMode = false;
-  rebusBuffer = '';
-  congratsEl.classList.remove('show');
-
-  // Show rebus button only for puzzles that have rebus cells
-  btnRebus.style.display = hasRebus() ? '' : 'none';
-  btnRebus.classList.remove('active');
-
-  // Apply shared state
-  applySharedState(stateData.userGrid || {}, stateData.cellFillers || {}, stateData.points || {}, stateData.userColors || {}, stateData.guesses || {});
-  if (isLocalSoloMode()) {
-    populateSoloFillersFromGrid();
-    timerBaseSeconds = stateData.timerSeconds || 0;
-    timerBaseTime = Date.now();
-    updateTimerDisplay();
-    startTimerTick();
-    if (Object.keys(stateData.userGrid || {}).length > 0 && !stateData.summary) {
-      saveSoloState(dateStr);
-    }
-  }
-
-  applyCheckedCellMap(stateData.checkedCells || {});
-  refreshCheckedCells();
-
-  // Scan for already-completed words and assign filler colors
-  // Update header
-  const d = new Date(dateStr + 'T12:00:00');
-  const dayName = DAYS[d.getDay()];
-  const prettyDate = `${dayName}, ${MONTH_NAMES[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`;
-  titleEl.textContent = data.title || 'The New York Times Crossword';
-  metaEl.textContent = `${prettyDate} \u00B7 By ${data.author} \u00B7 Edited by ${data.editor}`;
-  document.getElementById('rebus-indicator').style.display = hasRebus() ? '' : 'none';
-  document.title = `Crossword \u2014 ${prettyDate}`;
-
-  computeAndApplyCellSize();
-  window.removeEventListener('resize', computeAndApplyCellSize);
-  window.addEventListener('resize', computeAndApplyCellSize);
-
-  buildGrid();
-  buildCluePanel();
-
-  // Select first white cell
-  selectedRow = 0; selectedCol = 0;
-  for (let r = 0; r < ROWS; r++) {
-    let found = false;
-    for (let c = 0; c < COLS; c++) {
-      if (!isBlack(r, c)) { selectedRow = r; selectedCol = c; found = true; break; }
-    }
-    if (found) break;
-  }
-
-  render();
-  focusGrid();
-
-  // Join puzzle room via Socket.IO
-  if (!isLocalSoloMode() && socket) socket.emit('join-puzzle', dateStr);
-
-  // Start hint timer
-  startHintTimer();
-}
-
-// ─── Collaboration helpers ────────────────────────────────────
-function applySharedState(gridMap, fillersMap, pointsMap, userColorsMap, guessesMap) {
-  for (const [key, letter] of Object.entries(gridMap)) {
-    const [r, c] = key.split(',').map(Number);
-    if (r >= 0 && r < ROWS && c >= 0 && c < COLS) {
-      userGrid[r][c] = letter;
-    }
-  }
-  // Apply persisted cell fillers with real colors
-  if (fillersMap) {
-    for (const [key, name] of Object.entries(fillersMap)) {
-      if (name) {
-        if (name === '(hint)') {
-          hintCells.add(key);
-        } else {
-          const color = (userColorsMap && userColorsMap[name]) || (name === myName ? myColor : '#ccc');
-          cellFillers.set(key, { userName: name, color });
-        }
-      }
-    }
-  }
-  // Apply persisted base points
-  if (pointsMap) {
-    for (const [name, pts] of Object.entries(pointsMap)) {
-      persistedPoints.set(name, pts);
-    }
-  }
-  // Apply persisted guess stats
-  if (guessesMap) {
-    for (const [name, stats] of Object.entries(guessesMap)) {
-      guessStats.set(name, { total: stats.total || 0, incorrect: stats.incorrect || 0 });
-    }
-  }
-}
-
-function showPointFloat(row, col, delta, type, isFireBoosted) {
-  if (!delta || !cellEls[row]?.[col]) return;
-  const el = cellEls[row][col];
-  const float = document.createElement('span');
-  if (type === 'combo') {
-    float.className = 'point-float combo';
-    float.textContent = `+${delta} COMBO`;
-  } else if (type === 'word') {
-    float.className = 'point-float word';
-    float.textContent = `word complete +${delta}`;
-  } else {
-    float.className = `point-float ${delta > 0 ? 'plus' : 'minus'}`;
-    float.textContent = delta > 0 ? `+${delta}` : `${delta}`;
-  }
-  if (isFireBoosted && delta > 0) float.classList.add('fire-points');
-  el.appendChild(float);
-  float.addEventListener('animationend', () => float.remove());
-}
-
-function checkLocalWordBonus(row, col) {
-  if (!PUZZLE) return { bonus: 0, completed: 0, wordCellKeys: [] };
-  let completed = 0;
-  const wordCellKeys = [];
-  for (const dir of ['across', 'down']) {
-    const clue = getClueForCell(row, col, dir);
-    if (!clue) continue;
-    const cells = getWordCells(clue, dir);
-    if (cells.every(([r, c]) => isCellCorrect(r, c))) {
-      completed++;
-      for (const [r, c] of cells) wordCellKeys.push(`${r},${c}`);
-    }
-  }
-  let bonus = 0;
-  if (completed >= 2) bonus = 250;
-  else if (completed === 1) bonus = 50;
-  return { bonus, completed, wordCellKeys };
-}
-
-function triggerWordWave(row, col, completerColor) {
-  if (!PUZZLE) return;
-  const color = completerColor || myColor;
-  for (const dir of ['across', 'down']) {
-    const clue = getClueForCell(row, col, dir);
-    if (!clue) continue;
-    const cells = getWordCells(clue, dir);
-    if (!cells.every(([r, c]) => isCellCorrect(r, c))) continue;
-    cells.forEach(([r, c], i) => {
-      const key = `${r},${c}`;
-      const el = cellEls[r]?.[c];
-      if (!el) return;
-      setTimeout(() => {
-        el.classList.remove('wave');
-        void el.offsetWidth;
-        el.classList.add('wave');
-        el.addEventListener('animationend', () => el.classList.remove('wave'), { once: true });
-      }, i * 50);
-    });
-  }
-  render();
-}
-
-function sendCellUpdate(row, col, letter) {
-  if (!currentDate) return;
-  const key = `${row},${col}`;
-  // Prevent modifying hint cells (cannot delete or overwrite)
-  if (hintCells.has(key)) return;
-  if (letter) {
-    cellFillers.set(key, { userName: myName, color: myColor });
-    // Immediate local point scoring with fire mechanic
-    if (PUZZLE) {
-      const isCorrect = isCellCorrect(row, col, letter);
-      sfxType(isCorrect);
-
-      if (!isSoloMode()) {
-        const now = Date.now();
-        const wasOnFire = myFireActive;
-
-        if (!isCorrect && myFireActive) {
-          breakMyFire();
-        } else if (!isCorrect && !myFireActive) {
-          myRecentWordCompletions = [];
-        }
-
-        // Word completion: sound effects, fire tracking, hint timer
-        if (isCorrect) {
-          const { bonus: rawWb, completed: wordsCompleted, wordCellKeys } = checkLocalWordBonus(row, col);
-          if (rawWb > 0) {
-            resetHintTimer();
-            sfxWordComplete();
-            triggerWordWave(row, col);
-
-            // Extend fire on word completion while on fire
-            if (myFireActive && wasOnFire) {
-              myFireWordsCompleted += wordsCompleted;
-              myFireExpiresAt = myFireExpiresAt + 5000;
-            }
-
-            // Track word completions toward fire trigger (only when not on fire)
-            if (!myFireActive) {
-              myRecentWordCompletions.push({ timestamp: now, count: wordsCompleted, wordCells: wordCellKeys });
-              myRecentWordCompletions = myRecentWordCompletions.filter(e => now - e.timestamp < 30000);
-              const totalCompletions = myRecentWordCompletions.reduce((sum, e) => sum + e.count, 0);
-              if (totalCompletions >= 3) {
-                myFireWordsCompleted = 0;
-                startMyFire([], now + 30000);
-                myRecentWordCompletions = [];
-              }
-            }
-          }
-        }
-      } else {
-        // Solo mode: just check word completions for sound effects and hint timer
-        if (isCorrect) {
-          const { bonus: rawWb } = checkLocalWordBonus(row, col);
-          if (rawWb > 0) {
-            resetHintTimer();
-            sfxWordComplete();
-            triggerWordWave(row, col);
-          }
-        }
-      }
-    }
-  } else {
-    cellFillers.delete(key);
-    // Deleting a letter does NOT break fire or count toward streak
-  }
-  if (isLocalSoloMode()) {
-    saveSoloState(currentDate);
-    return;
-  }
-  if (socket) socket.emit('cell-update', { puzzleDate: currentDate, row, col, letter });
-}
-
-// ─── Hint system ─────────────────────────────────────────────────
-function startHintTimer() {
-  lastWordCompletionTime = Date.now();
-  hintVoted = false;
-  if (hintCheckInterval) clearInterval(hintCheckInterval);
-  hintCheckInterval = setInterval(() => {
-    if (solved) { hideHintBtn(); return; }
-    const elapsed = Date.now() - lastWordCompletionTime;
-    if (elapsed >= 60000) {
-      showHintBtn();
-      // Notify server that hint is available (so all clients can see it)
-      if (!isLocalSoloMode() && socket && currentDate) socket.emit('hint-available', { puzzleDate: currentDate });
-    }
-  }, 5000);
-}
-
-function resetHintTimer() {
-  lastWordCompletionTime = Date.now();
-  hintVoted = false;
-  hideHintBtn();
-}
-
-function showHintBtn() {
-  const btn = document.getElementById('hint-btn');
-  if (btn) {
-    btn.classList.add('show');
-    btn.classList.toggle('voted', hintVoted);
-    updateHintVoteText(0, 0);
-  }
-}
-
-function hideHintBtn() {
-  const btn = document.getElementById('hint-btn');
-  if (btn) {
-    btn.classList.remove('show');
-    btn.classList.remove('voted');
-  }
-  hintVoted = false;
-}
-
-function updateHintVoteText(votes, total) {
-  const el = document.getElementById('hint-votes');
-  if (!el) return;
-  if (votes > 0 || total > 0) {
-    el.textContent = `${votes}/${total}`;
-  } else {
-    el.textContent = 'Hint';
-  }
-}
-
-function voteForHint() {
-  if (!PUZZLE || !currentDate || hintVoted) return;
-  hintVoted = true;
-  const btn = document.getElementById('hint-btn');
-  if (btn) btn.classList.add('voted');
-  if (isLocalSoloMode()) {
-    const candidates = [];
-    for (let r = 0; r < ROWS; r++) {
-      for (let c = 0; c < COLS; c++) {
-        if (isBlack(r, c)) continue;
-        const key = `${r},${c}`;
-        if (hintCells.has(key)) continue;
-        const correct = getCorrectAnswer(r, c);
-        if (userGrid[r][c] !== correct) {
-          candidates.push({ row: r, col: c, letter: correct });
-        }
-      }
-    }
-    for (let i = candidates.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [candidates[i], candidates[j]] = [candidates[j], candidates[i]];
-    }
-    applyHintReveal(candidates.slice(0, 5));
-    return;
-  }
-  if (socket) socket.emit('hint-vote', { puzzleDate: currentDate });
-}
-
-function applyHintReveal(cells) {
-  lastWordCompletionTime = Date.now();
-  hintVoted = false;
-
-  // Get hint button position for fly-from origin
-  const btn = document.getElementById('hint-btn');
-  const btnRect = btn ? btn.getBoundingClientRect() : null;
-  const btnX = btnRect ? btnRect.left + btnRect.width / 2 : 0;
-  const btnY = btnRect ? btnRect.top + btnRect.height / 2 : 0;
-
-  hideHintBtn();
-
-  // Get cell size for flyer dimensions
-  const cellSize = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--cell-size')) || 32;
-
-  cells.forEach(({ row: r, col: c, letter }, i) => {
-    const key = `${r},${c}`;
-    hintCells.add(key);
-    userGrid[r][c] = letter;
-
-    // Create flying letter element
-    const cellEl = cellEls[r]?.[c];
-    if (!cellEl || !btnRect) return;
-
-    const targetRect = cellEl.getBoundingClientRect();
-    const flyer = document.createElement('div');
-    flyer.className = 'hint-flyer';
-    flyer.textContent = letter;
-    flyer.style.width = cellSize + 'px';
-    flyer.style.height = cellSize + 'px';
-    flyer.style.fontSize = (cellSize * 0.5) + 'px';
-    // Start at button center
-    flyer.style.left = (btnX - cellSize / 2) + 'px';
-    flyer.style.top = (btnY - cellSize / 2) + 'px';
-    flyer.style.transform = 'scale(0.3)';
-    flyer.style.opacity = '0.6';
-    document.body.appendChild(flyer);
-
-    // Stagger each letter slightly
-    let glitterInterval;
-    setTimeout(() => {
-      flyer.style.left = targetRect.left + 'px';
-      flyer.style.top = targetRect.top + 'px';
-      flyer.style.transform = 'scale(1)';
-      flyer.style.opacity = '1';
-      // Spawn glitter particles along the path
-      glitterInterval = setInterval(() => {
-        const rect = flyer.getBoundingClientRect();
-        const cx = rect.left + rect.width / 2;
-        const cy = rect.top + rect.height / 2;
-        for (let p = 0; p < 2; p++) {
-          const spark = document.createElement('div');
-          spark.className = 'hint-glitter';
-          const ox = (Math.random() - 0.5) * cellSize;
-          const oy = (Math.random() - 0.5) * cellSize;
-          spark.style.left = (cx + ox) + 'px';
-          spark.style.top = (cy + oy) + 'px';
-          spark.style.setProperty('--dx', (Math.random() - 0.5) * 20 + 'px');
-          spark.style.setProperty('--dy', (Math.random() - 0.5) * 20 + 'px');
-          spark.style.width = (3 + Math.random() * 5) + 'px';
-          spark.style.height = spark.style.width;
-          document.body.appendChild(spark);
-          spark.addEventListener('animationend', () => spark.remove());
-        }
-      }, 40);
-    }, i * 100);
-
-    // After animation, remove flyer and glitter, show real cell
-    setTimeout(() => {
-      if (glitterInterval) clearInterval(glitterInterval);
-      flyer.remove();
-      render();
-    }, i * 100 + 650);
-  });
-
-  // Final render + completion check after all animations
-  setTimeout(() => {
-    refreshCheckedCells();
-    if (isLocalSoloMode()) {
-      populateSoloFillersFromGrid();
-      saveSoloState(currentDate);
-    }
-    render();
-    checkCompletion();
-  }, cells.length * 100 + 700);
-}
-
-// ─── Fire streak helpers ─────────────────────────────────────────
-function resetFireState() {
-  myFireActive = false;
-  myFireExpiresAt = 0;
-  myRecentWordCompletions = [];
-  myFireWordsCompleted = 0;
-  remoteFireStates.clear();
-  hideFireBar();
-}
-
-function startMyFire(_, expiresAt) {
-  myFireActive = true;
-  myFireExpiresAt = expiresAt;
-  sfxFireStart();
-  showFireBar();
-}
-
-function breakMyFire() {
-  sfxFireBreak();
-  showComboBroken();
-  myFireActive = false;
-  myFireExpiresAt = 0;
-  myRecentWordCompletions = [];
-  myFireWordsCompleted = 0;
-  hideFireBar();
-}
-
-function expireMyFire() {
-  myFireActive = false;
-  myFireExpiresAt = 0;
-  myRecentWordCompletions = [];
-  myFireWordsCompleted = 0;
-  hideFireBar();
-}
-
-let presenceFireInterval = null;
-
-function updatePresenceFireTimers() {
-  const now = Date.now();
-  const totalDuration = 30000;
-  const presenceEls = presenceBarEl ? presenceBarEl.children : [];
-  for (let i = 0; i < presenceEls.length; i++) { const el = presenceEls[i];
-    const uname = el.dataset.username;
-    let expiresAt = 0, isOnFire = false;
-
-    if (uname === myName && myFireActive) {
-      expiresAt = myFireExpiresAt;
-      isOnFire = true;
-    } else {
-      for (const [, rs] of remoteFireStates) {
-        if (rs.userName === uname && rs.expiresAt > now) {
-          expiresAt = rs.expiresAt;
-          isOnFire = true;
-          break;
-        }
-      }
-    }
-
-    if (isOnFire) {
-      if (!el.classList.contains('on-fire')) el.classList.add('on-fire');
-      const remaining = expiresAt - now;
-      if (remaining <= 0) {
-        el.classList.remove('on-fire');
-        continue;
-      }
-      const pct = Math.min(100, (remaining / totalDuration) * 100);
-      const fill = el.querySelector('.presence-fire-timer-fill');
-      const label = el.querySelector('.presence-fire-timer-label');
-      if (fill) fill.style.width = pct + '%';
-      if (label) label.textContent = 'ON FIRE';
-    } else {
-      if (el.classList.contains('on-fire')) el.classList.remove('on-fire');
-    }
-  }
-
-  // Expire local fire if timer ran out
-  if (myFireActive && myFireExpiresAt <= now) {
-    expireMyFire();
-  }
-
-  // Clean up expired remote fire states
-  for (const [sid, rs] of remoteFireStates) {
-    if (rs.expiresAt <= now) {
-      remoteFireStates.delete(sid);
-    }
-  }
-}
-
-function startPresenceFireInterval() {
-  if (presenceFireInterval) return;
-  presenceFireInterval = setInterval(updatePresenceFireTimers, 100);
-}
-
-function stopPresenceFireInterval() {
-  if (presenceFireInterval) {
-    clearInterval(presenceFireInterval);
-    presenceFireInterval = null;
-  }
-}
-
-function showFireBar() {
-  // Start the unified presence fire timer interval
-  startPresenceFireInterval();
-  renderPresenceBar();
-}
-
-function hideFireBar() {
-  // Stop interval only if no one is on fire anymore
-  let anyFire = false;
-  if (myFireActive) anyFire = true;
-  if (!anyFire) {
-    const now = Date.now();
-    for (const [, rs] of remoteFireStates) {
-      if (rs.expiresAt > now) { anyFire = true; break; }
-    }
-  }
-  if (!anyFire) stopPresenceFireInterval();
-  renderPresenceBar();
-}
-
-function showComboBroken() {
-  const container = document.querySelector('.grid-container');
-  if (!container) return;
-  const el = document.createElement('div');
-  el.className = 'combo-broken';
-  el.textContent = 'COMBO BROKEN';
-  container.appendChild(el);
-  el.addEventListener('animationend', () => el.remove());
-}
-
-function showFireAnnounce(name) {
-  const container = document.querySelector('.grid-container');
-  if (!container) return;
-  const el = document.createElement('div');
-  el.className = 'fire-announce';
-  el.textContent = `${name} is on fire!`;
-  container.appendChild(el);
-  el.addEventListener('animationend', () => el.remove());
-}
-
-function handleRemoteFireEvent(fireEvent, remoteUserId) {
-  // Find socketId for this remote user
-  let remoteSocketId = null;
-  for (const [sid, u] of remoteUsers) {
-    if (u.userName === fireEvent.userName) { remoteSocketId = sid; break; }
-  }
-  if (!remoteSocketId) return;
-
-  if (fireEvent.type === 'started') {
-    remoteFireStates.set(remoteSocketId, {
-      userName: fireEvent.userName, color: fireEvent.color,
-      expiresAt: Date.now() + fireEvent.remainingMs,
-    });
-    sfxFireStart(true);
-    showFireAnnounce(fireEvent.userName);
-    startPresenceFireInterval();
-    renderPresenceBar();
-  } else if (fireEvent.type === 'extended') {
-    const rs = remoteFireStates.get(remoteSocketId);
-    if (rs) {
-      rs.expiresAt = Date.now() + fireEvent.remainingMs;
-      renderPresenceBar();
-    }
-  } else if (fireEvent.type === 'broken') {
-    remoteFireStates.delete(remoteSocketId);
-    sfxFireBreak(true);
-    showComboBroken();
-    renderPresenceBar();
-  }
-}
-
 function broadcastCursor() {
-  if (!currentDate || !socket) return;
+  if (!currentDate || !socket || !activeRoomCode) return;
   const key = `${selectedRow},${selectedCol},${direction}`;
   if (key === lastCursorKey) return;
   lastCursorKey = key;
-  socket.emit('cursor-move', { puzzleDate: currentDate, row: selectedRow, col: selectedCol, direction });
+  socket.emit('cursor-move', { roomCode: activeRoomCode, row: selectedRow, col: selectedCol, direction });
 }
 
 // ─── Socket.IO event handlers for puzzle ──────────────────────
 function setupSocketHandlers() {
-  socket.on('room-state', ({ users, yourColor, yourName }) => {
+  socket.on('room-state', ({ roomCode, puzzleDate, users, yourColor, yourName }) => {
+    if (roomCode && puzzleDate) setActiveRoomContext(roomCode, puzzleDate);
     myColor = yourColor;
     if (yourName) myName = yourName;
     remoteUsers.clear();
@@ -3549,6 +2172,7 @@ function setupSocketHandlers() {
       if (fireEvent) {
         handleRemoteFireEvent(fireEvent, remoteUserId);
       }
+      saveSoloState(currentDate);
       render({ scrollClues: false });
       checkCompletion();
     }
@@ -3559,6 +2183,7 @@ function setupSocketHandlers() {
     timerBaseTime = Date.now();
     updateTimerDisplay();
     startTimerTick();
+    if (currentDate) saveSoloState(currentDate);
   });
 
   // Catch up on bot progress / timer after tab was hidden
@@ -3585,6 +2210,7 @@ function setupSocketHandlers() {
         }
       }
     }
+    saveSoloState(currentDate);
     render();
     checkCompletion();
   });
@@ -3605,44 +2231,25 @@ function setupSocketHandlers() {
     hideHintBtn();
     solved = false;
     congratsEl.classList.remove('show');
+    clearSoloState(currentDate);
     render();
-  });
-
-  socket.on('room-count', ({ puzzleDate, count }) => {
-    if (count > 0) {
-      roomCounts.set(puzzleDate, count);
-    } else {
-      roomCounts.delete(puzzleDate);
-    }
-    const dayEl = document.querySelector(`.cal-day[data-date="${puzzleDate}"]`);
-    if (dayEl) {
-      let badge = dayEl.querySelector('.player-count-badge');
-      if (count > 0) {
-        if (!badge) {
-          badge = document.createElement('div');
-          badge.className = 'player-count-badge';
-          dayEl.appendChild(badge);
-        }
-        badge.textContent = count;
-      } else if (badge) {
-        badge.remove();
-      }
-    }
-  });
-
-  socket.on('puzzle-progress', (summary) => {
-    calendarData.set(summary.date, summary);
-    const dayEl = document.querySelector(`.cal-day[data-date="${summary.date}"]`);
-    if (dayEl && !dayEl.classList.contains('no-puzzle')) {
-      dayEl.classList.toggle('complete', summary.isComplete);
-      const canvas = dayEl.querySelector('canvas');
-      if (canvas) drawThumbnail(canvas, summary);
-    }
   });
 
   socket.on('chat-message', (message) => {
     if (!currentDate || message.puzzleDate !== currentDate) return;
     appendChatMessage(message);
+  });
+
+  socket.on('room-closed', () => {
+    clearActiveRoomContext();
+    remoteUsers.clear();
+    aiBotList = [];
+    resetChatState();
+    updateModeUI();
+    if (currentDate) {
+      alert('That room is no longer active');
+      showPuzzle(currentDate, false, true);
+    }
   });
 
   // Fire streak: server confirmation for local user
@@ -3688,751 +2295,7 @@ function setupSocketHandlers() {
   });
 }
 
-function computeUserPoints() {
-  if (!PUZZLE) return new Map();
-  const points = new Map(); // userName → { color, pts }
-
-  function ensure(name, color) {
-    if (!points.has(name)) points.set(name, { color: color || '#ccc', pts: 0 });
-    const p = points.get(name);
-    if (color && color !== '#ccc') p.color = color;
-    return p;
-  }
-
-  // Start from persisted base points (includes all historical +1/-1 from letter placements)
-  for (const [name, pts] of persistedPoints) {
-    ensure(name, null).pts = pts;
-  }
-
-  // Apply filler colors (so we know each user's color for display)
-  for (const [, filler] of cellFillers) {
-    ensure(filler.userName, filler.color);
-  }
-
-  // Word bonuses (+5/+15) are now persisted server-side in the points total
-
-  return points;
-}
-
-function renderPresenceBar() {
-  presenceBarEl.innerHTML = '';
-
-  // Build list: current user + online remote users
-  const allUsers = [{ name: myName, color: myColor, label: myName || 'You', isBot: false }];
-  const seenNames = new Set([myName]);
-  for (const [sid, user] of remoteUsers) {
-    if (!seenNames.has(user.userName)) {
-      const isBotUser = user.isBot || sid.startsWith('ai-bot-');
-      allUsers.push({ name: user.userName, color: user.color, label: user.userName, isBot: isBotUser });
-      seenNames.add(user.userName);
-    }
-  }
-  // Include offline users who have filled squares
-  for (const [, filler] of cellFillers) {
-    if (!seenNames.has(filler.userName)) {
-      allUsers.push({ name: filler.userName, color: filler.color || '#ccc', label: filler.userName });
-      seenNames.add(filler.userName);
-    }
-  }
-
-  if (isSoloMode()) {
-    presenceBarEl.style.display = 'none';
-    return;
-  }
-  presenceBarEl.style.display = '';
-
-  // Count correct filled squares per player
-  const filledCounts = new Map();
-  for (const [key, filler] of cellFillers) {
-    const [r, c] = key.split(',').map(Number);
-    if (isCellCorrect(r, c)) {
-      filledCounts.set(filler.userName, (filledCounts.get(filler.userName) || 0) + 1);
-    }
-  }
-
-  for (const u of allUsers) {
-    const filled = filledCounts.get(u.name) || 0;
-    const el = document.createElement('div');
-    el.className = 'presence-user';
-    el.dataset.username = u.name;
-
-    // Determine if this user is on fire
-    let isOnFire = false;
-    if (u.name === myName) {
-      isOnFire = myFireActive;
-    } else {
-      for (const [, rs] of remoteFireStates) {
-        if (rs.userName === u.name && rs.expiresAt > Date.now()) { isOnFire = true; break; }
-      }
-    }
-    if (isOnFire) el.classList.add('on-fire');
-
-    const filledStr = filled > 0 ? ` <span class="presence-filled">${filled}</span>` : '';
-    const botBadge = u.isBot ? ' <span class="presence-bot-badge">BOT</span>' : '';
-    el.innerHTML =
-      `<div class="presence-fire-header">` +
-        `<div class="presence-flames"></div>` +
-        `<div class="presence-fire-timer">` +
-          `<div class="presence-fire-timer-fill"></div>` +
-          `<span class="presence-fire-timer-label">ON FIRE</span>` +
-        `</div>` +
-      `</div>` +
-      `<div class="presence-user-info">` +
-        `<span class="presence-dot" style="background:${u.color}"></span>${u.label}${botBadge}${filledStr}` +
-      `</div>`;
-    if (u.name === myName) {
-      el.style.cursor = 'pointer';
-      el.addEventListener('click', () => showNameModal(true));
-    }
-    presenceBarEl.appendChild(el);
-  }
-
-  // Immediately update fire timers after render
-  updatePresenceFireTimers();
-}
-
-// ─── Helpers ───────────────────────────────────────────────────
-function isBlack(r, c) {
-  return PUZZLE.grid[r]?.[c] === '.';
-}
-
-function inBounds(r, c) {
-  return r >= 0 && r < ROWS && c >= 0 && c < COLS;
-}
-
-function getClueForCell(r, c, dir) {
-  const clues = dir === 'across' ? PUZZLE.clues.across : PUZZLE.clues.down;
-  for (let i = clues.length - 1; i >= 0; i--) {
-    const cl = clues[i];
-    if (dir === 'across') {
-      if (cl.row === r && cl.col <= c && cl.col + getWordLen(cl, 'across') > c) return cl;
-    } else {
-      if (cl.col === c && cl.row <= r && cl.row + getWordLen(cl, 'down') > r) return cl;
-    }
-  }
-  return null;
-}
-
-function getWordLen(clue, dir) {
-  if (clue.answer) return clue.answer.length;
-  let len = 0;
-  if (dir === 'across') {
-    for (let c = clue.col; c < COLS && !isBlack(clue.row, c); c++) len++;
-  } else {
-    for (let r = clue.row; r < ROWS && !isBlack(r, clue.col); r++) len++;
-  }
-  return len;
-}
-
-function parseReferencedClues(clueText) {
-  const refs = [];
-  // Match explicit "N-Across" or "N-Down" references
-  const explicitRegex = /(\d+)[-\s]?([Aa]cross|[Dd]own)/g;
-  let m;
-  while ((m = explicitRegex.exec(clueText)) !== null) {
-    refs.push({ n: parseInt(m[1]), dir: m[2].toLowerCase() });
-  }
-  // Match grouped references like "24-, 38- and 49-Across" or "12- and 15-Down"
-  // Pattern: sequence of "N-," or "N- and" before an explicit direction
-  const groupRegex = /(?:(\d+)-[\s,]+(?:and\s+)?)+(\d+)[-\s]?([Aa]cross|[Dd]own)/g;
-  while ((m = groupRegex.exec(clueText)) !== null) {
-    const dir = m[3].toLowerCase();
-    // Extract the full matched substring and pull all numbers from it
-    const fragment = m[0];
-    const nums = [...fragment.matchAll(/(\d+)/g)].map(x => parseInt(x[1]));
-    for (const n of nums) {
-      if (!refs.some(r => r.n === n && r.dir === dir)) {
-        refs.push({ n, dir });
-      }
-    }
-  }
-  return refs;
-}
-
-function getWordCells(clue, dir) {
-  const cells = [];
-  const len = getWordLen(clue, dir);
-  for (let i = 0; i < len; i++) {
-    if (dir === 'across') cells.push([clue.row, clue.col + i]);
-    else cells.push([clue.row + i, clue.col]);
-  }
-  return cells;
-}
-
-// ─── Build Grid ────────────────────────────────────────────────
-let cellEls = [];
-
-function buildGrid() {
-  gridScale = 1; gridTx = 0; gridTy = 0;
-  gridEl.style.transform = '';
-  gridEl.innerHTML = '';
-  gridEl.style.gridTemplateColumns = `repeat(${COLS}, var(--cell-size))`;
-  gridEl.style.gridTemplateRows = `repeat(${ROWS}, var(--cell-size))`;
-
-  cellEls = [];
-  for (let r = 0; r < ROWS; r++) {
-    cellEls[r] = [];
-    for (let c = 0; c < COLS; c++) {
-      const cell = document.createElement('div');
-      cell.className = 'cell' + (isBlack(r, c) ? ' black' : '');
-
-      const num = PUZZLE.cellNumbers[r][c];
-      if (num > 0) {
-        const numSpan = document.createElement('span');
-        numSpan.className = 'number';
-        numSpan.textContent = num;
-        cell.appendChild(numSpan);
-      }
-
-      if (!isBlack(r, c)) {
-        const letterSpan = document.createElement('span');
-        letterSpan.className = 'letter';
-        cell.appendChild(letterSpan);
-
-        // Circle overlay
-        const key = `${r},${c}`;
-        if (PUZZLE.circles.has(key)) {
-          cell.classList.add('circled');
-        }
-
-        // Shade background
-        const shadeColor = PUZZLE.shades.get(key);
-        if (shadeColor) {
-          cell.classList.add('shaded');
-          cell.style.setProperty('--shade-color', shadeColor);
-        }
-
-        // Rebus cell thick outline
-        if (PUZZLE.rebus[key]) {
-          cell.classList.add('rebus-cell');
-        }
-      }
-
-      cell.addEventListener('click', () => onCellClick(r, c));
-      gridEl.appendChild(cell);
-      cellEls[r][c] = cell;
-    }
-  }
-
-  if (!IS_MOBILE) {
-    const gridH = ROWS * parseInt(getComputedStyle(document.documentElement).getPropertyValue('--cell-size')) + 4;
-    cluePanelEl.style.maxHeight = gridH + 'px';
-    for (const sec of cluePanelEl.querySelectorAll('.clue-section')) {
-      sec.style.maxHeight = gridH + 'px';
-    }
-  } else {
-    cluePanelEl.style.maxHeight = '300px';
-  }
-}
-
-// ─── Build Clue Panel ──────────────────────────────────────────
-let clueItemEls = {};
-
-function buildCluePanel() {
-  cluePanelEl.innerHTML = '';
-  clueItemEls = {};
-
-  for (const dir of ['across', 'down']) {
-    const section = document.createElement('div');
-    section.className = 'clue-section';
-    const h2 = document.createElement('h2');
-    h2.textContent = dir.charAt(0).toUpperCase() + dir.slice(1);
-    section.appendChild(h2);
-
-    for (const clue of PUZZLE.clues[dir]) {
-      const item = document.createElement('div');
-      item.className = 'clue-item';
-
-      const numSpan = document.createElement('span');
-      numSpan.className = 'clue-num';
-      numSpan.textContent = clue.n;
-      item.appendChild(numSpan);
-
-      const textSpan = document.createElement('span');
-      textSpan.className = 'clue-text';
-      textSpan.textContent = clue.clue;
-      item.appendChild(textSpan);
-
-      item.addEventListener('click', () => {
-        direction = dir;
-        selectedRow = clue.row;
-        selectedCol = clue.col;
-        render();
-        focusGrid();
-      });
-
-      section.appendChild(item);
-      clueItemEls[`${dir}-${clue.n}`] = item;
-    }
-    cluePanelEl.appendChild(section);
-  }
-}
-
-// ─── Rendering ─────────────────────────────────────────────────
-function render({ scrollClues = true } = {}) {
-  if (!PUZZLE) return;
-  const autoCheckEnabled = isAutoCheckEnabled();
-  const useSoloCheckedBlue = isLocalSoloMode() && autoCheckEnabled;
-  const currentClue = getClueForCell(selectedRow, selectedCol, direction);
-  const wordCells = currentClue ? getWordCells(currentClue, direction) : [];
-  const wordSet = new Set(wordCells.map(([r,c]) => `${r},${c}`));
-
-  // Build referenced clue cell set (e.g. "See 9-Across")
-  const refCellSet = new Set();
-  if (currentClue) {
-    for (const ref of parseReferencedClues(currentClue.clue)) {
-      const clues = PUZZLE.clues[ref.dir];
-      if (clues) {
-        const refClue = clues.find(c => c.n === ref.n);
-        if (refClue) {
-          for (const [rr, cc] of getWordCells(refClue, ref.dir)) refCellSet.add(`${rr},${cc}`);
-        }
-      }
-    }
-    // Highlight starred clue cells when the current clue references "starred"
-    if (/starred/i.test(currentClue.clue)) {
-      for (const dir of ['across', 'down']) {
-        for (const clue of PUZZLE.clues[dir]) {
-          if (/^\s*\*/.test(clue.clue)) {
-            for (const [rr, cc] of getWordCells(clue, dir)) refCellSet.add(`${rr},${cc}`);
-          }
-        }
-      }
-    }
-  }
-
-  // Build remote user highlight maps
-  const remoteCursorCells = new Map(); // "r,c" → color (selected cell)
-  const remoteWordCells = new Map();   // "r,c" → color (word highlight)
-  if (showTrails) {
-    for (const [, user] of remoteUsers) {
-      if (!PUZZLE) break;
-      // Map near-black to grey so highlights are visible
-      const hlColor = user.color === '#222222' ? '#888888' : user.color;
-      const rClue = getClueForCell(user.row, user.col, user.direction);
-      if (rClue) {
-        const rWordCells = getWordCells(rClue, user.direction);
-        for (const [wr, wc] of rWordCells) {
-          const key = `${wr},${wc}`;
-          if (!remoteWordCells.has(key)) remoteWordCells.set(key, hlColor);
-        }
-      }
-      remoteCursorCells.set(`${user.row},${user.col}`, hlColor);
-    }
-  }
-
-  for (let r = 0; r < ROWS; r++) {
-    for (let c = 0; c < COLS; c++) {
-      const el = cellEls[r][c];
-      if (isBlack(r, c)) continue;
-
-      const key = `${r},${c}`;
-      const isMyWord = wordSet.has(key);
-      const isMyCell = r === selectedRow && c === selectedCol;
-
-      el.classList.toggle('highlight-word', isMyWord);
-      el.classList.toggle('highlight-ref', refCellSet.has(key) && !isMyWord && !isMyCell);
-      el.classList.toggle('highlight-cell', isMyCell);
-
-      const letterEl = el.querySelector('.letter');
-      if (letterEl) {
-        // Show rebus buffer for the active cell in rebus mode
-        const displayText = (rebusMode && isMyCell && rebusBuffer) ? rebusBuffer : userGrid[r][c];
-        letterEl.textContent = displayText;
-        // Shrink font for multi-letter content
-        letterEl.classList.toggle('rebus-text', displayText.length > 1);
-      }
-
-      // Rebus mode indicator on active cell
-      el.classList.toggle('rebus-active', rebusMode && isMyCell);
-
-      el.classList.toggle('hint-cell', hintCells.has(key));
-      el.classList.toggle('checked', checkedCells[r][c]);
-      // Set filler color for checked letters
-      const filler = cellFillers.get(key);
-      if (filler && filler.color) {
-        el.style.setProperty('--filler-color', filler.color);
-      } else {
-        el.style.removeProperty('--filler-color');
-      }
-      if (checkedCells[r][c] && isLocalSoloMode()) {
-        el.style.setProperty('--checked-color', useSoloCheckedBlue ? '#2a6dd4' : '#222');
-      } else {
-        el.style.removeProperty('--checked-color');
-      }
-      if (autoCheckEnabled && userGrid[r][c] && !checkedCells[r][c]) {
-        el.classList.toggle('error', !isCellCorrect(r, c));
-      } else {
-        el.classList.remove('error');
-      }
-
-      // Background color priority: hint > my cell/word > ref clue > remote cursor > remote word > none
-      const isHint = hintCells.has(key);
-      const isRefHighlight = refCellSet.has(key) && !isMyWord && !isMyCell;
-      const remoteCursorColor = remoteCursorCells.get(key);
-      const remoteWordColor = remoteWordCells.get(key);
-
-      if (isHint) {
-        // Hint cells: clear inline bg so CSS gradient takes full effect
-        el.style.backgroundColor = '';
-        el.style.background = '';
-      } else if (isMyCell || isMyWord) {
-        // Let CSS classes (highlight-cell / highlight-word) handle it
-        el.style.backgroundColor = '';
-        el.style.background = '';
-      } else if (isRefHighlight) {
-        // Let CSS class (highlight-ref) handle it
-        el.style.backgroundColor = '';
-        el.style.background = '';
-      } else if (remoteCursorColor) {
-        el.style.background = '';
-        el.style.backgroundColor = '#FFA500';
-      } else if (remoteWordColor) {
-        const hex = remoteWordColor.replace('#', '');
-        const rr = parseInt(hex.substring(0, 2), 16);
-        const gg = parseInt(hex.substring(2, 4), 16);
-        const bb = parseInt(hex.substring(4, 6), 16);
-        el.style.background = '';
-        el.style.backgroundColor = `rgba(${rr},${gg},${bb},0.25)`;
-      } else {
-        el.style.backgroundColor = '';
-        el.style.background = '';
-      }
-
-      el.style.boxShadow = '';
-
-      // Fire cell effect
-    }
-  }
-
-  const clueBarTextEl = clueBarEl.querySelector('#clue-bar-text');
-  if (currentClue) {
-    const dirLabel = direction === 'across' ? 'A' : 'D';
-    clueBarTextEl.textContent = `${currentClue.n}${dirLabel}: ${currentClue.clue}`;
-  } else {
-    clueBarTextEl.innerHTML = '&nbsp;';
-  }
-
-  // Build set of referenced clue keys for panel highlighting
-  const refClueKeys = new Set();
-  if (currentClue) {
-    for (const ref of parseReferencedClues(currentClue.clue)) {
-      refClueKeys.add(`${ref.dir}-${ref.n}`);
-    }
-  }
-
-  // Check if current clue references "starred" clues
-  const showStarred = currentClue && /starred/i.test(currentClue.clue);
-
-  for (const k in clueItemEls) {
-    clueItemEls[k].classList.remove('active', 'ref-active', 'starred');
-  }
-  if (currentClue) {
-    const k = `${direction}-${currentClue.n}`;
-    if (clueItemEls[k]) {
-      clueItemEls[k].classList.add('active');
-      // Only scroll clue panel for local cursor movements
-      if (scrollClues) {
-        const el = clueItemEls[k];
-        const section = el.closest('.clue-section');
-        if (section) {
-          const stickyH = section.querySelector('h2');
-          const headerHeight = stickyH ? stickyH.offsetHeight : 0;
-          const sectionRect = section.getBoundingClientRect();
-          const elRect = el.getBoundingClientRect();
-          const visibleTop = sectionRect.top + headerHeight;
-          if (elRect.top < visibleTop) {
-            section.scrollTop += elRect.top - visibleTop;
-          } else if (elRect.bottom > sectionRect.bottom) {
-            section.scrollTop += elRect.bottom - sectionRect.bottom;
-          }
-        }
-      }
-    }
-    // Highlight referenced clues in the panel
-    for (const refKey of refClueKeys) {
-      if (clueItemEls[refKey]) {
-        clueItemEls[refKey].classList.add('ref-active');
-      }
-    }
-    // Highlight starred clues when the selected clue references them
-    if (showStarred) {
-      for (const dir of ['across', 'down']) {
-        for (const clue of PUZZLE.clues[dir]) {
-          if (/^\s*\*/.test(clue.clue)) {
-            const sk = `${dir}-${clue.n}`;
-            if (clueItemEls[sk]) clueItemEls[sk].classList.add('starred');
-          }
-        }
-      }
-    }
-  }
-
-  // Mark solved clues
-  for (const dir of ['across', 'down']) {
-    for (const clue of PUZZLE.clues[dir]) {
-      const k = `${dir}-${clue.n}`;
-      const el = clueItemEls[k];
-      if (!el) continue;
-      const wCells = getWordCells(clue, dir);
-      const isSolved = wCells.length > 0 && wCells.every(([wr, wc]) => isCellCorrect(wr, wc));
-      el.classList.toggle('solved', isSolved);
-    }
-  }
-
-  // Update presence bar with live percentages
-  renderPresenceBar();
-
-  broadcastCursor();
-}
-
-// ─── Interaction ───────────────────────────────────────────────
-function onCellClick(r, c) {
-  if (isBlack(r, c)) return;
-  // Commit rebus buffer when clicking a different cell
-  if (rebusMode && rebusBuffer && (r !== selectedRow || c !== selectedCol)) {
-    commitRebus();
-  }
-  if (r === selectedRow && c === selectedCol) {
-    direction = direction === 'across' ? 'down' : 'across';
-    if (!getClueForCell(r, c, direction)) {
-      direction = direction === 'across' ? 'down' : 'across';
-    }
-  } else {
-    selectedRow = r;
-    selectedCol = c;
-    if (!getClueForCell(r, c, direction)) {
-      direction = direction === 'across' ? 'down' : 'across';
-    }
-  }
-  render();
-  focusGrid();
-}
-
-function advanceCursor(skipFilled = false) {
-  if (direction === 'across') {
-    let nc = selectedCol + 1;
-    while (nc < COLS && !isBlack(selectedRow, nc) && skipFilled && userGrid[selectedRow][nc]) nc++;
-    if (nc < COLS && !isBlack(selectedRow, nc)) selectedCol = nc;
-  } else {
-    let nr = selectedRow + 1;
-    while (nr < ROWS && !isBlack(nr, selectedCol) && skipFilled && userGrid[nr][selectedCol]) nr++;
-    if (nr < ROWS && !isBlack(nr, selectedCol)) selectedRow = nr;
-  }
-}
-
-function retreatCursor() {
-  if (direction === 'across') {
-    let nc = selectedCol - 1;
-    while (nc >= 0 && isBlack(selectedRow, nc)) nc--;
-    if (nc >= 0) selectedCol = nc;
-  } else {
-    let nr = selectedRow - 1;
-    while (nr >= 0 && isBlack(nr, selectedCol)) nr--;
-    if (nr >= 0) selectedRow = nr;
-  }
-}
-
-// After filling the last cell of a word correctly, jump to the next unsolved sequential clue
-function advanceToNextClueIfWordFilled(typedRow, typedCol) {
-  if (!isCellCorrect(typedRow, typedCol)) return; // wrong letter → stay put
-  const clue = getClueForCell(typedRow, typedCol, direction);
-  if (!clue) return;
-  const cells = getWordCells(clue, direction);
-  if (!cells.every(([r, c]) => userGrid[r]?.[c])) return; // not all filled yet
-
-  const clues = direction === 'across' ? PUZZLE.clues.across : PUZZLE.clues.down;
-  const idx = clues.findIndex(c => c.n === clue.n);
-  if (idx === -1) return;
-
-  // Try clues after current, then wrap — skip fully solved words
-  for (let i = 1; i < clues.length; i++) {
-    const next = clues[(idx + i) % clues.length];
-    if (isWordSolved(next, direction)) continue;
-    const nextCells = getWordCells(next, direction);
-    const firstEmpty = nextCells.find(([r, c]) => !userGrid[r]?.[c]);
-    [selectedRow, selectedCol] = firstEmpty || [next.row, next.col];
-    return;
-  }
-
-  // All clues in this direction solved — switch to other direction's first unsolved
-  const otherDir = direction === 'across' ? 'down' : 'across';
-  const otherClues = otherDir === 'across' ? PUZZLE.clues.across : PUZZLE.clues.down;
-  for (const next of otherClues) {
-    if (isWordSolved(next, otherDir)) continue;
-    const nextCells = getWordCells(next, otherDir);
-    const firstEmpty = nextCells.find(([r, c]) => !userGrid[r]?.[c]);
-    [selectedRow, selectedCol] = firstEmpty || [next.row, next.col];
-    direction = otherDir;
-    return;
-  }
-}
-
-function isWordSolved(clue, dir) {
-  const cells = getWordCells(clue, dir);
-  return cells.every(([r, c]) => isCellCorrect(r, c));
-}
-
-function firstUnsolvedCell(clue, dir) {
-  const cells = getWordCells(clue, dir);
-  for (const [r, c] of cells) {
-    if (!isCellCorrect(r, c)) return [r, c];
-  }
-  return [clue.row, clue.col]; // fallback to start
-}
-
-function moveToNextWord(forward) {
-  const dirs = [direction, direction === 'across' ? 'down' : 'across'];
-  const currentClue = getClueForCell(selectedRow, selectedCol, direction);
-  if (!currentClue) return;
-
-  // Build ordered list: remaining clues in current direction, then all in other direction
-  const curClues = dirs[0] === 'across' ? PUZZLE.clues.across : PUZZLE.clues.down;
-  const otherClues = dirs[1] === 'across' ? PUZZLE.clues.across : PUZZLE.clues.down;
-  const curIdx = curClues.findIndex(c => c.n === currentClue.n);
-
-  // Candidates: rest of current list, then full other list, then start of current list (wrap)
-  const candidates = [];
-  if (forward) {
-    for (let i = curIdx + 1; i < curClues.length; i++) candidates.push({ clue: curClues[i], dir: dirs[0] });
-    for (let i = 0; i < otherClues.length; i++) candidates.push({ clue: otherClues[i], dir: dirs[1] });
-    for (let i = 0; i <= curIdx; i++) candidates.push({ clue: curClues[i], dir: dirs[0] });
-  } else {
-    for (let i = curIdx - 1; i >= 0; i--) candidates.push({ clue: curClues[i], dir: dirs[0] });
-    for (let i = otherClues.length - 1; i >= 0; i--) candidates.push({ clue: otherClues[i], dir: dirs[1] });
-    for (let i = curClues.length - 1; i >= curIdx; i--) candidates.push({ clue: curClues[i], dir: dirs[0] });
-  }
-
-  // Find first unsolved word
-  for (const cand of candidates) {
-    if (!isWordSolved(cand.clue, cand.dir)) {
-      direction = cand.dir;
-      const [r, c] = firstUnsolvedCell(cand.clue, cand.dir);
-      selectedRow = r;
-      selectedCol = c;
-      render();
-      return;
-    }
-  }
-
-  // All solved — just move to next word normally
-  const nextIdx = forward ? (curIdx + 1) % curClues.length : (curIdx - 1 + curClues.length) % curClues.length;
-  selectedRow = curClues[nextIdx].row;
-  selectedCol = curClues[nextIdx].col;
-  render();
-}
-
-function moveArrow(dr, dc) {
-  const newDir = dc !== 0 ? 'across' : 'down';
-
-  if (newDir !== direction) {
-    if (getClueForCell(selectedRow, selectedCol, newDir)) {
-      direction = newDir;
-      return;
-    }
-  }
-
-  let r = selectedRow + dr;
-  let c = selectedCol + dc;
-  while (inBounds(r, c) && isBlack(r, c)) { r += dr; c += dc; }
-  if (inBounds(r, c)) {
-    selectedRow = r;
-    selectedCol = c;
-    direction = newDir;
-  }
-}
-
-function computeAccuracy() {
-  // Return guess-based accuracy: total guesses and incorrect guesses per user
-  const stats = new Map(); // userName → { correct, total }
-  for (const [name, gs] of guessStats) {
-    stats.set(name, { correct: gs.total - gs.incorrect, total: gs.total });
-  }
-  return stats;
-}
-
-function showLeaderboard() {
-  const titleEl = document.getElementById('congrats-title');
-  const msgEl = document.getElementById('congrats-msg');
-  const lbEl = document.getElementById('leaderboard');
-  const timeStr = formatTimer(getTimerSeconds());
-
-  if (isSoloMode()) {
-    titleEl.textContent = 'Congratulations!';
-    msgEl.textContent = `Solved in ${timeStr}!`;
-    lbEl.innerHTML = '';
-    return;
-  }
-
-  // Count correct filled squares per player
-  const filledCells = new Map();
-  const playerColors = new Map();
-  for (const [key, filler] of cellFillers) {
-    const [r, c] = key.split(',').map(Number);
-    if (isCellCorrect(r, c)) {
-      filledCells.set(filler.userName, (filledCells.get(filler.userName) || 0) + 1);
-    }
-    if (filler.color && filler.color !== '#ccc') playerColors.set(filler.userName, filler.color);
-  }
-
-  // Build sorted list by squares
-  const players = [];
-  for (const [name, filled] of filledCells) {
-    const color = playerColors.get(name) || (name === myName ? myColor : '#ccc');
-    players.push({ name, color, filled });
-  }
-  players.sort((a, b) => b.filled - a.filled);
-
-  if (players.length > 0) {
-    titleEl.textContent = `${players[0].name} wins!`;
-    msgEl.textContent = `Solved in ${timeStr} — Final standings:`;
-  } else {
-    titleEl.textContent = 'Congratulations!';
-    msgEl.textContent = `Solved in ${timeStr}!`;
-  }
-
-  lbEl.innerHTML = '';
-  players.forEach((p, i) => {
-    const row = document.createElement('div');
-    row.className = 'leaderboard-row';
-    row.innerHTML = `
-      <span class="leaderboard-rank">${i + 1}.</span>
-      <span class="leaderboard-dot" style="background:${p.color}"></span>
-      <span class="leaderboard-name">${p.name}</span>
-      <span class="leaderboard-pts">${p.filled} squares</span>
-    `;
-    lbEl.appendChild(row);
-  });
-}
-
-function checkCompletion() {
-  for (let r = 0; r < ROWS; r++) {
-    for (let c = 0; c < COLS; c++) {
-      if (!isBlack(r, c) && !isCellCorrect(r, c)) return;
-    }
-  }
-  if (!solved) {
-    sfxVictory();
-  }
-  solved = true;
-  stopTimerTick();
-  if (isLocalSoloMode()) saveSoloState(currentDate);
-  showLeaderboard();
-  congratsEl.classList.add('show');
-}
-
 const mobileInput = document.getElementById('mobile-input');
-function focusGrid() {
-  if (IS_MOBILE && chatOpen) {
-    chatInputEl.focus();
-    return;
-  }
-  if (IS_MOBILE) {
-    mobileInput.focus();
-  } else {
-    gridEl.focus();
-  }
-}
 
 // ─── Mobile input handler ──────────────────────────────────────
 mobileInput.addEventListener('input', (e) => {
@@ -4484,45 +2347,6 @@ mobileInput.addEventListener('keydown', (e) => {
     render();
   }
 });
-
-// ─── Rebus mode helpers ─────────────────────────────────────────
-function commitRebus() {
-  const hadContent = !!rebusBuffer;
-  if (rebusBuffer && !checkedCells[selectedRow][selectedCol]) {
-    userGrid[selectedRow][selectedCol] = rebusBuffer;
-    sendCellUpdate(selectedRow, selectedCol, rebusBuffer);
-    if (isAutoCheckEnabled() && isCellCorrect(selectedRow, selectedCol, rebusBuffer)) {
-      checkedCells[selectedRow][selectedCol] = true;
-    }
-  }
-  rebusBuffer = '';
-  rebusMode = false;
-  btnRebus.classList.remove('active');
-  render();
-  if (hadContent) {
-    advanceCursor(true);
-    render();
-    checkCompletion();
-  }
-}
-
-function toggleRebus() {
-  if (rebusMode) {
-    if (rebusBuffer) {
-      commitRebus();
-    } else {
-      rebusMode = false;
-      rebusBuffer = '';
-      btnRebus.classList.remove('active');
-      render();
-    }
-  } else {
-    rebusMode = true;
-    rebusBuffer = '';
-    btnRebus.classList.add('active');
-    render();
-  }
-}
 
 // ─── Keyboard ──────────────────────────────────────────────────
 gridEl.addEventListener('keydown', (e) => {
@@ -4651,18 +2475,6 @@ chatFormEl.addEventListener('submit', (e) => {
   }
 });
 updateChatComposerState();
-
-// Pause: show overlay and notify server
-function pausePuzzle() {
-  if (!currentDate || solved) return;
-  stopTimerTick();
-  if (isLocalSoloMode()) {
-    saveSoloState(currentDate);
-  } else if (socket) {
-    socket.emit('pause-puzzle', { puzzleDate: currentDate });
-  }
-  showPuzzleEntryOverlay(currentDate, true);
-}
 document.getElementById('btn-pause').addEventListener('click', pausePuzzle);
 
 const trailsBtn = document.getElementById('btn-trails');
@@ -4708,8 +2520,9 @@ btnClear.addEventListener('click', () => {
     startTimerTick();
     clearSoloState(currentDate);
     updateCalendarSummaryForCurrentPuzzle();
-  } else if (currentDate && socket) {
-    socket.emit('clear-puzzle', { puzzleDate: currentDate });
+  } else if (currentDate && socket && activeRoomCode) {
+    clearSoloState(currentDate);
+    socket.emit('clear-puzzle', { roomCode: activeRoomCode });
   }
   render();
 });
@@ -4733,81 +2546,6 @@ btnRebus.addEventListener('click', () => {
   toggleRebus();
   focusGrid();
 });
-
-// ─── Mobile keyboard ────────────────────────────────────────────
-function initMobileKeyboard() {
-  const kb = document.getElementById('mobile-keyboard');
-  const rows = [
-    ['Q','W','E','R','T','Y','U','I','O','P'],
-    ['A','S','D','F','G','H','J','K','L'],
-    ['MORE','Z','X','C','V','B','N','M','BACK'],
-  ];
-
-  rows.forEach(letters => {
-    const rowEl = document.createElement('div');
-    rowEl.className = 'kb-row';
-    letters.forEach(l => {
-      const btn = document.createElement('button');
-      btn.className = 'kb-key';
-      if (l === 'MORE') {
-        btn.classList.add('kb-more');
-        btn.textContent = 'Rebus';
-      } else if (l === 'BACK') {
-        btn.classList.add('kb-backspace');
-        btn.textContent = '\u232B';
-      } else {
-        btn.textContent = l;
-      }
-      btn.addEventListener('click', (e) => {
-        e.preventDefault();
-        if (!PUZZLE || solved) return;
-        if (l === 'MORE') { toggleRebus(); return; }
-        if (l === 'BACK') {
-          if (rebusMode) { rebusBuffer = rebusBuffer.slice(0, -1); render(); return; }
-          handleBackspace();
-        } else {
-          handleLetterInput(l);
-        }
-      });
-      rowEl.appendChild(btn);
-    });
-    kb.appendChild(rowEl);
-  });
-}
-
-function handleLetterInput(letter) {
-  if (rebusMode) {
-    rebusBuffer += letter;
-    render();
-    return;
-  }
-  if (!checkedCells[selectedRow][selectedCol]) {
-    userGrid[selectedRow][selectedCol] = letter;
-    sendCellUpdate(selectedRow, selectedCol, letter);
-    if (isAutoCheckEnabled() && isCellCorrect(selectedRow, selectedCol, letter)) {
-      checkedCells[selectedRow][selectedCol] = true;
-    }
-  }
-  advanceCursor(true);
-  render();
-  checkCompletion();
-}
-
-function handleBackspace() {
-  if (checkedCells[selectedRow][selectedCol]) {
-    retreatCursor();
-  } else if (userGrid[selectedRow][selectedCol]) {
-    userGrid[selectedRow][selectedCol] = '';
-    sendCellUpdate(selectedRow, selectedCol, '');
-  } else {
-    retreatCursor();
-    if (!checkedCells[selectedRow][selectedCol]) {
-      userGrid[selectedRow][selectedCol] = '';
-      sendCellUpdate(selectedRow, selectedCol, '');
-    }
-  }
-  render();
-}
 
 // Override focusGrid to skip hidden input on mobile
 const origFocusGrid = focusGrid;
@@ -4962,21 +2700,6 @@ function startApp() {
   initCalendarNav();
   updateModeUI();
 
-  // Check URL path for a puzzle date (e.g. /2025-02-15)
-  const urlPath = window.location.pathname.slice(1); // strip leading /
-  if (/^\d{4}-\d{2}-\d{2}$/.test(urlPath)) {
-    showPuzzle(urlPath, false); // don't push state, we're already at this URL
-    history.replaceState({ view: 'puzzle', date: urlPath }, '', `/${urlPath}`);
-  } else {
-    const savedPuzzle = localStorage.getItem('crossword-current-puzzle');
-    if (savedPuzzle) {
-      showPuzzle(savedPuzzle);
-    } else {
-      history.replaceState({ view: 'calendar' }, '', '/');
-      fetchAndRenderCalendar();
-    }
-  }
-
   // Handle browser back/forward
   window.addEventListener('popstate', (e) => {
     if (e.state?.view === 'puzzle' && e.state.date) {
@@ -4985,6 +2708,42 @@ function startApp() {
       showCalendar(false);
     }
   });
+
+  (async () => {
+    const urlPath = window.location.pathname.slice(1);
+    const storedRoomCode = normalizeRoomCode(activeRoomCode);
+    const storedRoomPuzzle = activeRoomPuzzleDate;
+
+    if (storedRoomCode && storedRoomPuzzle) {
+      try {
+        const res = await fetch(`/api/rooms/${encodeURIComponent(storedRoomCode)}`);
+        if (res.ok) {
+          const data = await res.json();
+          setActiveRoomContext(data.roomCode, data.puzzleDate);
+          showPuzzle(data.puzzleDate, false);
+          history.replaceState({ view: 'puzzle', date: data.puzzleDate }, '', `/${data.puzzleDate}`);
+          return;
+        }
+      } catch (err) {
+        // fall back to solo
+      }
+      clearActiveRoomContext();
+    }
+
+    if (/^\d{4}-\d{2}-\d{2}$/.test(urlPath)) {
+      showPuzzle(urlPath, false);
+      history.replaceState({ view: 'puzzle', date: urlPath }, '', `/${urlPath}`);
+      return;
+    }
+
+    const savedPuzzle = localStorage.getItem('crossword-current-puzzle');
+    if (savedPuzzle) {
+      showPuzzle(savedPuzzle);
+    } else {
+      history.replaceState({ view: 'calendar' }, '', '/');
+      fetchAndRenderCalendar();
+    }
+  })();
 }
 
 // Begin: check identity first, then connect socket, then start app

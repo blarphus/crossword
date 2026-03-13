@@ -8,6 +8,7 @@ const cron = require('node-cron');
 const db = require('./db');
 const { scrapeDate } = require('./scrape');
 const initJeopardy = require('./server-jeopardy');
+const { createPrivateRoomService } = require('./crossword/runtime/private-room-service');
 
 const app = express();
 app.set('trust proxy', true);
@@ -172,6 +173,57 @@ app.delete('/api/state/:date', async (req, res) => {
     console.error('DELETE /api/state error:', err);
     res.status(500).json({ error: 'Database error' });
   }
+});
+
+// POST /api/rooms — create a private multiplayer room seeded from solo progress
+app.post('/api/rooms', async (req, res) => {
+  try {
+    const deviceId = req.headers['x-device-id'];
+    const dbUser = await db.getUser(deviceId);
+    if (!dbUser?.name) {
+      return res.status(400).json({ error: 'Name is required before creating a room' });
+    }
+    const { puzzleDate, seedState } = req.body || {};
+    if (!puzzleDate || !/^\d{4}-\d{2}-\d{2}$/.test(puzzleDate)) {
+      return res.status(400).json({ error: 'Valid puzzleDate is required' });
+    }
+    const puzzle = await db.getPuzzle(puzzleDate);
+    if (!puzzle) {
+      return res.status(404).json({ error: 'Puzzle not found' });
+    }
+
+    const room = createPrivateRoom({
+      puzzleDate,
+      userName: dbUser.name,
+      userColor: dbUser.color || COLOR_POOL[0],
+      seedState: seedState || {},
+    });
+
+    res.json({
+      roomCode: room.roomCode,
+      puzzleDate: room.puzzleDate,
+      snapshot: buildPrivateRoomSnapshot(room),
+    });
+  } catch (err) {
+    console.error('POST /api/rooms error:', err);
+    res.status(500).json({ error: 'Database error' });
+  }
+});
+
+// GET /api/rooms/:roomCode — inspect active room and fetch its snapshot
+app.get('/api/rooms/:roomCode', (req, res) => {
+  const roomCode = normalizeRoomCode(req.params.roomCode);
+  const room = privateRooms.get(roomCode);
+  if (!room) {
+    return res.status(404).json({ exists: false, error: 'Room not found' });
+  }
+  res.json({
+    exists: true,
+    roomCode: room.roomCode,
+    puzzleDate: room.puzzleDate,
+    playerCount: getPrivateRealPlayerCount(room),
+    snapshot: buildPrivateRoomSnapshot(room),
+  });
 });
 
 // POST /api/scrape/:date — manually trigger scrape for a date
@@ -339,6 +391,45 @@ const AI_MULTIPLIER_RANGES = [
 
 const AI_NAMES = ['Cleo', 'Atlas', 'Mira', 'Rex', 'Nova', 'Sage', 'Orion', 'Luna'];
 const AI_DIFFICULTY_LABELS = ['Easy', 'Standard-', 'Standard', 'Standard+', 'Expert'];
+const {
+  privateRooms,
+  socketPrivateRoom,
+  normalizeRoomCode,
+  privateRoomChannel,
+  createPrivateRoom,
+  buildPrivateRoomSnapshot,
+  getPrivateRoomElapsedSeconds,
+  startPrivateRoomTimer,
+  stopPrivateRoomTimer,
+  getPrivateRealPlayerCount,
+  areAllPrivatePlayersPaused,
+  processPrivateRoomCellUpdate,
+  getPrivateAiBotList,
+  addPrivateAiBot,
+  removePrivateAiBot,
+  removeAllPrivateAiBots,
+  pauseAllPrivateAiBots,
+  resumeAllPrivateAiBots,
+  startPrivateAiSolving,
+  leaveCurrentPrivateRoom,
+} = createPrivateRoomService({
+  db,
+  io,
+  fireStreaks,
+  chatThrottle,
+  getPuzzleData,
+  getCorrectAnswer,
+  isCellCorrectServer,
+  getServerWordCells,
+  colorPool: COLOR_POOL,
+  aiTargetTimes: AI_TARGET_TIMES,
+  aiMultiplierRanges: AI_MULTIPLIER_RANGES,
+  aiNames: AI_NAMES,
+  aiDifficultyLabels: AI_DIFFICULTY_LABELS,
+  buildAiWordQueue,
+  distributeAiTiming,
+  randomHop,
+});
 
 function expireFire(socketId) {
   const fs = fireStreaks.get(socketId);
@@ -353,7 +444,7 @@ function expireFire(socketId) {
   fs.fireMultiplier = 1.5;
   fs.fireWordsCompleted = 0;
   // Broadcast to room
-  const roomName = `puzzle:${fs.puzzleDate}`;
+  const roomName = fs.roomCode ? privateRoomChannel(fs.roomCode) : `puzzle:${fs.puzzleDate}`;
   io.to(roomName).emit('fire-expired', {
     socketId,
     userName: fs.userName,
@@ -1117,6 +1208,66 @@ io.on('connection', async (socket) => {
 
   socket.join('calendar');
 
+  socket.on('join-room', async ({ roomCode }) => {
+    const normalizedCode = normalizeRoomCode(roomCode);
+    leaveCurrentPrivateRoom(socket);
+    leaveCurrentPuzzle(socket);
+
+    const room = privateRooms.get(normalizedCode);
+    if (!room) {
+      socket.emit('room-closed', { roomCode: normalizedCode });
+      return;
+    }
+
+    socket.join(privateRoomChannel(normalizedCode));
+    socketPrivateRoom.set(socket.id, normalizedCode);
+
+    const color = userColor || getNextColor(room.members);
+    room.members.set(socket.id, {
+      userId,
+      userName,
+      color,
+      row: 0,
+      col: 0,
+      direction: 'across',
+      isBot: false,
+    });
+
+    startPrivateRoomTimer(room);
+
+    const others = [];
+    for (const [sid, info] of room.members) {
+      if (sid !== socket.id) others.push({ socketId: sid, ...info });
+    }
+
+    socket.emit('room-state', {
+      roomCode: normalizedCode,
+      puzzleDate: room.puzzleDate,
+      users: others,
+      yourColor: color,
+      yourName: userName,
+    });
+    socket.emit('timer-sync', { seconds: getPrivateRoomElapsedSeconds(room) });
+
+    if (room.hintState.available) {
+      socket.emit('hint-available');
+      socket.emit('hint-vote-update', {
+        votes: room.hintState.votes.size,
+        total: getPrivateRealPlayerCount(room),
+      });
+    }
+
+    socket.to(privateRoomChannel(normalizedCode)).emit('user-joined', {
+      socketId: socket.id,
+      userId,
+      userName,
+      color,
+      row: 0,
+      col: 0,
+      direction: 'across',
+    });
+  });
+
   socket.on('join-puzzle', async (puzzleDate) => {
     // Leave previous puzzle room if any
     leaveCurrentPuzzle(socket);
@@ -1169,7 +1320,27 @@ io.on('connection', async (socket) => {
     broadcastRoomCount(puzzleDate);
   });
 
-  socket.on('cell-update', async ({ puzzleDate, row, col, letter }) => {
+  socket.on('cell-update', async ({ puzzleDate, roomCode, row, col, letter }) => {
+    if (roomCode) {
+      try {
+        const result = await processPrivateRoomCellUpdate({
+          roomCode: normalizeRoomCode(roomCode),
+          row,
+          col,
+          letter,
+          socketId: socket.id,
+          userName,
+          userColor,
+          isBot: false,
+        });
+        if (!result.payload) return;
+        socket.to(privateRoomChannel(normalizeRoomCode(roomCode))).emit('cell-updated', result.payload);
+        if (result.fireEvent) socket.emit('fire-update', result.fireEvent);
+      } catch (err) {
+        console.error('[ws] private room cell-update error:', err);
+      }
+      return;
+    }
     try {
       const result = await processCellUpdate({
         puzzleDate, row, col, letter,
@@ -1186,7 +1357,26 @@ io.on('connection', async (socket) => {
     }
   });
 
-  socket.on('cursor-move', ({ puzzleDate, row, col, direction }) => {
+  socket.on('cursor-move', ({ puzzleDate, roomCode, row, col, direction }) => {
+    if (roomCode) {
+      const normalizedCode = normalizeRoomCode(roomCode);
+      const room = privateRooms.get(normalizedCode);
+      if (room && room.members.has(socket.id)) {
+        const info = room.members.get(socket.id);
+        info.row = row;
+        info.col = col;
+        info.direction = direction;
+      }
+      socket.to(privateRoomChannel(normalizedCode)).emit('cursor-moved', {
+        socketId: socket.id,
+        userId,
+        userName,
+        row,
+        col,
+        direction,
+      });
+      return;
+    }
     const room = puzzleRooms.get(puzzleDate);
     if (room && room.has(socket.id)) {
       const info = room.get(socket.id);
@@ -1205,7 +1395,17 @@ io.on('connection', async (socket) => {
   });
 
   // ─── Pause / Resume ──────────────────────────────────────────────
-  socket.on('pause-puzzle', async ({ puzzleDate }) => {
+  socket.on('pause-puzzle', async ({ puzzleDate, roomCode }) => {
+    if (roomCode) {
+      const room = privateRooms.get(normalizeRoomCode(roomCode));
+      if (!room) return;
+      room.pausedSockets.add(socket.id);
+      if (areAllPrivatePlayersPaused(room)) {
+        stopPrivateRoomTimer(room);
+        pauseAllPrivateAiBots(room.roomCode);
+      }
+      return;
+    }
     if (!pausedSockets.has(puzzleDate)) pausedSockets.set(puzzleDate, new Set());
     pausedSockets.get(puzzleDate).add(socket.id);
     // If all players are now paused, stop the timer and pause bots
@@ -1215,7 +1415,16 @@ io.on('connection', async (socket) => {
     }
   });
 
-  socket.on('resume-puzzle', async ({ puzzleDate }) => {
+  socket.on('resume-puzzle', async ({ puzzleDate, roomCode }) => {
+    if (roomCode) {
+      const room = privateRooms.get(normalizeRoomCode(roomCode));
+      if (!room) return;
+      room.pausedSockets.delete(socket.id);
+      startPrivateRoomTimer(room);
+      io.to(privateRoomChannel(room.roomCode)).emit('timer-sync', { seconds: getPrivateRoomElapsedSeconds(room) });
+      resumeAllPrivateAiBots(room.roomCode);
+      return;
+    }
     const paused = pausedSockets.get(puzzleDate);
     if (paused) paused.delete(socket.id);
     // Restart timer if it was stopped during pause
@@ -1228,7 +1437,24 @@ io.on('connection', async (socket) => {
   });
 
   // Lightweight state refresh (used when tab regains focus)
-  socket.on('request-state', async ({ puzzleDate }) => {
+  socket.on('request-state', async ({ puzzleDate, roomCode }) => {
+    if (roomCode) {
+      const room = privateRooms.get(normalizeRoomCode(roomCode));
+      if (!room) {
+        socket.emit('room-closed', { roomCode: normalizeRoomCode(roomCode) });
+        return;
+      }
+      const snapshot = buildPrivateRoomSnapshot(room);
+      socket.emit('state-refresh', {
+        roomCode: room.roomCode,
+        puzzleDate: room.puzzleDate,
+        userGrid: snapshot.userGrid,
+        cellFillers: snapshot.cellFillers,
+        userColors: snapshot.userColors,
+        seconds: snapshot.timerSeconds,
+      });
+      return;
+    }
     try {
       const state = await db.getState(puzzleDate);
       if (!state) return;
@@ -1247,7 +1473,47 @@ io.on('connection', async (socket) => {
   });
 
   // ─── Hint voting ───────────────────────────────────────────────
-  socket.on('hint-vote', async ({ puzzleDate }) => {
+  socket.on('hint-vote', async ({ puzzleDate, roomCode }) => {
+    if (roomCode) {
+      const room = privateRooms.get(normalizeRoomCode(roomCode));
+      if (!room) return;
+      room.hintState.votes.add(socket.id);
+      const voteCount = room.hintState.votes.size;
+      const totalPlayers = getPrivateRealPlayerCount(room);
+      io.to(privateRoomChannel(room.roomCode)).emit('hint-vote-update', { votes: voteCount, total: totalPlayers });
+      if (voteCount >= totalPlayers) {
+        const pData = await getPuzzleData(room.puzzleDate);
+        if (!pData) return;
+        const candidates = [];
+        for (let r = 0; r < pData.dimensions.rows; r++) {
+          for (let c = 0; c < pData.dimensions.cols; c++) {
+            if (pData.grid[r][c] === '.') continue;
+            const key = `${r},${c}`;
+            if (room.hintState.hintCells.has(key)) continue;
+            const correct = getCorrectAnswer(pData, r, c);
+            if (room.userGrid[key] !== correct) {
+              candidates.push({ row: r, col: c, letter: correct });
+            }
+          }
+        }
+        for (let i = candidates.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [candidates[i], candidates[j]] = [candidates[j], candidates[i]];
+        }
+        const chosen = candidates.slice(0, 5);
+        for (const { row, col, letter } of chosen) {
+          const key = `${row},${col}`;
+          room.hintState.hintCells.add(key);
+          room.userGrid[key] = letter;
+          room.cellFillers[key] = '(hint)';
+          room.checkedCells[key] = true;
+        }
+        io.to(privateRoomChannel(room.roomCode)).emit('hint-reveal', { cells: chosen });
+        room.hintState.votes.clear();
+        room.hintState.available = false;
+      }
+      return;
+    }
     try {
       const room = puzzleRooms.get(puzzleDate);
       if (!room) return;
@@ -1308,7 +1574,17 @@ io.on('connection', async (socket) => {
     }
   });
 
-  socket.on('hint-available', ({ puzzleDate }) => {
+  socket.on('hint-available', ({ puzzleDate, roomCode }) => {
+    if (roomCode) {
+      const room = privateRooms.get(normalizeRoomCode(roomCode));
+      if (!room) return;
+      if (!room.hintState.available) {
+        room.hintState.available = true;
+        room.hintState.votes.clear();
+        io.to(privateRoomChannel(room.roomCode)).emit('hint-available');
+      }
+      return;
+    }
     // Server acknowledges hint availability — broadcast to room
     const hs = getHintState(puzzleDate);
     if (!hs.available) {
@@ -1318,7 +1594,30 @@ io.on('connection', async (socket) => {
     }
   });
 
-  socket.on('chat-send', ({ puzzleDate, text }) => {
+  socket.on('chat-send', ({ puzzleDate, roomCode, text }) => {
+    if (roomCode) {
+      const normalizedCode = normalizeRoomCode(roomCode);
+      if (socketPrivateRoom.get(socket.id) !== normalizedCode) return;
+      const room = privateRooms.get(normalizedCode);
+      if (!room || !room.members.has(socket.id)) return;
+      const trimmed = typeof text === 'string' ? text.trim() : '';
+      if (!trimmed || trimmed.length > 240) return;
+      const now = Date.now();
+      const lastSentAt = chatThrottle.get(socket.id) || 0;
+      if (now - lastSentAt < 750) return;
+      chatThrottle.set(socket.id, now);
+      const sender = room.members.get(socket.id);
+      io.to(privateRoomChannel(normalizedCode)).emit('chat-message', {
+        roomCode: normalizedCode,
+        puzzleDate: room.puzzleDate,
+        socketId: socket.id,
+        userName: sender?.userName || socket.userName || 'Anonymous',
+        color: sender?.color || socket.userColor || '#ccc',
+        text: trimmed,
+        sentAt: now,
+      });
+      return;
+    }
     if (socketPuzzle.get(socket.id) !== puzzleDate) return;
 
     const room = puzzleRooms.get(puzzleDate);
@@ -1344,7 +1643,23 @@ io.on('connection', async (socket) => {
     });
   });
 
-  socket.on('clear-puzzle', async ({ puzzleDate }) => {
+  socket.on('clear-puzzle', async ({ puzzleDate, roomCode }) => {
+    if (roomCode) {
+      const room = privateRooms.get(normalizeRoomCode(roomCode));
+      if (!room) return;
+      removeAllPrivateAiBots(room.roomCode);
+      room.userGrid = {};
+      room.checkedCells = {};
+      room.cellFillers = {};
+      room.points = {};
+      room.guesses = {};
+      room.hintState = { votes: new Set(), hintCells: new Set(), available: false };
+      room.timerAccumulated = 0;
+      room.timerStartedAt = Date.now();
+      io.to(privateRoomChannel(room.roomCode)).emit('timer-sync', { seconds: 0 });
+      socket.to(privateRoomChannel(room.roomCode)).emit('puzzle-cleared', { userId });
+      return;
+    }
     try {
       removeAllAiBots(puzzleDate);
       await db.clearState(puzzleDate);
@@ -1362,7 +1677,15 @@ io.on('connection', async (socket) => {
   });
 
   // ─── AI bot handlers ──────────────────────────────────────────
-  socket.on('add-ai', ({ puzzleDate, difficultyIndex }) => {
+  socket.on('add-ai', ({ puzzleDate, roomCode, difficultyIndex }) => {
+    if (roomCode) {
+      const room = privateRooms.get(normalizeRoomCode(roomCode));
+      if (!room || room.members.size >= 6) return;
+      const di = Math.max(0, Math.min(4, difficultyIndex || 2));
+      addPrivateAiBot(room.roomCode, di);
+      io.to(privateRoomChannel(room.roomCode)).emit('ai-bot-list', getPrivateAiBotList(room.roomCode));
+      return;
+    }
     const roomBots = aiBots.get(puzzleDate);
     const room = puzzleRooms.get(puzzleDate);
     if (room && room.size >= 6) return; // max 6 players including bots
@@ -1371,25 +1694,42 @@ io.on('connection', async (socket) => {
     io.to(`puzzle:${puzzleDate}`).emit('ai-bot-list', getAiBotList(puzzleDate));
   });
 
-  socket.on('remove-ai', ({ puzzleDate, botId }) => {
+  socket.on('remove-ai', ({ puzzleDate, roomCode, botId }) => {
+    if (roomCode) {
+      const normalizedCode = normalizeRoomCode(roomCode);
+      removePrivateAiBot(normalizedCode, botId);
+      const room = privateRooms.get(normalizedCode);
+      if (room) io.to(privateRoomChannel(normalizedCode)).emit('ai-bot-list', getPrivateAiBotList(normalizedCode));
+      return;
+    }
     removeAiBot(puzzleDate, botId);
     io.to(`puzzle:${puzzleDate}`).emit('ai-bot-list', getAiBotList(puzzleDate));
   });
 
-  socket.on('start-ai', ({ puzzleDate }) => {
+  socket.on('start-ai', ({ puzzleDate, roomCode }) => {
+    if (roomCode) {
+      startPrivateAiSolving(normalizeRoomCode(roomCode)).catch(err => console.error('[ai] start-private-ai error:', err));
+      return;
+    }
     startAiSolving(puzzleDate).catch(err => console.error('[ai] start-ai error:', err));
   });
 
-  socket.on('get-ai-bots', ({ puzzleDate }) => {
+  socket.on('get-ai-bots', ({ puzzleDate, roomCode }) => {
+    if (roomCode) {
+      socket.emit('ai-bot-list', getPrivateAiBotList(normalizeRoomCode(roomCode)));
+      return;
+    }
     socket.emit('ai-bot-list', getAiBotList(puzzleDate));
   });
 
   socket.on('leave-puzzle', () => {
+    leaveCurrentPrivateRoom(socket);
     leaveCurrentPuzzle(socket);
   });
 
   socket.on('disconnect', () => {
     chatThrottle.delete(socket.id);
+    leaveCurrentPrivateRoom(socket);
     leaveCurrentPuzzle(socket);
   });
 });
