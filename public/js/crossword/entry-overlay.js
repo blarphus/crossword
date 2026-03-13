@@ -25,27 +25,25 @@ function showPuzzleEntryOverlay(dateStr, paused) {
   const weekdayEl = document.getElementById('entry-weekday');
   const metaEl2 = document.getElementById('entry-meta');
   const playersEl = document.getElementById('entry-players');
+  const playersLabelEl = document.querySelector('.entry-players-label');
   const userPreviewEl = document.getElementById('entry-user-preview');
   const roomCodeEl = document.getElementById('entry-room-code');
   const aiSectionEl = document.getElementById('entry-ai-section');
   const baseStartBtn = document.getElementById('entry-start-btn');
   const baseChangeNameBtn = document.getElementById('entry-change-name');
   const baseMultiplayerBtn = document.getElementById('entry-multiplayer-btn');
-  const baseSharedBtn = document.getElementById('entry-shared-btn');
   const baseMarkCompleteBtn = document.getElementById('entry-mark-complete');
   const baseCopyCodeBtn = document.getElementById('entry-copy-code');
   const baseAddBotBtn = document.getElementById('entry-ai-add-btn');
   const startBtn = baseStartBtn.cloneNode(true);
   const changeNameBtn = baseChangeNameBtn.cloneNode(true);
   const multiplayerBtn = baseMultiplayerBtn.cloneNode(true);
-  const sharedBtn = baseSharedBtn.cloneNode(true);
   const markCompleteBtn = baseMarkCompleteBtn.cloneNode(true);
   const copyCodeBtn = baseCopyCodeBtn.cloneNode(true);
   const addBotBtn = baseAddBotBtn.cloneNode(true);
   baseStartBtn.parentNode.replaceChild(startBtn, baseStartBtn);
   baseChangeNameBtn.parentNode.replaceChild(changeNameBtn, baseChangeNameBtn);
   baseMultiplayerBtn.parentNode.replaceChild(multiplayerBtn, baseMultiplayerBtn);
-  baseSharedBtn.parentNode.replaceChild(sharedBtn, baseSharedBtn);
   baseMarkCompleteBtn.parentNode.replaceChild(markCompleteBtn, baseMarkCompleteBtn);
   baseCopyCodeBtn.parentNode.replaceChild(copyCodeBtn, baseCopyCodeBtn);
   baseAddBotBtn.parentNode.replaceChild(addBotBtn, baseAddBotBtn);
@@ -72,6 +70,9 @@ function showPuzzleEntryOverlay(dateStr, paused) {
   }
 
   playersEl.innerHTML = '';
+  if (playersLabelEl) {
+    playersLabelEl.textContent = isSharedMode ? 'COMMUNAL GRID' : 'PLAYERS SOLVING';
+  }
   if (isSharedMode) {
     playersEl.innerHTML = '<div class="entry-no-players">Shared grid uses the persistent backend state for this date</div>';
   } else if (!roomModeActive) {
@@ -93,8 +94,7 @@ function showPuzzleEntryOverlay(dateStr, paused) {
 
   overlay.classList.add('show');
   aiSectionEl.style.display = roomModeActive ? '' : 'none';
-  multiplayerBtn.style.display = roomModeActive ? 'none' : '';
-  sharedBtn.style.display = roomModeActive || isSharedMode ? 'none' : '';
+  multiplayerBtn.style.display = roomModeActive || isSharedMode ? 'none' : '';
   copyCodeBtn.style.display = roomModeActive ? '' : 'none';
   markCompleteBtn.textContent = isManuallyComplete(dateStr) ? 'Mark Incomplete' : 'Mark Complete';
 
@@ -194,17 +194,6 @@ function showPuzzleEntryOverlay(dateStr, paused) {
     }
   };
 
-  const handleUseSharedGrid = async () => {
-    try {
-      setActiveSharedContext(dateStr);
-      ensureSocketState();
-      await loadPuzzle(dateStr);
-      showPuzzleEntryOverlay(dateStr, paused);
-    } catch (err) {
-      alert('Failed to open shared grid');
-    }
-  };
-
   const handleToggleManualComplete = () => {
     setManualCompleteStatus(dateStr, !isManuallyComplete(dateStr));
     markCompleteBtn.textContent = isManuallyComplete(dateStr) ? 'Mark Incomplete' : 'Mark Complete';
@@ -213,7 +202,6 @@ function showPuzzleEntryOverlay(dateStr, paused) {
   startBtn.addEventListener('click', handleStart);
   changeNameBtn.addEventListener('click', handleChangeName);
   multiplayerBtn.addEventListener('click', handleMakeMultiplayer);
-  sharedBtn.addEventListener('click', handleUseSharedGrid);
   copyCodeBtn.addEventListener('click', handleCopyCode);
   markCompleteBtn.addEventListener('click', handleToggleManualComplete);
 }

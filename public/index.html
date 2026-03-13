@@ -58,6 +58,35 @@ body {
 .calendar-nav button:disabled { opacity: 0.4; cursor: default; }
 .calendar-nav select { font-size: 0.85rem; }
 
+.calendar-mode-tabs {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px;
+  border: 1px solid #d7d7d7;
+  border-radius: 999px;
+  background: #f1f1f1;
+}
+
+.calendar-mode-tab {
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: #666;
+  font-size: 0.8rem;
+  font-weight: 700;
+  padding: 7px 14px;
+}
+
+.calendar-mode-tab:hover {
+  background: #e5e5e5;
+}
+
+.calendar-mode-tab.active {
+  background: #222;
+  color: #fff;
+}
+
 .room-join {
   display: inline-flex;
   align-items: center;
@@ -896,6 +925,7 @@ body {
 body.mobile .calendar-nav { padding: 10px; gap: 6px; }
 body.mobile .calendar-nav h1 { font-size: 1rem; margin-right: 6px; }
 body.mobile .calendar-nav button, body.mobile .calendar-nav select { padding: 5px 8px; font-size: 0.78rem; }
+body.mobile .calendar-mode-tab { padding: 6px 12px; font-size: 0.75rem; }
 body.mobile .user-badge { font-size: 0.72rem; padding: 3px 8px; }
 body.mobile .room-join { order: 10; width: 100%; }
 body.mobile .room-join input { flex: 1; width: auto; font-size: 0.78rem; }
@@ -1380,6 +1410,10 @@ body.mobile.chat-open .mobile-keyboard { display: none; }
 <div id="calendar-view">
   <div class="calendar-nav">
     <h1>NYT Crossword</h1>
+    <div class="calendar-mode-tabs" role="tablist" aria-label="Crossword mode">
+      <button class="calendar-mode-tab active" id="calendar-mode-local" type="button" role="tab" aria-selected="true">Local</button>
+      <button class="calendar-mode-tab" id="calendar-mode-communal" type="button" role="tab" aria-selected="false">Communal</button>
+    </div>
     <a href="/jeopardy" style="padding:6px 14px; border-radius:4px; background:#060CE9; color:#D7A32A; text-decoration:none; font-weight:700; font-size:0.85rem; transition:opacity 0.15s;" onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'">Jeopardy!</a>
     <span class="user-badge" id="user-badge" title="Click to change name"></span>
     <div class="room-join">
@@ -1509,7 +1543,6 @@ body.mobile.chat-open .mobile-keyboard { display: none; }
     </div>
     <button class="entry-start-btn" id="entry-start-btn">Start Solving</button>
     <button class="entry-change-name" id="entry-multiplayer-btn" type="button">Make Multiplayer</button>
-    <button class="entry-change-name" id="entry-shared-btn" type="button">Use Shared Grid</button>
     <button class="entry-change-name" id="entry-mark-complete" type="button">Mark Complete</button>
     <button class="entry-change-name" id="entry-copy-code" type="button" style="display:none">Copy Room Code</button>
     <button class="entry-change-name" id="entry-change-name">Change Name / Color</button>
@@ -1689,11 +1722,13 @@ const ACTIVE_SESSION_TYPE_KEY = 'crossword-active-session-type';
 const ACTIVE_ROOM_CODE_KEY = 'crossword-active-room-code';
 const ACTIVE_ROOM_PUZZLE_KEY = 'crossword-active-room-puzzle';
 const ACTIVE_SHARED_PUZZLE_KEY = 'crossword-active-shared-puzzle';
+const HOME_SOLVE_MODE_KEY = 'crossword-home-solve-mode';
 let soloAutoCheck = localStorage.getItem(SOLO_AUTO_CHECK_KEY) !== 'false';
 let activeSessionType = localStorage.getItem(ACTIVE_SESSION_TYPE_KEY) || '';
 let activeRoomCode = String(localStorage.getItem(ACTIVE_ROOM_CODE_KEY) || '').trim().toUpperCase();
 let activeRoomPuzzleDate = localStorage.getItem(ACTIVE_ROOM_PUZZLE_KEY) || '';
 let activeSharedPuzzleDate = localStorage.getItem(ACTIVE_SHARED_PUZZLE_KEY) || '';
+let homeSolveMode = localStorage.getItem(HOME_SOLVE_MODE_KEY) === 'communal' ? 'communal' : 'local';
 
 function isLocalSoloMode() {
   return activeSessionType !== 'room' && activeSessionType !== 'shared';
@@ -1971,6 +2006,8 @@ const btnClear = document.getElementById('btn-clear');
 const btnReveal = document.getElementById('btn-reveal');
 const btnRebus = document.getElementById('btn-rebus');
 const btnBack = document.getElementById('btn-back');
+const calendarModeLocalEl = document.getElementById('calendar-mode-local');
+const calendarModeCommunalEl = document.getElementById('calendar-mode-communal');
 const roomCodeInputEl = document.getElementById('room-code-input');
 const roomCodeSubmitEl = document.getElementById('room-code-submit');
 
@@ -2025,6 +2062,11 @@ function updateModeUI() {
 
 // ─── View management ───────────────────────────────────────────
 function showCalendar(pushState = true) {
+  if (isSharedGridMode()) {
+    setHomeSolveMode('communal');
+  } else if (isLocalSoloMode()) {
+    setHomeSolveMode('local');
+  }
   puzzleView.style.display = 'none';
   calendarView.style.display = 'block';
   document.body.style.overflow = '';

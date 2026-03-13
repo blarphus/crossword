@@ -198,6 +198,14 @@ function setActiveSharedContext(puzzleDate) {
   if (appStarted) updateModeUI();
 }
 
+function setHomeSolveMode(mode) {
+  homeSolveMode = mode === 'communal' ? 'communal' : 'local';
+  localStorage.setItem(HOME_SOLVE_MODE_KEY, homeSolveMode);
+  if (typeof syncCalendarModeTabs === 'function') {
+    syncCalendarModeTabs();
+  }
+}
+
 function clearActiveRoomContext() {
   activeSessionType = '';
   activeRoomCode = '';

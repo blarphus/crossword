@@ -2,6 +2,23 @@ function todayET() {
   return new Date().toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
 }
 
+function syncCalendarModeTabs() {
+  const isCommunal = homeSolveMode === 'communal';
+  calendarModeLocalEl.classList.toggle('active', !isCommunal);
+  calendarModeLocalEl.setAttribute('aria-selected', String(!isCommunal));
+  calendarModeCommunalEl.classList.toggle('active', isCommunal);
+  calendarModeCommunalEl.setAttribute('aria-selected', String(isCommunal));
+}
+
+function openPuzzleFromCalendar(dateStr) {
+  if (homeSolveMode === 'communal') {
+    setActiveSharedContext(dateStr);
+  } else if (!isRoomMode()) {
+    clearActiveRoomContext();
+  }
+  showPuzzle(dateStr, true, true);
+}
+
 function cloneCalendarSummary(summary) {
   return {
     ...summary,
@@ -76,6 +93,10 @@ function initCalendarNav() {
   }
   monthSel.value = calendarMonth;
   yearSel.value = calendarYear;
+  syncCalendarModeTabs();
+
+  calendarModeLocalEl.addEventListener('click', () => setHomeSolveMode('local'));
+  calendarModeCommunalEl.addEventListener('click', () => setHomeSolveMode('communal'));
 
   monthSel.addEventListener('change', () => {
     calendarMonth = parseInt(monthSel.value, 10);
@@ -206,7 +227,7 @@ function renderCalendar() {
       star.textContent = '\u2B50';
       dayEl.appendChild(star);
 
-      dayEl.addEventListener('click', () => showPuzzle(dateStr, true, true));
+      dayEl.addEventListener('click', () => openPuzzleFromCalendar(dateStr));
     } else {
       dayEl.classList.add('no-puzzle');
     }
