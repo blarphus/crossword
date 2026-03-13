@@ -1411,8 +1411,8 @@ body.mobile.chat-open .mobile-keyboard { display: none; }
   <div class="calendar-nav">
     <h1>NYT Crossword</h1>
     <div class="calendar-mode-tabs" role="tablist" aria-label="Crossword mode">
-      <button class="calendar-mode-tab active" id="calendar-mode-local" type="button" role="tab" aria-selected="true">Local</button>
-      <button class="calendar-mode-tab" id="calendar-mode-communal" type="button" role="tab" aria-selected="false">Communal</button>
+      <button class="calendar-mode-tab" id="calendar-mode-local" type="button" role="tab" aria-selected="false">Local</button>
+      <button class="calendar-mode-tab active" id="calendar-mode-communal" type="button" role="tab" aria-selected="true">Communal</button>
     </div>
     <a href="/jeopardy" style="padding:6px 14px; border-radius:4px; background:#060CE9; color:#D7A32A; text-decoration:none; font-weight:700; font-size:0.85rem; transition:opacity 0.15s;" onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'">Jeopardy!</a>
     <span class="user-badge" id="user-badge" title="Click to change name"></span>
@@ -1729,7 +1729,7 @@ let activeSessionType = localStorage.getItem(ACTIVE_SESSION_TYPE_KEY) || '';
 let activeRoomCode = String(localStorage.getItem(ACTIVE_ROOM_CODE_KEY) || '').trim().toUpperCase();
 let activeRoomPuzzleDate = localStorage.getItem(ACTIVE_ROOM_PUZZLE_KEY) || '';
 let activeSharedPuzzleDate = localStorage.getItem(ACTIVE_SHARED_PUZZLE_KEY) || '';
-let homeSolveMode = localStorage.getItem(HOME_SOLVE_MODE_KEY) === 'communal' ? 'communal' : 'local';
+let homeSolveMode = localStorage.getItem(HOME_SOLVE_MODE_KEY) === 'local' ? 'local' : 'communal';
 
 function isLocalSoloMode() {
   return activeSessionType !== 'room' && activeSessionType !== 'shared';
