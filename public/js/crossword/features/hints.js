@@ -10,8 +10,9 @@ function startHintTimer() {
     const elapsed = Date.now() - lastWordCompletionTime;
     if (elapsed >= 60000) {
       showHintBtn();
-      if (!isLocalSoloMode() && socket && activeRoomCode) {
-        socket.emit('hint-available', { roomCode: activeRoomCode });
+      const payload = getLivePuzzlePayload();
+      if (payload && socket) {
+        socket.emit('hint-available', payload);
       }
     }
   }, 5000);
@@ -76,7 +77,8 @@ function voteForHint() {
     applyHintReveal(candidates.slice(0, 5));
     return;
   }
-  if (socket && activeRoomCode) socket.emit('hint-vote', { roomCode: activeRoomCode });
+  const payload = getLivePuzzlePayload();
+  if (payload && socket) socket.emit('hint-vote', payload);
 }
 
 function applyHintReveal(cells) {

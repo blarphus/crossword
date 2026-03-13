@@ -161,12 +161,37 @@ function populateSoloFillersFromGrid() {
 }
 
 function setActiveRoomContext(roomCode, puzzleDate) {
+  activeSessionType = 'room';
   activeRoomCode = normalizeRoomCode(roomCode);
   activeRoomPuzzleDate = puzzleDate || '';
+  activeSharedPuzzleDate = '';
   if (activeRoomCode && activeRoomPuzzleDate) {
+    localStorage.setItem(ACTIVE_SESSION_TYPE_KEY, activeSessionType);
     localStorage.setItem(ACTIVE_ROOM_CODE_KEY, activeRoomCode);
     localStorage.setItem(ACTIVE_ROOM_PUZZLE_KEY, activeRoomPuzzleDate);
+    localStorage.removeItem(ACTIVE_SHARED_PUZZLE_KEY);
   } else {
+    localStorage.removeItem(ACTIVE_SESSION_TYPE_KEY);
+    localStorage.removeItem(ACTIVE_ROOM_CODE_KEY);
+    localStorage.removeItem(ACTIVE_ROOM_PUZZLE_KEY);
+    localStorage.removeItem(ACTIVE_SHARED_PUZZLE_KEY);
+  }
+  if (appStarted) updateModeUI();
+}
+
+function setActiveSharedContext(puzzleDate) {
+  activeSessionType = puzzleDate ? 'shared' : '';
+  activeSharedPuzzleDate = puzzleDate || '';
+  activeRoomCode = '';
+  activeRoomPuzzleDate = '';
+  if (activeSharedPuzzleDate) {
+    localStorage.setItem(ACTIVE_SESSION_TYPE_KEY, activeSessionType);
+    localStorage.setItem(ACTIVE_SHARED_PUZZLE_KEY, activeSharedPuzzleDate);
+    localStorage.removeItem(ACTIVE_ROOM_CODE_KEY);
+    localStorage.removeItem(ACTIVE_ROOM_PUZZLE_KEY);
+  } else {
+    localStorage.removeItem(ACTIVE_SESSION_TYPE_KEY);
+    localStorage.removeItem(ACTIVE_SHARED_PUZZLE_KEY);
     localStorage.removeItem(ACTIVE_ROOM_CODE_KEY);
     localStorage.removeItem(ACTIVE_ROOM_PUZZLE_KEY);
   }
@@ -174,7 +199,15 @@ function setActiveRoomContext(roomCode, puzzleDate) {
 }
 
 function clearActiveRoomContext() {
-  setActiveRoomContext('', '');
+  activeSessionType = '';
+  activeRoomCode = '';
+  activeRoomPuzzleDate = '';
+  activeSharedPuzzleDate = '';
+  localStorage.removeItem(ACTIVE_SESSION_TYPE_KEY);
+  localStorage.removeItem(ACTIVE_ROOM_CODE_KEY);
+  localStorage.removeItem(ACTIVE_ROOM_PUZZLE_KEY);
+  localStorage.removeItem(ACTIVE_SHARED_PUZZLE_KEY);
+  if (appStarted) updateModeUI();
 }
 
 function isManuallyComplete(puzzleDate) {

@@ -1509,6 +1509,7 @@ body.mobile.chat-open .mobile-keyboard { display: none; }
     </div>
     <button class="entry-start-btn" id="entry-start-btn">Start Solving</button>
     <button class="entry-change-name" id="entry-multiplayer-btn" type="button">Make Multiplayer</button>
+    <button class="entry-change-name" id="entry-shared-btn" type="button">Use Shared Grid</button>
     <button class="entry-change-name" id="entry-mark-complete" type="button">Mark Complete</button>
     <button class="entry-change-name" id="entry-copy-code" type="button" style="display:none">Copy Room Code</button>
     <button class="entry-change-name" id="entry-change-name">Change Name / Color</button>
@@ -1684,14 +1685,36 @@ const DEVICE_ID = getDeviceId();
 const SOLO_AUTO_CHECK_KEY = 'crossword-solo-auto-check';
 const SOLO_STATE_KEY_PREFIX = 'crossword-solo-state:';
 const SOLO_CALENDAR_TEMPLATE_KEY_PREFIX = 'crossword-solo-calendar-template:';
+const ACTIVE_SESSION_TYPE_KEY = 'crossword-active-session-type';
 const ACTIVE_ROOM_CODE_KEY = 'crossword-active-room-code';
 const ACTIVE_ROOM_PUZZLE_KEY = 'crossword-active-room-puzzle';
+const ACTIVE_SHARED_PUZZLE_KEY = 'crossword-active-shared-puzzle';
 let soloAutoCheck = localStorage.getItem(SOLO_AUTO_CHECK_KEY) !== 'false';
+let activeSessionType = localStorage.getItem(ACTIVE_SESSION_TYPE_KEY) || '';
 let activeRoomCode = String(localStorage.getItem(ACTIVE_ROOM_CODE_KEY) || '').trim().toUpperCase();
 let activeRoomPuzzleDate = localStorage.getItem(ACTIVE_ROOM_PUZZLE_KEY) || '';
+let activeSharedPuzzleDate = localStorage.getItem(ACTIVE_SHARED_PUZZLE_KEY) || '';
 
 function isLocalSoloMode() {
-  return !activeRoomCode;
+  return activeSessionType !== 'room' && activeSessionType !== 'shared';
+}
+
+function isRoomMode() {
+  return activeSessionType === 'room' && !!activeRoomCode;
+}
+
+function isSharedGridMode() {
+  return activeSessionType === 'shared' && !!activeSharedPuzzleDate;
+}
+
+function getLivePuzzlePayload(puzzleDate = currentDate) {
+  if (isRoomMode()) {
+    return { roomCode: activeRoomCode };
+  }
+  if (isSharedGridMode()) {
+    return { puzzleDate: puzzleDate || activeSharedPuzzleDate };
+  }
+  return null;
 }
 
 function isAutoCheckEnabled() {
@@ -1844,9 +1867,12 @@ function connectSocket() {
   socket = io({ query: { userId: myName, deviceId: DEVICE_ID } });
 
   socket.on('connect', () => {
-    if (currentDate && activeRoomCode) {
+    if (currentDate && isRoomMode()) {
       resetChatState();
       socket.emit('join-room', { roomCode: activeRoomCode });
+    } else if (currentDate && isSharedGridMode()) {
+      resetChatState();
+      socket.emit('join-puzzle', currentDate);
     }
   });
 
@@ -1887,8 +1913,9 @@ document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'visible') {
     updateTimerDisplay();
     // Ask server for fresh state so bot progress catches up
-    if (socket && currentDate && activeRoomCode) {
-      socket.emit('request-state', { roomCode: activeRoomCode });
+    if (socket && currentDate) {
+      const livePayload = getLivePuzzlePayload();
+      if (livePayload) socket.emit('request-state', livePayload);
     }
   }
 });
@@ -2074,11 +2101,13 @@ function computeAndApplyCellSize() {
 }
 
 function broadcastCursor() {
-  if (!currentDate || !socket || !activeRoomCode) return;
+  if (!currentDate || !socket) return;
+  const livePayload = getLivePuzzlePayload();
+  if (!livePayload) return;
   const key = `${selectedRow},${selectedCol},${direction}`;
   if (key === lastCursorKey) return;
   lastCursorKey = key;
-  socket.emit('cursor-move', { roomCode: activeRoomCode, row: selectedRow, col: selectedCol, direction });
+  socket.emit('cursor-move', { ...livePayload, row: selectedRow, col: selectedCol, direction });
 }
 
 // ─── Socket.IO event handlers for puzzle ──────────────────────
@@ -2520,9 +2549,10 @@ btnClear.addEventListener('click', () => {
     startTimerTick();
     clearSoloState(currentDate);
     updateCalendarSummaryForCurrentPuzzle();
-  } else if (currentDate && socket && activeRoomCode) {
+  } else {
     clearSoloState(currentDate);
-    socket.emit('clear-puzzle', { roomCode: activeRoomCode });
+    const livePayload = getLivePuzzlePayload();
+    if (livePayload && socket) socket.emit('clear-puzzle', livePayload);
   }
   render();
 });
@@ -2713,8 +2743,9 @@ function startApp() {
     const urlPath = window.location.pathname.slice(1);
     const storedRoomCode = normalizeRoomCode(activeRoomCode);
     const storedRoomPuzzle = activeRoomPuzzleDate;
+    const storedSharedPuzzle = activeSharedPuzzleDate;
 
-    if (storedRoomCode && storedRoomPuzzle) {
+    if (isRoomMode() && storedRoomCode && storedRoomPuzzle) {
       try {
         const res = await fetch(`/api/rooms/${encodeURIComponent(storedRoomCode)}`);
         if (res.ok) {
@@ -2728,6 +2759,12 @@ function startApp() {
         // fall back to solo
       }
       clearActiveRoomContext();
+    }
+
+    if (isSharedGridMode() && storedSharedPuzzle) {
+      showPuzzle(storedSharedPuzzle, false);
+      history.replaceState({ view: 'puzzle', date: storedSharedPuzzle }, '', `/${storedSharedPuzzle}`);
+      return;
     }
 
     if (/^\d{4}-\d{2}-\d{2}$/.test(urlPath)) {

@@ -10,8 +10,10 @@ function renderAiBotList() {
   }
   listEl.querySelectorAll('.ai-remove').forEach(btn => {
     btn.addEventListener('click', () => {
-      if (socket && currentDate && activeRoomCode) {
+      if (socket && currentDate && isRoomMode()) {
         socket.emit('remove-ai', { roomCode: activeRoomCode, botId: btn.dataset.botId });
+      } else if (socket && currentDate && isSharedGridMode()) {
+        socket.emit('remove-ai', { puzzleDate: currentDate, botId: btn.dataset.botId });
       }
     });
   });
@@ -29,25 +31,29 @@ function showPuzzleEntryOverlay(dateStr, paused) {
   const baseStartBtn = document.getElementById('entry-start-btn');
   const baseChangeNameBtn = document.getElementById('entry-change-name');
   const baseMultiplayerBtn = document.getElementById('entry-multiplayer-btn');
+  const baseSharedBtn = document.getElementById('entry-shared-btn');
   const baseMarkCompleteBtn = document.getElementById('entry-mark-complete');
   const baseCopyCodeBtn = document.getElementById('entry-copy-code');
   const baseAddBotBtn = document.getElementById('entry-ai-add-btn');
   const startBtn = baseStartBtn.cloneNode(true);
   const changeNameBtn = baseChangeNameBtn.cloneNode(true);
   const multiplayerBtn = baseMultiplayerBtn.cloneNode(true);
+  const sharedBtn = baseSharedBtn.cloneNode(true);
   const markCompleteBtn = baseMarkCompleteBtn.cloneNode(true);
   const copyCodeBtn = baseCopyCodeBtn.cloneNode(true);
   const addBotBtn = baseAddBotBtn.cloneNode(true);
   baseStartBtn.parentNode.replaceChild(startBtn, baseStartBtn);
   baseChangeNameBtn.parentNode.replaceChild(changeNameBtn, baseChangeNameBtn);
   baseMultiplayerBtn.parentNode.replaceChild(multiplayerBtn, baseMultiplayerBtn);
+  baseSharedBtn.parentNode.replaceChild(sharedBtn, baseSharedBtn);
   baseMarkCompleteBtn.parentNode.replaceChild(markCompleteBtn, baseMarkCompleteBtn);
   baseCopyCodeBtn.parentNode.replaceChild(copyCodeBtn, baseCopyCodeBtn);
   baseAddBotBtn.parentNode.replaceChild(addBotBtn, baseAddBotBtn);
-  const isRoomMode = !!activeRoomCode && activeRoomPuzzleDate === dateStr;
+  const roomModeActive = isRoomMode() && activeRoomPuzzleDate === dateStr;
+  const isSharedMode = isSharedGridMode() && activeSharedPuzzleDate === dateStr;
   startBtn.textContent = paused
-    ? (isRoomMode ? 'Resume Room' : 'Resume Solo')
-    : (isRoomMode ? 'Start Room' : 'Start Solo');
+    ? (roomModeActive ? 'Resume Room' : (isSharedMode ? 'Resume Shared Grid' : 'Resume Solo'))
+    : (roomModeActive ? 'Start Room' : (isSharedMode ? 'Start Shared Grid' : 'Start Solo'));
 
   const [y, m, d] = dateStr.split('-').map(Number);
   const dateObj = new Date(y, m - 1, d);
@@ -66,7 +72,9 @@ function showPuzzleEntryOverlay(dateStr, paused) {
   }
 
   playersEl.innerHTML = '';
-  if (!isRoomMode) {
+  if (isSharedMode) {
+    playersEl.innerHTML = '<div class="entry-no-players">Shared grid uses the persistent backend state for this date</div>';
+  } else if (!roomModeActive) {
     playersEl.innerHTML = '<div class="entry-no-players">Solo mode saves progress in this browser only</div>';
   } else {
     const count = remoteUsers.size + 1;
@@ -80,23 +88,28 @@ function showPuzzleEntryOverlay(dateStr, paused) {
     }
   }
 
-  roomCodeEl.style.display = isRoomMode ? '' : 'none';
-  roomCodeEl.textContent = isRoomMode ? `ROOM ${activeRoomCode}` : '';
+  roomCodeEl.style.display = roomModeActive ? '' : 'none';
+  roomCodeEl.textContent = roomModeActive ? `ROOM ${activeRoomCode}` : '';
 
   overlay.classList.add('show');
-  aiSectionEl.style.display = isRoomMode ? '' : 'none';
-  multiplayerBtn.style.display = isRoomMode ? 'none' : '';
-  copyCodeBtn.style.display = isRoomMode ? '' : 'none';
+  aiSectionEl.style.display = roomModeActive ? '' : 'none';
+  multiplayerBtn.style.display = roomModeActive ? 'none' : '';
+  sharedBtn.style.display = roomModeActive || isSharedMode ? 'none' : '';
+  copyCodeBtn.style.display = roomModeActive ? '' : 'none';
   markCompleteBtn.textContent = isManuallyComplete(dateStr) ? 'Mark Incomplete' : 'Mark Complete';
 
-  if (isRoomMode && socket && activeRoomCode) {
+  if (roomModeActive && socket && activeRoomCode) {
     socket.emit('get-ai-bots', { roomCode: activeRoomCode });
+  } else if (isSharedMode && socket && currentDate) {
+    socket.emit('get-ai-bots', { puzzleDate: currentDate });
   }
 
   const diffSelect = document.getElementById('entry-ai-difficulty');
   const handleAddBot = () => {
-    if (isRoomMode && socket && activeRoomCode) {
+    if (roomModeActive && socket && activeRoomCode) {
       socket.emit('add-ai', { roomCode: activeRoomCode, difficultyIndex: parseInt(diffSelect.value, 10) });
+    } else if (isSharedMode && socket && currentDate) {
+      socket.emit('add-ai', { puzzleDate: currentDate, difficultyIndex: parseInt(diffSelect.value, 10) });
     }
   };
   addBotBtn.addEventListener('click', handleAddBot);
@@ -116,11 +129,16 @@ function showPuzzleEntryOverlay(dateStr, paused) {
     if (paused && isLocalSoloMode()) {
       timerBaseTime = Date.now();
       startTimerTick();
-    } else if (paused && socket && currentDate && activeRoomCode) {
+    } else if (paused && socket && currentDate && roomModeActive) {
       socket.emit('resume-puzzle', { roomCode: activeRoomCode });
       startTimerTick();
-    } else if (isRoomMode && socket && activeRoomCode && aiBotList.length > 0) {
+    } else if (paused && socket && currentDate && isSharedMode) {
+      socket.emit('resume-puzzle', { puzzleDate: currentDate });
+      startTimerTick();
+    } else if (roomModeActive && socket && activeRoomCode && aiBotList.length > 0) {
       socket.emit('start-ai', { roomCode: activeRoomCode });
+    } else if (isSharedMode && socket && currentDate && aiBotList.length > 0) {
+      socket.emit('start-ai', { puzzleDate: currentDate });
     }
     setTimeout(() => focusGrid(), 50);
   };
@@ -176,6 +194,17 @@ function showPuzzleEntryOverlay(dateStr, paused) {
     }
   };
 
+  const handleUseSharedGrid = async () => {
+    try {
+      setActiveSharedContext(dateStr);
+      ensureSocketState();
+      await loadPuzzle(dateStr);
+      showPuzzleEntryOverlay(dateStr, paused);
+    } catch (err) {
+      alert('Failed to open shared grid');
+    }
+  };
+
   const handleToggleManualComplete = () => {
     setManualCompleteStatus(dateStr, !isManuallyComplete(dateStr));
     markCompleteBtn.textContent = isManuallyComplete(dateStr) ? 'Mark Incomplete' : 'Mark Complete';
@@ -184,6 +213,7 @@ function showPuzzleEntryOverlay(dateStr, paused) {
   startBtn.addEventListener('click', handleStart);
   changeNameBtn.addEventListener('click', handleChangeName);
   multiplayerBtn.addEventListener('click', handleMakeMultiplayer);
+  sharedBtn.addEventListener('click', handleUseSharedGrid);
   copyCodeBtn.addEventListener('click', handleCopyCode);
   markCompleteBtn.addEventListener('click', handleToggleManualComplete);
 }

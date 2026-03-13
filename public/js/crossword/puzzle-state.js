@@ -107,7 +107,7 @@ async function loadPuzzle(dateStr) {
     }
     data = await puzzleRes.json();
 
-    if (activeRoomCode) {
+    if (isRoomMode()) {
       const roomRes = await fetch(`/api/rooms/${encodeURIComponent(activeRoomCode)}`);
       if (!roomRes.ok) {
         clearActiveRoomContext();
@@ -118,6 +118,14 @@ async function loadPuzzle(dateStr) {
           setActiveRoomContext(roomData.roomCode, roomData.puzzleDate);
         }
         stateData = roomData.snapshot || {};
+      }
+    } else if (isSharedGridMode()) {
+      const sharedRes = await fetch(`/api/state/${dateStr}`);
+      if (!sharedRes.ok) {
+        clearActiveRoomContext();
+        stateData = loadSoloState(dateStr) || {};
+      } else {
+        stateData = await sharedRes.json();
       }
     } else {
       stateData = loadSoloState(dateStr) || {};
@@ -229,8 +237,10 @@ async function loadPuzzle(dateStr) {
   render();
   focusGrid();
 
-  if (!isLocalSoloMode() && socket && socket.connected && activeRoomCode) {
+  if (isRoomMode() && socket && socket.connected && activeRoomCode) {
     socket.emit('join-room', { roomCode: activeRoomCode });
+  } else if (isSharedGridMode() && socket && socket.connected) {
+    socket.emit('join-puzzle', dateStr);
   }
 
   startHintTimer();

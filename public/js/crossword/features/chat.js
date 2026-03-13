@@ -8,7 +8,7 @@ function updateChatUnreadIndicator() {
 }
 
 function updateChatComposerState() {
-  chatSendEl.disabled = !currentDate || !activeRoomCode || !socket || !socket.connected || !chatInputEl.value.trim();
+  chatSendEl.disabled = !currentDate || !getLivePuzzlePayload() || !socket || !socket.connected || !chatInputEl.value.trim();
 }
 
 function renderChatMessages() {
@@ -100,10 +100,12 @@ function appendChatMessage(message) {
 }
 
 function submitChatMessage() {
-  if (!socket || !socket.connected || !currentDate || !activeRoomCode) return;
+  if (!socket || !socket.connected || !currentDate) return;
   const text = chatInputEl.value.trim();
   if (!text) return;
-  socket.emit('chat-send', { roomCode: activeRoomCode, text: text.slice(0, 240) });
+  const payload = getLivePuzzlePayload();
+  if (!payload) return;
+  socket.emit('chat-send', { ...payload, text: text.slice(0, 240) });
   chatInputEl.value = '';
   updateChatComposerState();
 }

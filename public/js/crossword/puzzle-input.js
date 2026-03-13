@@ -115,8 +115,9 @@ function sendCellUpdate(row, col, letter) {
     cellFillers.delete(key);
   }
   saveSoloState(currentDate);
-  if (!isLocalSoloMode() && socket && activeRoomCode) {
-    socket.emit('cell-update', { roomCode: activeRoomCode, row, col, letter });
+  const livePayload = getLivePuzzlePayload();
+  if (livePayload && socket) {
+    socket.emit('cell-update', { ...livePayload, row, col, letter });
   }
 }
 
@@ -372,8 +373,9 @@ function pausePuzzle() {
   if (!currentDate || solved) return;
   stopTimerTick();
   saveSoloState(currentDate);
-  if (!isLocalSoloMode() && socket && activeRoomCode) {
-    socket.emit('pause-puzzle', { roomCode: activeRoomCode });
+  const livePayload = getLivePuzzlePayload();
+  if (livePayload && socket) {
+    socket.emit('pause-puzzle', livePayload);
   }
   showPuzzleEntryOverlay(currentDate, true);
 }
