@@ -40,6 +40,18 @@ function normalizeSoloCalendarTemplateItem(item) {
   };
 }
 
+function recentCalendarMonthsET() {
+  const [year, month, day] = todayET().split('-').map(Number);
+  const today = new Date(Date.UTC(year, month - 1, day));
+  const months = new Set();
+  for (let offset = 0; offset < 2; offset++) {
+    const d = new Date(today);
+    d.setUTCDate(today.getUTCDate() - offset);
+    months.add(`${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`);
+  }
+  return months;
+}
+
 function buildCommunalProgressInfo(templateItem, sharedState) {
   const userGrid = sharedState?.userGrid || {};
   const cells = [];
@@ -70,13 +82,14 @@ function buildCommunalProgressInfo(templateItem, sharedState) {
   };
 }
 
-async function getSoloCalendarTemplate(yearMonth) {
-  if (soloCalendarTemplateCache.has(yearMonth)) {
+async function getSoloCalendarTemplate(yearMonth, { forceRefresh = false } = {}) {
+  const shouldRefresh = forceRefresh || recentCalendarMonthsET().has(yearMonth);
+  if (!shouldRefresh && soloCalendarTemplateCache.has(yearMonth)) {
     return soloCalendarTemplateCache.get(yearMonth);
   }
 
   const stored = localStorage.getItem(getSoloCalendarTemplateKey(yearMonth));
-  if (stored) {
+  if (!shouldRefresh && stored) {
     try {
       const parsed = JSON.parse(stored);
       soloCalendarTemplateCache.set(yearMonth, parsed);
@@ -86,12 +99,25 @@ async function getSoloCalendarTemplate(yearMonth) {
     }
   }
 
-  const res = await fetch(`/api/calendar/${yearMonth}`);
-  const data = await res.json();
-  const normalized = data.map(normalizeSoloCalendarTemplateItem);
-  soloCalendarTemplateCache.set(yearMonth, normalized);
-  localStorage.setItem(getSoloCalendarTemplateKey(yearMonth), JSON.stringify(normalized));
-  return normalized;
+  try {
+    const res = await fetch(`/api/calendar/${yearMonth}`);
+    const data = await res.json();
+    const normalized = data.map(normalizeSoloCalendarTemplateItem);
+    soloCalendarTemplateCache.set(yearMonth, normalized);
+    localStorage.setItem(getSoloCalendarTemplateKey(yearMonth), JSON.stringify(normalized));
+    return normalized;
+  } catch (err) {
+    if (stored) {
+      try {
+        const parsed = JSON.parse(stored);
+        soloCalendarTemplateCache.set(yearMonth, parsed);
+        return parsed;
+      } catch (parseErr) {
+        localStorage.removeItem(getSoloCalendarTemplateKey(yearMonth));
+      }
+    }
+    throw err;
+  }
 }
 
 async function getCommunalCalendarSummary(yearMonth, { forceRefresh = false } = {}) {
