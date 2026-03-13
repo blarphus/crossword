@@ -3,7 +3,7 @@ options:
   createIntermediateGroups: true
 settings:
   base:
-    DEVELOPMENT_TEAM: SD522KHTXP
+    DEVELOPMENT_TEAM: DQNRTU7888
     SWIFT_VERSION: 6.0
 targets:
   CrosswordNative:
