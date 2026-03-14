@@ -54,6 +54,20 @@ function parsePuzzle(html, dateStr) {
   const shades = [];
   const rebus = {};
 
+  // Detect bidirectional rebus from note text (e.g. "read as PH across and F down")
+  const noteEl = root.querySelector('.notetext');
+  const noteText = noteEl ? noteEl.text.trim() : '';
+  let biRebus = null;
+  const biMatch = noteText.match(/read as (\S+) (across|down) and (\S+) (across|down)/i);
+  if (biMatch) {
+    const text1 = biMatch[1].toUpperCase();
+    const text2 = biMatch[3].toUpperCase();
+    // The longer text is the rebus; the shorter is the substitute letter
+    biRebus = text1.length >= text2.length
+      ? { rebus: text1, sub: text2 }
+      : { rebus: text2, sub: text1 };
+  }
+
   let rowIdx = 0;
   for (const tr of table.querySelectorAll('tr')) {
     const rowLetters = [];
@@ -78,7 +92,11 @@ function parsePuzzle(html, dateStr) {
 
         let letter;
         if (substDiv) {
-          const rebusText = substDiv.text.trim().toUpperCase();
+          let rebusText = substDiv.text.trim().toUpperCase();
+          // For bidirectional rebuses, the subst text is rebus+sub concatenated (e.g. "PHF" = "PH"+"F")
+          if (biRebus && rebusText === biRebus.rebus + biRebus.sub) {
+            rebusText = biRebus.rebus;
+          }
           letter = rebusText[0] || '';
           rebus[`${rowIdx},${colIdx}`] = rebusText;
         } else {
