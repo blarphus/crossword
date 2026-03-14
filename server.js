@@ -234,6 +234,7 @@ app.post('/api/scrape/:date', async (req, res) => {
   }
   try {
     await scrapeDate(dateStr);
+    puzzleDataCache.delete(dateStr);
     res.json({ ok: true, date: dateStr });
   } catch (err) {
     console.error(`POST /api/scrape error:`, err.message);
@@ -1464,6 +1465,7 @@ io.on('connection', async (socket) => {
       socket.emit('state-refresh', {
         userGrid: state.user_grid || {},
         cellFillers: state.cell_fillers || {},
+        points: state.points || {},
         userColors,
         seconds: getElapsedSeconds(puzzleDate),
       });
