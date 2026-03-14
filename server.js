@@ -758,8 +758,9 @@ async function processCellUpdate({ puzzleDate, row, col, letter, socketId, userN
         lastSquareBonus = 250;
         await db.addPoints(puzzleDate, userName, lastSquareBonus);
         // Stop and persist the timer on completion
+        const finalSeconds = getElapsedSeconds(puzzleDate);
         await stopTimer(puzzleDate);
-        io.to(`puzzle:${puzzleDate}`).emit('timer-sync', { seconds: getElapsedSeconds(puzzleDate) });
+        io.to(`puzzle:${puzzleDate}`).emit('timer-sync', { seconds: finalSeconds });
         // Clean up all AI bots on puzzle completion
         removeAllAiBots(puzzleDate);
       }
